@@ -5,10 +5,11 @@ require_once '../config/db.php';
 requireAdmin();
 
 // 統計
-$total_users   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM users"))['cnt'];
-$total_forms   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM forms"))['cnt'];
-$total_resp    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM form_responses"))['cnt'];
-$total_groups  = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM `groups`"))['cnt'];
+$total_users          = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM users"))['cnt'];
+$total_forms          = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM forms"))['cnt'];
+$total_resp           = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM form_responses"))['cnt'];
+$total_groups         = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM `groups`"))['cnt'];
+$pending_reports      = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM reports WHERE status = 'pending'"))['cnt'];
 
 require_once '../config/header.php';
 ?>
@@ -77,6 +78,20 @@ require_once '../config/header.php';
                 <h5 class="fw-bold"><i class="bi bi-diagram-3 text-warning"></i> 群組管理</h5>
                 <p class="text-muted small">新增、修改、刪除群組</p>
                 <a href="/admin/groups.php" class="btn btn-outline-warning btn-sm">進入管理</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="fw-bold">
+                    <i class="bi bi-flag text-danger"></i> 檢舉管理
+                    <?php if ($pending_reports > 0): ?>
+                        <span class="badge bg-danger ms-1"><?= $pending_reports ?></span>
+                    <?php endif; ?>
+                </h5>
+                <p class="text-muted small">查看並處理會員的檢舉記錄</p>
+                <a href="/admin/reports.php" class="btn btn-outline-danger btn-sm">進入管理</a>
             </div>
         </div>
     </div>

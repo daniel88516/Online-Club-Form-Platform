@@ -100,7 +100,12 @@ require_once '../config/header.php';
                 <?php while ($user = mysqli_fetch_assoc($users)): ?>
                 <tr>
                     <td><?= $user['id'] ?></td>
-                    <td class="fw-semibold"><?= htmlspecialchars($user['username']) ?></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <?= renderAvatar($user['username'], $user['avatar'] ?? null, 28) ?>
+                            <span class="fw-semibold"><?= htmlspecialchars($user['username']) ?></span>
+                        </div>
+                    </td>
                     <td class="small text-muted"><?= htmlspecialchars($user['email']) ?></td>
                     <td>
                         <form method="POST" class="d-flex gap-1 align-items-center">
@@ -129,7 +134,9 @@ require_once '../config/header.php';
                     <td class="small text-muted"><?= date('Y/m/d', strtotime($user['created_at'])) ?></td>
                     <td class="text-center">
                         <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                        <form method="POST" class="d-inline" onsubmit="return confirm('確定刪除此會員？')">
+                        <form method="POST" class="d-inline"
+                              data-cute-confirm="確定刪除此會員？"
+                              data-cute-icon="👤">
                             <input type="hidden" name="delete_id" value="<?= $user['id'] ?>">
                             <button type="submit" class="btn btn-outline-danger btn-sm">
                                 <i class="bi bi-trash"></i>

@@ -2,23 +2,25 @@
 $pageTitle = '填答統計';
 require_once '../config/session.php';
 require_once '../config/db.php';
+
 requireLogin();
 
 $id = intval($_GET['id'] ?? 0);
 
-// 確認表單屬於此會員（或管理員）
-if (isAdmin()) {
-    $stmt = mysqli_prepare($conn, "SELECT f.*, u.username AS author FROM forms f JOIN users u ON f.user_id = u.id WHERE f.id = ?");
-    mysqli_stmt_bind_param($stmt, 'i', $id);
-} else {
-    $stmt = mysqli_prepare($conn, "SELECT f.*, u.username AS author FROM forms f JOIN users u ON f.user_id = u.id WHERE f.id = ? AND f.user_id = ?");
-    mysqli_stmt_bind_param($stmt, 'ii', $id, $_SESSION['user_id']);
-}
+// 統一以 id 查詢，不限制 user_id（存取控制交由 show_stats 決定）
+$stmt = mysqli_prepare($conn, "SELECT f.*, u.username AS author FROM forms f JOIN users u ON f.user_id = u.id WHERE f.id = ?");
+mysqli_stmt_bind_param($stmt, 'i', $id);
 mysqli_stmt_execute($stmt);
 $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$form) {
-    header('Location: /member/my_forms.php');
+    header('Location: /index.php');
+    exit();
+}
+
+// 存取控制：show_stats=0 時只有擁有者與 admin 可查看；show_stats=1 則所有登入會員皆可
+if (!isAdmin() && $form['user_id'] != $_SESSION['user_id'] && empty($form['show_stats'])) {
+    header('Location: /index.php');
     exit();
 }
 
@@ -30,9 +32,8 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
     $fields[] = $f;
 }
 
-// 取得填答記錄總數
-$total_result = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM form_responses WHERE form_id = $id");
-$total = mysqli_fetch_assoc($total_result)['cnt'];
+// 填答總數
+$total = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM form_responses WHERE form_id = $id"))['cnt'];
 
 // 每個欄位的答案統計
 $field_stats = [];
@@ -55,12 +56,55 @@ $responses_result = mysqli_query($conn, "
     ORDER BY fr.submitted_at DESC
 ");
 
+// ── 按讚記錄 ──────────────────────────────────────────────
+$stmtLk = mysqli_prepare($conn, "
+    SELECT u.id, u.username, u.avatar, fl.created_at
+    FROM form_likes fl
+    JOIN users u ON fl.user_id = u.id
+    WHERE fl.form_id = ?
+    ORDER BY fl.created_at DESC
+");
+mysqli_stmt_bind_param($stmtLk, 'i', $id);
+mysqli_stmt_execute($stmtLk);
+$likes_users = mysqli_stmt_get_result($stmtLk);
+$like_total  = mysqli_num_rows($likes_users);
+
+// ── 收藏記錄 ──────────────────────────────────────────────
+$stmtBk = mysqli_prepare($conn, "
+    SELECT u.id, u.username, u.avatar, fb.created_at
+    FROM form_bookmarks fb
+    JOIN users u ON fb.user_id = u.id
+    WHERE fb.form_id = ?
+    ORDER BY fb.created_at DESC
+");
+mysqli_stmt_bind_param($stmtBk, 'i', $id);
+mysqli_stmt_execute($stmtBk);
+$bookmarks_users = mysqli_stmt_get_result($stmtBk);
+$bookmark_total  = mysqli_num_rows($bookmarks_users);
+
 require_once '../config/header.php';
 ?>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+/* ── 全域：主題色 & 文字色，供各題圖表共用 ── */
+var _themeColor = (function () {
+    var c = localStorage.getItem('themeColor');
+    if (c && /^#[0-9a-fA-F]{6}$/.test(c)) return c;
+    return getComputedStyle(document.documentElement)
+               .getPropertyValue('--bs-primary').trim() || '#0d6efd';
+})();
+var _chartText = getComputedStyle(document.documentElement)
+                     .getPropertyValue('--bs-body-color').trim() || '#212529';
+var _chartGrid = getComputedStyle(document.documentElement)
+                     .getPropertyValue('--bs-border-color').trim() || '#dee2e6';
+</script>
 
 <div class="row mb-3 align-items-center">
     <div class="col">
         <h4 class="fw-bold"><i class="bi bi-bar-chart"></i> 填答統計：<?= htmlspecialchars($form['title']) ?></h4>
+        <small class="text-muted">建立者：<?= htmlspecialchars($form['author']) ?></small>
     </div>
     <div class="col-auto">
         <a href="/member/my_forms.php" class="btn btn-outline-secondary btn-sm">
@@ -72,28 +116,26 @@ require_once '../config/header.php';
 <!-- 總覽 -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card text-center">
+        <div class="card text-center border-0 bg-primary text-white">
             <div class="card-body py-4">
-                <h2 class="fw-bold text-primary"><?= $total ?></h2>
-                <p class="text-muted mb-0">填答人數</p>
+                <h2 class="fw-bold"><?= $total ?></h2>
+                <p class="mb-0"><i class="bi bi-people"></i> 填答人數</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-center">
+        <div class="card text-center border-0 bg-success text-white">
             <div class="card-body py-4">
-                <h2 class="fw-bold text-success"><?= count($fields) ?></h2>
-                <p class="text-muted mb-0">題目數量</p>
+                <h2 class="fw-bold"><?= count($fields) ?></h2>
+                <p class="mb-0"><i class="bi bi-list-check"></i> 題目數量</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-center">
+        <div class="card text-center border-0 <?= $form['is_published'] ? 'bg-info' : 'bg-secondary' ?> text-white">
             <div class="card-body py-4">
-                <h2 class="fw-bold <?= $form['is_published'] ? 'text-success' : 'text-secondary' ?>">
-                    <?= $form['is_published'] ? '已發布' : '草稿' ?>
-                </h2>
-                <p class="text-muted mb-0">狀態</p>
+                <h2 class="fw-bold"><?= $form['is_published'] ? '已發布' : '草稿' ?></h2>
+                <p class="mb-0"><i class="bi bi-toggle-on"></i> 狀態</p>
             </div>
         </div>
     </div>
@@ -106,37 +148,112 @@ require_once '../config/header.php';
 <!-- 各題統計 -->
 <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart"></i> 各題統計</h5>
 <?php foreach ($fields as $field): ?>
-<div class="card mb-3">
-    <div class="card-header">
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
         <strong><?= htmlspecialchars($field['label']) ?></strong>
-        <span class="badge bg-secondary ms-2"><?= ['short_text'=>'簡答','long_text'=>'詳答','radio'=>'單選','checkbox'=>'核取','dropdown'=>'下拉','date'=>'日期','time'=>'時間'][$field['field_type']] ?></span>
+        <span class="badge bg-secondary"><?= ['short_text'=>'簡答','long_text'=>'詳答','radio'=>'單選','checkbox'=>'核取','dropdown'=>'下拉','date'=>'日期','time'=>'時間'][$field['field_type']] ?></span>
+        <?php if ($field['is_required']): ?>
+            <span class="badge bg-danger">必填</span>
+        <?php endif; ?>
     </div>
     <div class="card-body">
         <?php $stats = $field_stats[$field['id']]; ?>
         <?php if (empty($stats)): ?>
-            <p class="text-muted small">無填答</p>
-        <?php elseif (in_array($field['field_type'], ['radio', 'checkbox', 'dropdown'])): ?>
-            <!-- 長條圖統計 -->
-            <?php foreach ($stats as $s): ?>
-                <?php $pct = $total > 0 ? round($s['cnt'] / $total * 100) : 0; ?>
-                <div class="mb-2">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="small"><?= htmlspecialchars($s['answer']) ?></span>
-                        <span class="small text-muted"><?= $s['cnt'] ?> (<?= $pct ?>%)</span>
-                    </div>
-                    <div class="bg-light rounded" style="height:20px;">
-                        <div class="stat-bar rounded" style="width:<?= $pct ?>%;height:100%;"></div>
-                    </div>
+            <p class="text-muted small mb-0">無填答記錄</p>
+
+        <?php elseif (in_array($field['field_type'], ['radio', 'dropdown'])): ?>
+            <!-- 圓餅圖 -->
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <canvas id="chart_<?= $field['id'] ?>" height="200"></canvas>
                 </div>
-            <?php endforeach; ?>
+                <div class="col-md-7">
+                    <?php foreach ($stats as $s): ?>
+                        <?php $pct = $total > 0 ? round($s['cnt'] / $total * 100) : 0; ?>
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="small"><?= htmlspecialchars($s['answer']) ?></span>
+                                <span class="small text-muted"><?= $s['cnt'] ?> 票（<?= $pct ?>%）</span>
+                            </div>
+                            <div class="progress" style="height:10px;">
+                                <div class="progress-bar" style="width:<?= $pct ?>%"></div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <script>
+            (function(){
+            new Chart(document.getElementById('chart_<?= $field['id'] ?>'), {
+                type: 'doughnut',
+                data: {
+                    labels: [<?= implode(',', array_map(fn($s) => "'" . addslashes($s['answer']) . "'", $stats)) ?>],
+                    datasets: [{
+                        data: [<?= implode(',', array_map(fn($s) => $s['cnt'], $stats)) ?>],
+                        backgroundColor: [_themeColor,'#198754','#ffc107','#dc3545','#0dcaf0','#6f42c1','#fd7e14','#20c997'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: _chartText }
+                        }
+                    }
+                }
+            });
+            })();
+            </script>
+
+        <?php elseif ($field['field_type'] === 'checkbox'): ?>
+            <!-- 橫向長條圖 -->
+            <canvas id="chart_<?= $field['id'] ?>" height="<?= min(count($stats) * 40 + 40, 250) ?>"></canvas>
+            <script>
+            (function(){
+            new Chart(document.getElementById('chart_<?= $field['id'] ?>'), {
+                type: 'bar',
+                data: {
+                    labels: [<?= implode(',', array_map(fn($s) => "'" . addslashes($s['answer']) . "'", $stats)) ?>],
+                    datasets: [{
+                        label: '勾選次數',
+                        data: [<?= implode(',', array_map(fn($s) => $s['cnt'], $stats)) ?>],
+                        backgroundColor: _themeColor,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, color: _chartText },
+                            grid:  { color: _chartGrid }
+                        },
+                        y: {
+                            ticks: { color: _chartText },
+                            grid:  { color: _chartGrid }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            })();
+            </script>
+
         <?php else: ?>
-            <!-- 文字答案列表 -->
+            <!-- 文字答案列表（簡答/詳答/日期/時間） -->
             <ul class="list-group list-group-flush">
                 <?php foreach (array_slice($stats, 0, 10) as $s): ?>
-                    <li class="list-group-item small py-1"><?= htmlspecialchars($s['answer']) ?></li>
+                    <li class="list-group-item small py-2">
+                        <?= nl2br(htmlspecialchars($s['answer'])) ?>
+                        <?php if ($s['cnt'] > 1): ?>
+                            <span class="badge bg-secondary ms-2"><?= $s['cnt'] ?></span>
+                        <?php endif; ?>
+                    </li>
                 <?php endforeach; ?>
                 <?php if (count($stats) > 10): ?>
-                    <li class="list-group-item small text-muted py-1">...還有 <?= count($stats) - 10 ?> 筆</li>
+                    <li class="list-group-item small text-muted py-2">...還有 <?= count($stats) - 10 ?> 筆答案</li>
                 <?php endif; ?>
             </ul>
         <?php endif; ?>
@@ -144,7 +261,7 @@ require_once '../config/header.php';
 </div>
 <?php endforeach; ?>
 
-<!-- 詳細記錄 -->
+<!-- 詳細填答記錄 -->
 <h5 class="fw-bold mb-3 mt-4"><i class="bi bi-list-ul"></i> 詳細填答記錄</h5>
 <div class="card">
     <div class="table-responsive">
@@ -161,12 +278,12 @@ require_once '../config/header.php';
                 <?php $i = 1; while ($r = mysqli_fetch_assoc($responses_result)): ?>
                 <tr>
                     <td><?= $i++ ?></td>
-                    <td><?= $r['username'] ? htmlspecialchars($r['username']) : '<span class="text-muted">匿名</span>' ?></td>
+                    <td><?= ($form['anonymous_responses'] ?? 0) ? '<span class="text-muted fst-italic"><i class="bi bi-incognito"></i> 匿名</span>' : ($r['username'] ? htmlspecialchars($r['username']) : '<span class="text-muted fst-italic">匿名</span>') ?></td>
                     <td class="small text-muted"><?= date('Y/m/d H:i', strtotime($r['submitted_at'])) ?></td>
                     <td class="text-center">
-                        <a href="/member/response_detail.php?id=<?= $r['id'] ?>" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-eye"></i>
-                        </a>
+                        <button class="btn btn-outline-primary btn-sm btn-view-response" data-id="<?= $r['id'] ?>">
+                            <i class="bi bi-eye"></i> 查看
+                        </button>
                     </td>
                 </tr>
                 <?php endwhile; ?>
@@ -174,6 +291,114 @@ require_once '../config/header.php';
         </table>
     </div>
 </div>
+
 <?php endif; ?>
+
+<!-- ── 按讚記錄 ── -->
+<h5 class="fw-bold mb-3 mt-4">
+    <i class="bi bi-heart-fill text-danger me-1"></i> 按讚記錄
+    <span class="badge bg-secondary ms-1" style="font-size:.75rem;"><?= $like_total ?></span>
+</h5>
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <?php if ($like_total === 0): ?>
+            <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> 尚無人按讚</p>
+        <?php else: ?>
+            <div class="d-flex flex-wrap gap-2">
+                <?php while ($u = mysqli_fetch_assoc($likes_users)): ?>
+                <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
+                    <?= renderAvatar($u['username'], $u['avatar'] ?? null, 26) ?>
+                    <div>
+                        <div class="small fw-semibold"><?= htmlspecialchars($u['username']) ?></div>
+                        <div class="text-muted" style="font-size:.72rem;"><?= date('Y/m/d H:i', strtotime($u['created_at'])) ?></div>
+                    </div>
+                </div>
+                <?php endwhile; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- ── 收藏記錄 ── -->
+<h5 class="fw-bold mb-3">
+    <i class="bi bi-bookmark-fill text-warning me-1"></i> 收藏記錄
+    <span class="badge bg-secondary ms-1" style="font-size:.75rem;"><?= $bookmark_total ?></span>
+</h5>
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <?php if ($bookmark_total === 0): ?>
+            <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> 尚無人收藏</p>
+        <?php else: ?>
+            <div class="d-flex flex-wrap gap-2">
+                <?php while ($u = mysqli_fetch_assoc($bookmarks_users)): ?>
+                <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
+                    <?= renderAvatar($u['username'], $u['avatar'] ?? null, 26) ?>
+                    <div>
+                        <div class="small fw-semibold"><?= htmlspecialchars($u['username']) ?></div>
+                        <div class="text-muted" style="font-size:.72rem;"><?= date('Y/m/d H:i', strtotime($u['created_at'])) ?></div>
+                    </div>
+                </div>
+                <?php endwhile; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- 填答詳情 Modal -->
+<div class="modal fade" id="responseDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <div>
+                    <h6 class="modal-title fw-semibold mb-0" id="responseDetailTitle">
+                        <i class="bi bi-person me-1"></i> <span id="rd-respondent"></span>
+                    </h6>
+                    <small class="text-muted" id="rd-time"></small>
+                </div>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="rd-body">
+                <div class="text-center py-4">
+                    <span class="spinner-border text-primary"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).on('click', '.btn-view-response', function () {
+    const id = $(this).data('id');
+    $('#rd-respondent').text('');
+    $('#rd-time').text('');
+    $('#rd-body').html('<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>');
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('responseDetailModal')).show();
+
+    $.get('/api/response_detail.php', { id: id }, function (res) {
+        if (!res.success) { $('#rd-body').html('<div class="alert alert-danger">' + res.message + '</div>'); return; }
+
+        $('#rd-respondent').text(res.respondent);
+        $('#rd-time').text(res.submitted_at);
+
+        let html = '';
+        if (res.answers.length === 0) {
+            html = '<p class="text-muted text-center">無填答內容</p>';
+        } else {
+            res.answers.forEach(function (a) {
+                const ans = a.answer !== ''
+                    ? $('<span>').text(a.answer).html().replace(/\n/g, '<br>')
+                    : '<span class="text-muted fst-italic">未填答</span>';
+                html += '<div class="card mb-2"><div class="card-body py-2">'
+                      + '<p class="fw-semibold mb-1 small">' + $('<span>').text(a.label).html() + '</p>'
+                      + '<p class="mb-0 text-secondary">' + ans + '</p>'
+                      + '</div></div>';
+            });
+        }
+        $('#rd-body').html(html);
+    }, 'json').fail(function () {
+        $('#rd-body').html('<div class="alert alert-danger">載入失敗，請稍後再試</div>');
+    });
+});
+</script>
 
 <?php require_once '../config/footer.php'; ?>

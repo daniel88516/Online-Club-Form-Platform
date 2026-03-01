@@ -117,7 +117,9 @@ require_once '../config/header.php';
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <!-- 刪除 -->
-                            <form method="POST" class="d-inline" onsubmit="return confirm('確定刪除此群組？')">
+                            <form method="POST" class="d-inline"
+                                  data-cute-confirm="確定刪除此群組？"
+                                  data-cute-icon="🗂️">
                                 <input type="hidden" name="delete_id" value="<?= $g['id'] ?>">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">
                                     <i class="bi bi-trash"></i>

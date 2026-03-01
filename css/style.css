@@ -1,5 +1,5 @@
 body {
-    background-color: #f8f9fa;
+    background-color: var(--bs-body-bg, #f8f9fa);
 }
 
 .navbar-brand {
@@ -8,8 +8,9 @@ body {
 
 .card {
     border: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10);
     border-radius: 12px;
+    background-color: #ffffff;
 }
 
 .card-header {
@@ -19,6 +20,26 @@ body {
 
 .btn {
     border-radius: 8px;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.08);
+    transition: box-shadow .2s ease, transform .15s ease;
+}
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22), 0 2px 5px rgba(0,0,0,0.10);
+}
+.btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+[data-bs-theme="dark"] .btn {
+    box-shadow: 0 0 8px rgba(255,255,255,0.13), 0 0 20px rgba(255,255,255,0.05) !important;
+}
+[data-bs-theme="dark"] .btn:hover {
+    box-shadow: 0 0 14px rgba(255,255,255,0.22), 0 0 32px rgba(255,255,255,0.08) !important;
+}
+[data-bs-theme="dark"] .btn:active {
+    box-shadow: 0 0 6px rgba(255,255,255,0.10) !important;
 }
 
 .form-control, .form-select {
@@ -31,6 +52,7 @@ body {
 
 .table th {
     background-color: #f1f3f5;
+    color: var(--bs-body-color);
     font-weight: 600;
 }
 
@@ -45,7 +67,7 @@ body {
 }
 
 .field-card:hover {
-    border-color: #0d6efd;
+    border-color: var(--bs-primary, #0d6efd);
 }
 
 .field-card .field-handle {
@@ -57,8 +79,352 @@ body {
 .stat-bar {
     height: 24px;
     border-radius: 4px;
-    background-color: #0d6efd;
+    background-color: var(--bs-primary, #0d6efd);
     transition: width 0.5s ease;
+}
+
+/* ── Nav Tabs：深色模式下非作用中分頁繼承 link-color 會不可見，強制用可讀色 ── */
+[data-bs-theme="dark"] .nav-tabs .nav-link:not(.active) {
+    color: rgba(255,255,255,0.65);
+}
+[data-bs-theme="dark"] .nav-tabs .nav-link:not(.active):hover {
+    color: rgba(255,255,255,0.9);
+}
+
+/* ── 深色模式覆寫（Instagram / Threads 風格）── */
+html[data-bs-theme="dark"],
+html[data-bs-theme="dark"] body {
+    background-color: #000000 !important;
+    --bs-body-bg: #000000;
+}
+[data-bs-theme="dark"] .card:not([class*="bg-"]) {
+    background-color: #242424 !important;
+    border: none !important;
+    box-shadow: 0 0 18px rgba(255,255,255,0.30), 0 0 55px rgba(255,255,255,0.13) !important;
+}
+[data-bs-theme="dark"] .card-header {
+    background-color: #222222 !important;
+    border-bottom: 1px solid #2a2a2a !important;
+}
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+}
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: #2a2a2a;
+}
+[data-bs-theme="dark"] .dropdown-divider {
+    border-color: #2a2a2a;
+}
+[data-bs-theme="dark"] .table th {
+    background-color: #1e1e1e;
+    color: #dee2e6;
+}
+[data-bs-theme="dark"] .table {
+    --bs-table-bg: #1a1a1a;
+    --bs-table-striped-bg: #1e1e1e;
+    --bs-table-border-color: #2a2a2a;
+}
+[data-bs-theme="dark"] .field-card {
+    background: #1a1a1a;
+    border-color: #333;
+}
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #111111;
+    border-color: #333;
+    color: #e0e0e0;
+}
+[data-bs-theme="dark"] footer {
+    background-color: #111111 !important;
+    border-color: #2a2a2a !important;
+}
+/* 留言泡泡 */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #222222 !important;
+    color: #e0e0e0;
+}
+/* 留言輸入觸發器 */
+[data-bs-theme="dark"] .top-reply-trigger-input {
+    background-color: #111111 !important;
+    color: #aaa;
+    border-color: #333;
+}
+/* 留言串垂直線 */
+[data-bs-theme="dark"] .thread-line {
+    background: #444 !important;
+}
+/* Quill 編輯器 */
+[data-bs-theme="dark"] .ql-toolbar {
+    background-color: #1e1e1e;
+    border-color: #333 !important;
+}
+[data-bs-theme="dark"] .ql-container {
+    background-color: #111111;
+    border-color: #333 !important;
+    color: #e0e0e0;
+}
+[data-bs-theme="dark"] .ql-editor {
+    color: #e0e0e0;
+}
+[data-bs-theme="dark"] .ql-editor.ql-blank::before {
+    color: #666;
+}
+[data-bs-theme="dark"] .ql-toolbar .ql-stroke {
+    stroke: #aaa;
+}
+[data-bs-theme="dark"] .ql-toolbar .ql-fill {
+    fill: #aaa;
+}
+[data-bs-theme="dark"] .ql-toolbar button:hover .ql-stroke {
+    stroke: #fff;
+}
+[data-bs-theme="dark"] .ql-snow .ql-picker {
+    color: #aaa;
+}
+
+/* ── FAB 新增按鈕 ── */
+.fab-btn {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 2rem;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--bs-primary, #0d6efd);
+    color: var(--bs-primary-text, #fff);
+    border: 2px solid rgba(255,255,255,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    box-shadow: 0 4px 16px rgba(var(--bs-primary-rgb, 13,110,253),.45);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    z-index: 1050;
+    text-decoration: none;
+}
+.fab-btn:hover {
+    color: var(--bs-primary-text, #fff);
+    filter: brightness(0.88);
+    transform: scale(1.1);
+    box-shadow: 0 6px 22px rgba(var(--bs-primary-rgb, 13,110,253),.55);
+}
+.fab-btn:active {
+    transform: scale(0.95);
+}
+
+/* ── 表單元件跟隨主題色 ── */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13,110,253), 0.25);
+}
+.form-check-input:checked {
+    background-color: var(--bs-primary, #0d6efd);
+    border-color: var(--bs-primary, #0d6efd);
+}
+.form-check-input:focus {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13,110,253), 0.25);
+}
+.form-check-input[type="radio"]:checked {
+    background-color: var(--bs-primary, #0d6efd);
+    border-color: var(--bs-primary, #0d6efd);
+}
+
+/* ── btn-primary 文字色：直接覆蓋 Bootstrap 硬編碼 #fff ── */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.show > .btn-primary.dropdown-toggle {
+    color: var(--bs-primary-text, #fff);
+}
+
+/* ── 深色模式：btn-primary 加白色外框，確保按鈕在深色背景上永遠看得到 ── */
+[data-bs-theme="dark"] .btn-primary,
+[data-bs-theme="dark"] .btn-primary:hover,
+[data-bs-theme="dark"] .btn-primary:focus,
+[data-bs-theme="dark"] .btn-primary:disabled,
+[data-bs-theme="dark"] .btn-primary.disabled {
+    border-color: rgba(255,255,255,0.30) !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+}
+
+/* ── btn-outline-primary hover/active 填滿主題色時文字用對比色 ── */
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.show > .btn-outline-primary.dropdown-toggle {
+    color: var(--bs-primary-text, #fff);
+}
+
+/* ── 頭像彈出選單 ── */
+.avd-wrap {
+    cursor: pointer;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 0;
+}
+#avd-popup {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    min-width: 140px;
+    background: #ffffff;
+    border: 2px solid var(--bs-primary, #0d6efd);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.28);
+    padding: 4px 0;
+    overflow: hidden;
+}
+.avd-pop-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: .9rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #212529;
+}
+.avd-pop-item:hover {
+    background: var(--bs-primary, #0d6efd);
+    color: var(--bs-primary-text, #fff);
+}
+[data-bs-theme="dark"] #avd-popup {
+    background: #333333;
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 1px var(--bs-primary, #0d6efd);
+}
+[data-bs-theme="dark"] .avd-pop-item {
+    color: #f0f0f0;
+}
+[data-bs-theme="dark"] .avd-pop-item:hover {
+    background: var(--bs-primary, #0d6efd);
+    color: var(--bs-primary-text, #fff);
+}
+
+/* ── 按讚 / 收藏按鈕黑白風格 ── */
+.btn-like.liked,
+.btn-bookmark.bookmarked {
+    color: #ffffff !important;
+}
+[data-bs-theme="light"] .btn-like.liked,
+[data-bs-theme="light"] .btn-bookmark.bookmarked,
+html:not([data-bs-theme="dark"]) .btn-like.liked,
+html:not([data-bs-theme="dark"]) .btn-bookmark.bookmarked {
+    color: #1a1a1a !important;
+}
+
+/* ── 全站頭像光影（無邊框，適應深色／淺色） ── */
+.site-avatar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.22), 0 0 6px rgba(0,0,0,0.10);
+    transition: box-shadow .2s ease;
+}
+[data-bs-theme="dark"] .site-avatar {
+    box-shadow: 0 0 10px rgba(255,255,255,0.28), 0 0 22px rgba(255,255,255,0.10) !important;
+}
+
+/* ── 黑底白光暈通用按鈕（名牌風格） ── */
+.btn-glow-dark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: #1a1a1a;
+    color: #f0f0f0;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 0 10px rgba(255,255,255,0.22), 0 0 28px rgba(255,255,255,0.09);
+    transition: box-shadow .2s ease, transform .15s ease, filter .15s ease;
+}
+.btn-glow-dark:hover {
+    color: #ffffff;
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+    box-shadow: 0 0 16px rgba(255,255,255,0.35), 0 0 40px rgba(255,255,255,0.14);
+    text-decoration: none;
+}
+.btn-glow-dark:active {
+    transform: translateY(0) scale(0.98);
+}
+.btn-glow-dark:disabled,
+.btn-glow-dark[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+/* 淺色模式：黑底白字 + 黑色陰影 */
+[data-bs-theme="light"] .btn-glow-dark,
+html:not([data-bs-theme="dark"]) .btn-glow-dark {
+    background: #1a1a1a;
+    color: #f0f0f0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.18);
+}
+[data-bs-theme="light"] .btn-glow-dark:hover,
+html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
+    box-shadow: 0 6px 22px rgba(0,0,0,0.38), 0 2px 8px rgba(0,0,0,0.22);
+    color: #ffffff;
+}
+
+/* ── 截止日期標示（黑白光暈名牌風） ── */
+.deadline-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: #1a1a1a;
+    color: #f0f0f0;
+    border: none;
+    box-shadow: 0 0 8px rgba(255,255,255,0.25), 0 0 20px rgba(255,255,255,0.10);
+    transition: box-shadow .2s ease;
+}
+.deadline-tag:hover {
+    box-shadow: 0 0 12px rgba(255,255,255,0.38), 0 0 28px rgba(255,255,255,0.15);
+}
+.deadline-tag.deadline-expired {
+    background: #111;
+    color: #666;
+    box-shadow: 0 0 6px rgba(255,255,255,0.08), 0 0 14px rgba(255,255,255,0.04);
+}
+/* 淺色模式下：反轉為黑字白底，光暈改為黑色陰影 */
+[data-bs-theme="light"] .deadline-tag,
+html:not([data-bs-theme="dark"]) .deadline-tag {
+    background: #1a1a1a;
+    color: #f0f0f0;
+    box-shadow: 0 0 8px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.15);
+}
+[data-bs-theme="light"] .deadline-tag:hover,
+html:not([data-bs-theme="dark"]) .deadline-tag:hover {
+    box-shadow: 0 0 14px rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.20);
+}
+[data-bs-theme="light"] .deadline-tag.deadline-expired,
+html:not([data-bs-theme="dark"]) .deadline-tag.deadline-expired {
+    background: #555;
+    color: #ccc;
+    box-shadow: 0 0 6px rgba(0,0,0,0.15);
+}
+
+/* ── 留言內容連結：無條件藍色（同 YouTube 邏輯） ── */
+.ql-content a {
+    color: #4a9eff !important;
+    text-decoration: underline;
+}
+.ql-content a:hover {
+    color: #70b8ff !important;
 }
 
 /* RWD 調整 */

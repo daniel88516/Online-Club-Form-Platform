@@ -13,8 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $target_group = !empty($_POST['target_group']) ? intval($_POST['target_group']) : null;
     $start_date   = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date     = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
-    $allow_multiple = isset($_POST['allow_multiple']) ? 1 : 0;
-    $is_published   = isset($_POST['is_published']) ? 1 : 0;
+    $allow_multiple      = isset($_POST['allow_multiple']) ? 1 : 0;
+    $is_published        = isset($_POST['is_published']) ? 1 : 0;
+    $show_stats          = isset($_POST['show_stats']) ? 1 : 0;
+    $anonymous_responses = isset($_POST['anonymous_responses']) ? 1 : 0;
     $fields       = $_POST['fields'] ?? [];
 
     // 檢查選擇類型欄位是否有填入選項
@@ -34,11 +36,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($optionError) {
         $error = '單選題、核取方塊、下拉選單必須至少填入一個選項';
     } else {
+        // 封面圖：由前端 AJAX 上傳後取得路徑，只需從 POST 讀取
+        $raw_cover   = trim($_POST['cover_image'] ?? '');
+        $cover_image = preg_match('#^/uploads/forms/[a-zA-Z0-9_.]+$#', $raw_cover)
+                       ? $raw_cover
+                       : null;
+
         // 插入表單
-        $stmt = mysqli_prepare($conn, "INSERT INTO forms (user_id, title, description, target_group, start_date, end_date, allow_multiple, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'ississis',
-            $_SESSION['user_id'], $title, $description, $target_group,
-            $start_date, $end_date, $allow_multiple, $is_published
+        $stmt = mysqli_prepare($conn, "INSERT INTO forms (user_id, title, description, cover_image, target_group, start_date, end_date, allow_multiple, is_published, show_stats, anonymous_responses) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issssissiii',
+            $_SESSION['user_id'], $title, $description, $cover_image, $target_group,
+            $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses
         );
 
         if (mysqli_stmt_execute($stmt)) {
@@ -92,7 +100,7 @@ require_once '../config/header.php';
     <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 
-<form method="POST" action="" id="formBuilder">
+<form method="POST" action="" id="formBuilder" enctype="multipart/form-data">
     <div class="row g-4">
         <!-- 左側：表單設定 -->
         <div class="col-lg-4">
@@ -108,7 +116,16 @@ require_once '../config/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">說明</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="表單說明（選填）"><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
+                        <input type="hidden" name="description" id="description-hidden">
+                        <div id="quill-description" class="quill-desc-editor"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">封面圖片</label>
+                        <input type="hidden" name="cover_image" id="cover-image-url" value="">
+                        <input type="file" id="cover-image-input" class="form-control" accept="image/*">
+                        <div id="cover-image-preview" class="mt-2" style="display:none;">
+                            <img id="cover-image-thumb" src="" class="img-fluid rounded" style="max-height:200px;object-fit:cover;">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">填答對象</label>
@@ -137,6 +154,23 @@ require_once '../config/header.php';
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_published" id="is_published">
                             <label class="form-check-label" for="is_published">立即發布</label>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_stats" id="show_stats" checked>
+                            <label class="form-check-label" for="show_stats">
+                                <i class="bi bi-bar-chart text-info"></i> 公開填答統計
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="anonymous_responses" id="anonymous_responses">
+                            <label class="form-check-label" for="anonymous_responses">
+                                <i class="bi bi-incognito text-secondary"></i> 匿名填寫
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -272,6 +306,11 @@ $(document).ready(function () {
 
     // 表單送出驗證
     $('#formBuilder').on('submit', function (e) {
+        // 先把 Quill 說明內容填入 hidden field
+        if (typeof quillDesc !== 'undefined') {
+            $('#description-hidden').val(quillDesc.root.innerHTML);
+        }
+
         if ($('.field-card').length === 0) {
             e.preventDefault();
             alert('請至少新增一個欄位');
@@ -299,4 +338,80 @@ $(document).ready(function () {
 });
 </script>
 
+<script>
+// 封面圖：選取後立即 AJAX 上傳（與 Quill 圖片邏輯一致）
+$('#cover-image-input').on('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('image', file);
+    fd.append('type', 'forms');
+    $.ajax({
+        url: '/api/upload.php', type: 'POST',
+        data: fd, contentType: false, processData: false,
+        success: res => {
+            if (res.success) {
+                $('#cover-image-url').val(res.path);
+                $('#cover-image-thumb').attr('src', res.path);
+                $('#cover-image-preview').show();
+            } else {
+                alert(res.message || '封面圖上傳失敗');
+            }
+        }
+    });
+});
+</script>
+
+<script>
+// ── 說明欄位：Quill 富文字編輯器 ──
+let quillDesc;
+$(document).ready(function () {
+    quillDesc = new Quill('#quill-description', {
+        theme: 'snow',
+        placeholder: '表單說明（選填）',
+        modules: {
+            toolbar: {
+                container: [
+                    [{ header: [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['blockquote', 'image', 'link'],
+                    ['clean']
+                ],
+                handlers: {
+                    image: function () {
+                        const input = document.createElement('input');
+                        input.setAttribute('type', 'file');
+                        input.setAttribute('accept', 'image/*');
+                        input.click();
+                        input.onchange = () => {
+                            const file = input.files[0];
+                            if (!file) return;
+                            const fd = new FormData();
+                            fd.append('image', file);
+                            fd.append('type', 'forms');
+                            $.ajax({
+                                url: '/api/upload.php', type: 'POST',
+                                data: fd, contentType: false, processData: false,
+                                success: res => {
+                                    if (res.success) {
+                                        const range = quillDesc.getSelection() || { index: quillDesc.getLength() };
+                                        quillDesc.insertEmbed(range.index, 'image', res.path);
+                                        quillDesc.setSelection(range.index + 1);
+                                    }
+                                }
+                            });
+                        };
+                    }
+                }
+            }
+        }
+    });
+    <?php if (!empty($_POST['description'])): ?>
+    quillDesc.clipboard.dangerouslyPasteHTML(<?= json_encode($_POST['description']) ?>);
+    <?php endif; ?>
+    attachAutoLink(quillDesc);
+    attachPasteImageHandler(quillDesc, 'forms');
+});
+</script>
 <?php require_once '../config/footer.php'; ?>

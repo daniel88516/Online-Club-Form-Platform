@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS `users` (
     `email` VARCHAR(100) UNIQUE NOT NULL,
     `role` ENUM('admin', 'member') DEFAULT 'member',
     `group_id` INT DEFAULT NULL,
+    `avatar` VARCHAR(255) DEFAULT NULL,
+    `profile_bg` VARCHAR(255) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`group_id`) REFERENCES `groups`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -30,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `forms` (
     `user_id` INT NOT NULL,
     `title` VARCHAR(255) NOT NULL,
     `description` TEXT,
+    `cover_image` VARCHAR(255) DEFAULT NULL,
     `target_group` INT DEFAULT NULL,
     `start_date` DATETIME DEFAULT NULL,
     `end_date` DATETIME DEFAULT NULL,
@@ -70,6 +73,78 @@ CREATE TABLE IF NOT EXISTS `response_answers` (
     `answer` TEXT,
     FOREIGN KEY (`response_id`) REFERENCES `form_responses`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`field_id`) REFERENCES `form_fields`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 按讚表
+CREATE TABLE IF NOT EXISTS `form_likes` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `form_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `unique_like` (`form_id`, `user_id`),
+    FOREIGN KEY (`form_id`) REFERENCES `forms`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 收藏表
+CREATE TABLE IF NOT EXISTS `form_bookmarks` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `form_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `unique_bookmark` (`form_id`, `user_id`),
+    FOREIGN KEY (`form_id`) REFERENCES `forms`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 留言表（支援巢狀回覆）
+CREATE TABLE IF NOT EXISTS `form_comments` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `form_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `content` TEXT NOT NULL,
+    `parent_id` INT DEFAULT NULL,
+    `image_path` VARCHAR(255) DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`form_id`) REFERENCES `forms`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`parent_id`) REFERENCES `form_comments`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 留言按讚表
+CREATE TABLE IF NOT EXISTS `comment_likes` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `comment_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `unique_comment_like` (`comment_id`, `user_id`),
+    FOREIGN KEY (`comment_id`) REFERENCES `form_comments`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 檢舉表
+CREATE TABLE IF NOT EXISTS `reports` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `type` ENUM('comment', 'form') NOT NULL,
+    `target_id` INT NOT NULL,
+    `reporter_id` INT NOT NULL,
+    `reason` VARCHAR(50) NOT NULL,
+    `status` ENUM('pending', 'resolved') DEFAULT 'pending',
+    `delete_token` VARCHAR(64) DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 站內訊息表
+CREATE TABLE IF NOT EXISTS `messages` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `sender_id` INT NOT NULL,
+    `receiver_id` INT NOT NULL,
+    `content` TEXT NOT NULL,
+    `is_read` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 預設群組

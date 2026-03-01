@@ -11,3 +11,6 @@ if (!$conn) {
 }
 
 mysqli_set_charset($conn, 'utf8mb4');
+
+// 確保 users 有 bio 欄位（一次性遷移，IF NOT EXISTS 讓它冪等）
+mysqli_query($conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT NULL");

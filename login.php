@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $error = '請填寫帳號和密碼';
     } else {
-        $stmt = mysqli_prepare($conn, "SELECT id, username, password, role FROM users WHERE username = ?");
+        $stmt = mysqli_prepare($conn, "SELECT id, username, password, role, avatar FROM users WHERE username = ?");
         mysqli_stmt_bind_param($stmt, 's', $username);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
+            $_SESSION['avatar'] = $user['avatar'];
 
             if ($user['role'] === 'admin') {
                 header('Location: /admin/dashboard.php');
