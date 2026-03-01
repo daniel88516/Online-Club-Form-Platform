@@ -196,28 +196,6 @@ require_once 'config/header.php';
     </div>
 </div>
 
-<!-- 檢舉 Modal（首頁共用） -->
-<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header py-2">
-                <h6 class="modal-title" id="reportModalLabel"><i class="bi bi-flag"></i> 檢舉</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body pb-3">
-                <p class="text-muted small mb-3">請選擇檢舉原因：</p>
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-secondary btn-sm text-start btn-report-reason" data-reason="騷擾內容">
-                        <i class="bi bi-person-x me-1"></i> 騷擾內容
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm text-start btn-report-reason" data-reason="詐騙">
-                        <i class="bi bi-exclamation-triangle me-1"></i> 詐騙
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
 // 按讚
@@ -301,35 +279,14 @@ $(document).on('click', '.btn-delete-feed-form', function () {
     });
 });
 
-// 首頁表單檢舉：開啟 Modal
+// 首頁表單檢舉
 $(document).on('click', '.btn-report-feed-form', function () {
-    const formId = $(this).data('form-id');
-    $('#reportModal').data('report-type', 'form').data('report-id', formId);
-    $('#reportModalLabel').html('<i class="bi bi-flag"></i> 檢舉表單');
-    new bootstrap.Modal(document.getElementById('reportModal')).show();
+    window.cuteReport('form', $(this).data('form-id'), '檢舉表單');
 });
 
-// 首頁留言檢舉：開啟 Modal（由 comments_panel 觸發）
+// 首頁留言檢舉
 $(document).on('click', '.btn-report-comment', function () {
-    const commentId = $(this).data('comment-id');
-    $('#reportModal').data('report-type', 'comment').data('report-id', commentId);
-    $('#reportModalLabel').html('<i class="bi bi-flag"></i> 檢舉留言');
-    new bootstrap.Modal(document.getElementById('reportModal')).show();
-});
-
-// 送出檢舉（共用）
-$(document).on('click', '.btn-report-reason', function () {
-    const reason = $(this).data('reason');
-    const type   = $('#reportModal').data('report-type');
-    const id     = $('#reportModal').data('report-id');
-    const modal  = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
-    $.post('/api/report.php', { type: type, target_id: id, reason: reason }, function (res) {
-        if (modal) modal.hide();
-        alert(res.message);
-    }, 'json').fail(function () {
-        if (modal) modal.hide();
-        alert('網路錯誤，請稍後再試');
-    });
+    window.cuteReport('comment', $(this).data('comment-id'), '檢舉留言');
 });
 
 </script>

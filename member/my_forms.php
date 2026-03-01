@@ -470,29 +470,6 @@ require_once '../config/header.php';
     </div>
 </div>
 
-<!-- 檢舉 Modal -->
-<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header py-2">
-                <h6 class="modal-title"><i class="bi bi-flag"></i> 檢舉表單</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body pb-3">
-                <p class="text-muted small mb-3">請選擇檢舉原因：</p>
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-secondary btn-sm text-start btn-report-reason" data-reason="騷擾內容">
-                        <i class="bi bi-person-x me-1"></i> 騷擾內容
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm text-start btn-report-reason" data-reason="詐騙">
-                        <i class="bi bi-exclamation-triangle me-1"></i> 詐騙
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 // ── 即時搜尋（客戶端過濾，不需按鈕）──
 $('#search-input').on('input', function () {
@@ -560,21 +537,8 @@ $(document).on('click', '.btn-unlike', function () {
 });
 
 // ── 檢舉 ──
-let reportFormId = 0;
 $(document).on('click', '.btn-report-my-form', function () {
-    reportFormId = $(this).data('form-id');
-    new bootstrap.Modal(document.getElementById('reportModal')).show();
-});
-$(document).on('click', '.btn-report-reason', function () {
-    const reason = $(this).data('reason');
-    const modal  = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
-    $.post('/api/report.php', { type: 'form', target_id: reportFormId, reason: reason }, function (res) {
-        if (modal) modal.hide();
-        alert(res.message);
-    }, 'json').fail(function () {
-        if (modal) modal.hide();
-        alert('網路錯誤，請稍後再試');
-    });
+    window.cuteReport('form', $(this).data('form-id'), '檢舉表單');
 });
 </script>
 

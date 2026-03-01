@@ -98,7 +98,7 @@ require_once 'config/header.php';
             <i class="bi bi-chat me-1"></i> 聊天
         </button>
     <?php elseif ($cur_uid == $profile_uid): ?>
-        <a href="/member/settings.php" class="btn btn-outline-secondary btn-sm">
+        <a href="/member/settings.php" class="btn-glow-dark" style="display:inline-flex;padding:6px 16px;font-size:0.875rem;border-radius:10px;">
             <i class="bi bi-pencil me-1"></i> 編輯個人資料
         </a>
     <?php endif; ?>
