@@ -56,12 +56,13 @@ require_once '../config/header.php';
 <?php endif; ?>
 
 <form method="GET" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="search" class="form-control" placeholder="搜尋表單標題..."
+    <div class="glow-sort-bar">
+        <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+        <input type="text" name="search" class="form-control ps-1" placeholder="搜尋表單標題..."
                value="<?= htmlspecialchars($search) ?>">
-        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        <button class="btn btn-glow-primary btn-sm px-3 flex-shrink-0" type="submit">搜尋</button>
         <?php if ($search): ?>
-            <a href="/admin/forms.php" class="btn btn-outline-danger"><i class="bi bi-x"></i></a>
+            <a href="/admin/forms.php" class="btn btn-sm btn-outline-secondary flex-shrink-0"><i class="bi bi-x"></i></a>
         <?php endif; ?>
     </div>
 </form>
@@ -71,12 +72,12 @@ require_once '../config/header.php';
         <table class="table table-hover mb-0 align-middle">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>標題</th>
+                    <th class="sortable-th" data-col="id">#<span class="sort-icon"></span></th>
+                    <th class="sortable-th" data-col="title">標題<span class="sort-icon"></span></th>
                     <th>建立者</th>
-                    <th>狀態</th>
-                    <th>填答數</th>
-                    <th>建立時間</th>
+                    <th class="sortable-th" data-col="status">狀態<span class="sort-icon"></span></th>
+                    <th class="sortable-th" data-col="resp">填答數<span class="sort-icon"></span></th>
+                    <th class="sortable-th desc" data-col="date">建立時間<span class="sort-icon"></span></th>
                     <th class="text-center">操作</th>
                 </tr>
             </thead>
@@ -85,7 +86,11 @@ require_once '../config/header.php';
                     <tr><td colspan="7" class="text-center text-muted py-4">沒有表單</td></tr>
                 <?php else: ?>
                     <?php while ($form = mysqli_fetch_assoc($forms)): ?>
-                    <tr>
+                    <tr data-id="<?= $form['id'] ?>"
+                        data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
+                        data-status="<?= $form['is_published'] ?>"
+                        data-resp="<?= $form['response_count'] ?>"
+                        data-date="<?= strtotime($form['created_at']) ?>">
                         <td><?= $form['id'] ?></td>
                         <td class="fw-semibold"><?= htmlspecialchars($form['title']) ?></td>
                         <td>
@@ -180,6 +185,38 @@ require_once '../config/header.php';
 </div>
 
 <script>
+// ── 表格欄位排序 ──
+(function () {
+    const tbody = document.querySelector('table tbody');
+    document.querySelectorAll('.sortable-th').forEach(function (th) {
+        th.addEventListener('click', function () {
+            const col  = th.dataset.col;
+            const isDesc = th.classList.contains('desc');
+            // 清除其他欄位狀態
+            document.querySelectorAll('.sortable-th').forEach(function (t) {
+                t.classList.remove('asc', 'desc');
+            });
+            th.classList.add(isDesc ? 'asc' : 'desc');
+            const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+            rows.sort(function (a, b) {
+                let va = a.dataset[col] || '';
+                let vb = b.dataset[col] || '';
+                // 數字欄位
+                if (['id','status','resp','date'].includes(col)) {
+                    va = parseFloat(va) || 0;
+                    vb = parseFloat(vb) || 0;
+                    return isDesc ? va - vb : vb - va;
+                }
+                // 文字欄位
+                return isDesc
+                    ? va.localeCompare(vb, 'zh-Hant')
+                    : vb.localeCompare(va, 'zh-Hant');
+            });
+            rows.forEach(function (r) { tbody.appendChild(r); });
+        });
+    });
+})();
+
 const _previewModalEl = document.getElementById('previewModal');
 $(document).on('click', '.btn-preview-form', function () {
     const formId    = $(this).data('form-id');

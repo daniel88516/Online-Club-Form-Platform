@@ -49,7 +49,7 @@ mysqli_stmt_execute($ins);
 $comment_id = mysqli_insert_id($conn);
 
 $row = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT fc.id, fc.content, fc.created_at, fc.parent_id, u.username
+    SELECT fc.id, fc.content, fc.created_at, fc.parent_id, u.username, u.id AS user_id, u.avatar
     FROM form_comments fc
     JOIN users u ON fc.user_id = u.id
     WHERE fc.id = $comment_id
@@ -61,6 +61,8 @@ echo json_encode([
         'id'         => $row['id'],
         'parent_id'  => $row['parent_id'],
         'username'   => $row['username'],
+        'user_id'    => $row['user_id'],
+        'avatar'     => $row['avatar'] ?? '',
         'content'    => $row['content'],
         'created_at' => date('Y/m/d H:i', strtotime($row['created_at'])),
         'like_count' => 0,

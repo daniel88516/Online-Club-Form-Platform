@@ -91,12 +91,12 @@ function panelRender($comments, $isLoggedIn, $cur_user, $fid) {
             </div>
             <div class="d-flex align-items-center gap-3 ps-1">
                 <?php if ($isLoggedIn): ?>
-                <button class="btn btn-sm p-0 btn-comment-like <?= $c['user_liked'] ? 'text-danger' : 'text-muted' ?>"
+                <button class="btn btn-sm px-2 btn-comment-like <?= $c['user_liked'] ? 'text-body-emphasis' : 'text-muted' ?>"
                         data-comment-id="<?= $c['id'] ?>">
                     <i class="bi <?= $c['user_liked'] ? 'bi-heart-fill' : 'bi-heart' ?>"></i>
                     <span class="comment-like-count small"><?= $c['like_count'] ?: '' ?></span>
                 </button>
-                <button class="btn btn-sm p-0 text-muted btn-reply"
+                <button class="btn btn-sm px-2 text-muted btn-reply"
                         data-comment-id="<?= $c['id'] ?>"
                         data-username="<?= htmlspecialchars($c['username']) ?>">
                     <small>回覆</small>
@@ -107,7 +107,7 @@ function panelRender($comments, $isLoggedIn, $cur_user, $fid) {
                 </span>
                 <?php endif; ?>
                 <?php if ($childCount > 0): ?>
-                <button class="btn btn-sm p-0 text-muted btn-toggle-replies"
+                <button class="btn btn-sm px-2 text-muted btn-toggle-replies"
                         data-comment-id="<?= $c['id'] ?>">
                     <small><i class="bi bi-arrow-return-right"></i> <?= $childCount ?> 則回覆</small>
                 </button>
@@ -156,12 +156,19 @@ function panelRender($comments, $isLoggedIn, $cur_user, $fid) {
 
 $commentTree = panelBuildTree($all_comments);
 $username    = $_SESSION['username'] ?? 'U';
+
+// 從 DB 取最新頭像（session 不一定即時更新）
+$_cur_avatar_panel = null;
+if ($cur_user) {
+    $__avp = mysqli_fetch_assoc(mysqli_query($conn, "SELECT avatar FROM users WHERE id = $cur_user"));
+    $_cur_avatar_panel = $__avp['avatar'] ?? null;
+}
 ?>
 
 <!-- ── 留言輸入框 ── -->
 <?php if ($isLoggedIn): ?>
 <div class="d-flex gap-2 mb-3 pt-2">
-    <?= renderAvatar($username, $_SESSION['avatar'] ?? null, 32) ?>
+    <?= renderAvatar($username, $_cur_avatar_panel, 32) ?>
     <div class="flex-grow-1">
         <div id="top-reply-collapsed-f<?= $fid ?>">
             <input type="text" id="top-reply-trigger-f<?= $fid ?>"
@@ -428,7 +435,7 @@ $username    = $_SESSION['username'] ?? 'U';
         $.post('/api/comment_like.php', { comment_id: commentId }, function (res) {
             if (!res.success) return;
             btn.find('.comment-like-count').text(res.count || '');
-            btn.toggleClass('text-muted', !res.liked).toggleClass('text-danger', res.liked);
+            btn.toggleClass('text-muted', !res.liked).toggleClass('text-body-emphasis', res.liked);
             btn.find('i').toggleClass('bi-heart', !res.liked).toggleClass('bi-heart-fill', res.liked);
         }, 'json');
     });
@@ -441,15 +448,19 @@ $username    = $_SESSION['username'] ?? 'U';
 
     /* 新留言 HTML 模板 */
     function makeCommentHTML(c) {
-        const colors  = ['bg-primary','bg-success','bg-danger','bg-warning text-dark','bg-info text-dark'];
-        const color   = colors[c.id % colors.length];
-        const initial = c.username.charAt(0).toUpperCase();
+        const s32 = 'width:32px;height:32px;border-radius:50%;flex-shrink:0;';
+        let avatarHtml;
+        if (c.avatar) {
+            avatarHtml = `<img src="${c.avatar}" class="site-avatar" style="${s32}object-fit:cover;" alt="">`;
+        } else {
+            const initial = (c.username.charAt(0) || '?').toUpperCase();
+            avatarHtml = `<span class="site-avatar" style="${s32}background:var(--bs-primary,#0d6efd);color:var(--bs-primary-text,#fff);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">${initial}</span>`;
+        }
         return `
         <div class="comment-node" id="comment-${c.id}" style="margin-bottom:8px;">
             <div class="d-flex gap-2">
                 <div class="d-flex flex-column align-items-center" style="flex-shrink:0;">
-                    <div class="rounded-circle text-white d-flex align-items-center justify-content-center ${color}"
-                         style="width:32px;height:32px;font-size:0.8rem;font-weight:bold;">${initial}</div>
+                    ${avatarHtml}
                 </div>
                 <div class="flex-grow-1 pb-2">
                     <div class="bg-light rounded px-3 py-2 mb-1 d-flex justify-content-between align-items-start gap-1">
@@ -476,11 +487,11 @@ $username    = $_SESSION['username'] ?? 'U';
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-3 ps-1">
-                        <button class="btn btn-sm p-0 text-muted btn-comment-like" data-comment-id="${c.id}">
+                        <button class="btn btn-sm px-2 text-muted btn-comment-like" data-comment-id="${c.id}">
                             <i class="bi bi-heart"></i>
                             <span class="comment-like-count small"></span>
                         </button>
-                        <button class="btn btn-sm p-0 text-muted btn-reply"
+                        <button class="btn btn-sm px-2 text-muted btn-reply"
                                 data-comment-id="${c.id}" data-username="${c.username}">
                             <small>回覆</small>
                         </button>

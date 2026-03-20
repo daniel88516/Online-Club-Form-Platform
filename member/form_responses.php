@@ -116,26 +116,26 @@ var _chartGrid = getComputedStyle(document.documentElement)
 <!-- 總覽 -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card text-center border-0 bg-primary text-white">
+        <div class="card text-center border-0 admin-stat-card stat-blue">
             <div class="card-body py-4">
                 <h2 class="fw-bold"><?= $total ?></h2>
-                <p class="mb-0"><i class="bi bi-people"></i> 填答人數</p>
+                <p class="mb-0 text-muted"><i class="bi bi-people"></i> 填答人數</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-center border-0 bg-success text-white">
+        <div class="card text-center border-0 admin-stat-card stat-green">
             <div class="card-body py-4">
                 <h2 class="fw-bold"><?= count($fields) ?></h2>
-                <p class="mb-0"><i class="bi bi-list-check"></i> 題目數量</p>
+                <p class="mb-0 text-muted"><i class="bi bi-list-check"></i> 題目數量</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-center border-0 <?= $form['is_published'] ? 'bg-info' : 'bg-secondary' ?> text-white">
+        <div class="card text-center border-0 admin-stat-card <?= $form['is_published'] ? 'stat-cyan' : 'stat-amber' ?>">
             <div class="card-body py-4">
                 <h2 class="fw-bold"><?= $form['is_published'] ? '已發布' : '草稿' ?></h2>
-                <p class="mb-0"><i class="bi bi-toggle-on"></i> 狀態</p>
+                <p class="mb-0 text-muted"><i class="bi bi-toggle-on"></i> 狀態</p>
             </div>
         </div>
     </div>
@@ -307,7 +307,7 @@ var _chartGrid = getComputedStyle(document.documentElement)
             <div class="d-flex flex-wrap gap-2">
                 <?php while ($u = mysqli_fetch_assoc($likes_users)): ?>
                 <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
-                    <?= renderAvatar($u['username'], $u['avatar'] ?? null, 26) ?>
+                    <?= renderAvatarDropdown($u['username'], $u['avatar'] ?? null, $u['id'], 26, $_SESSION['user_id']) ?>
                     <div>
                         <div class="small fw-semibold"><?= htmlspecialchars($u['username']) ?></div>
                         <div class="text-muted" style="font-size:.72rem;"><?= date('Y/m/d H:i', strtotime($u['created_at'])) ?></div>
@@ -332,7 +332,7 @@ var _chartGrid = getComputedStyle(document.documentElement)
             <div class="d-flex flex-wrap gap-2">
                 <?php while ($u = mysqli_fetch_assoc($bookmarks_users)): ?>
                 <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
-                    <?= renderAvatar($u['username'], $u['avatar'] ?? null, 26) ?>
+                    <?= renderAvatarDropdown($u['username'], $u['avatar'] ?? null, $u['id'], 26, $_SESSION['user_id']) ?>
                     <div>
                         <div class="small fw-semibold"><?= htmlspecialchars($u['username']) ?></div>
                         <div class="text-muted" style="font-size:.72rem;"><?= date('Y/m/d H:i', strtotime($u['created_at'])) ?></div>

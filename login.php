@@ -67,7 +67,7 @@ require_once 'config/header.php';
                         <label class="form-label fw-semibold">密碼</label>
                         <input type="password" name="password" class="form-control" placeholder="請輸入密碼" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-glow-primary w-100">
                         <i class="bi bi-box-arrow-in-right"></i> 登入
                     </button>
                 </form>

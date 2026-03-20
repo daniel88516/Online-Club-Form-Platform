@@ -89,7 +89,7 @@ require_once '../config/header.php';
             <textarea id="msg-input" class="form-control" rows="2"
                       placeholder="輸入訊息… (Enter 送出，Shift+Enter 換行)"
                       style="resize:none;"></textarea>
-            <button class="btn btn-primary px-4" id="btn-send">
+            <button class="btn btn-glow-primary px-4" id="btn-send">
                 <i class="bi bi-send-fill"></i>
             </button>
         </div>

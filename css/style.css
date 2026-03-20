@@ -1,3 +1,41 @@
+/* ══════════════════════════════════════════════════
+   ██ 全域光暈設計參數（以"提交"按鈕為基準）
+   ══════════════════════════════════════════════════ */
+:root {
+    /* 底色透明度 */
+    --glow-bg-alpha:               0.10;
+    /* 近光（主光暈） */
+    --glow-near-px:                22px;
+    --glow-near-alpha:             0.55;
+    /* 散光（外暈） */
+    --glow-far-px:                 55px;
+    --glow-far-alpha:              0.22;
+    /* hover 近光 */
+    --glow-hover-near-px:          30px;
+    --glow-hover-near-alpha:       0.78;
+    /* hover 散光 */
+    --glow-hover-far-px:           70px;
+    --glow-hover-far-alpha:        0.35;
+    /* 深色模式卡片光暈（白光，比按鈕柔） */
+    --glow-card-dark-near-px:      18px;
+    --glow-card-dark-near-alpha:   0.30;
+    --glow-card-dark-far-alpha:    0.13;
+    /* 小元件光圈（checkbox、range thumb） */
+    --glow-sm-near-px:             10px;
+    --glow-sm-near-alpha:          0.55;
+    --glow-sm-far-px:              22px;
+    --glow-sm-far-alpha:           0.22;
+    /* 白色光暈元件（btn-glow-dark、deadline-tag） */
+    --glow-white-near-px:          10px;
+    --glow-white-near-alpha:       0.22;
+    --glow-white-far-px:           28px;
+    --glow-white-far-alpha:        0.09;
+    --glow-white-hover-near-px:    16px;
+    --glow-white-hover-near-alpha: 0.35;
+    --glow-white-hover-far-px:     40px;
+    --glow-white-hover-far-alpha:  0.14;
+}
+
 body {
     background-color: var(--bs-body-bg, #f8f9fa);
 }
@@ -100,8 +138,29 @@ html[data-bs-theme="dark"] body {
 [data-bs-theme="dark"] .card:not([class*="bg-"]) {
     background-color: #242424 !important;
     border: none !important;
-    box-shadow: 0 0 18px rgba(255,255,255,0.30), 0 0 55px rgba(255,255,255,0.13) !important;
+    box-shadow: 0 0 var(--glow-card-dark-near-px) rgba(255,255,255,var(--glow-card-dark-near-alpha)),
+                0 0 var(--glow-far-px)             rgba(255,255,255,var(--glow-card-dark-far-alpha)) !important;
 }
+
+/* 管理後台統計卡片 */
+.admin-stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.admin-stat-card:hover {
+    transform: translateY(-3px);
+}
+
+/* 淺色模式：淡彩底色 + 彩色陰影 */
+.card.stat-blue  { background-color: rgba(74,158,255,0.08)  !important; box-shadow: 0 4px var(--glow-near-px) rgba(74,158,255,0.30),  0 1px 6px rgba(74,158,255,0.15)  !important; }
+.card.stat-green { background-color: rgba(46,204,113,0.08)  !important; box-shadow: 0 4px var(--glow-near-px) rgba(46,204,113,0.30),  0 1px 6px rgba(46,204,113,0.15)  !important; }
+.card.stat-cyan  { background-color: rgba(0,212,232,0.08)   !important; box-shadow: 0 4px var(--glow-near-px) rgba(0,212,232,0.30),   0 1px 6px rgba(0,212,232,0.15)   !important; }
+.card.stat-amber { background-color: rgba(255,180,0,0.08)   !important; box-shadow: 0 4px var(--glow-near-px) rgba(255,180,0,0.30),   0 1px 6px rgba(255,180,0,0.15)   !important; }
+
+/* 深色模式：更深底色 + 彩色外光暈 */
+[data-bs-theme="dark"] .card.stat-blue  { background-color: rgba(74,158,255,0.12)  !important; box-shadow: 0 0 var(--glow-near-px) rgba(74,158,255,var(--glow-near-alpha)),  0 0 var(--glow-far-px) rgba(74,158,255,var(--glow-far-alpha))  !important; }
+[data-bs-theme="dark"] .card.stat-green { background-color: rgba(46,204,113,0.12)  !important; box-shadow: 0 0 var(--glow-near-px) rgba(46,204,113,var(--glow-near-alpha)),  0 0 var(--glow-far-px) rgba(46,204,113,var(--glow-far-alpha))  !important; }
+[data-bs-theme="dark"] .card.stat-cyan  { background-color: rgba(0,212,232,0.12)   !important; box-shadow: 0 0 var(--glow-near-px) rgba(0,212,232,var(--glow-near-alpha)),   0 0 var(--glow-far-px) rgba(0,212,232,var(--glow-far-alpha))   !important; }
+[data-bs-theme="dark"] .card.stat-amber { background-color: rgba(255,180,0,0.12)   !important; box-shadow: 0 0 var(--glow-near-px) rgba(255,180,0,var(--glow-near-alpha)),   0 0 var(--glow-far-px) rgba(255,180,0,var(--glow-far-alpha))   !important; }
 [data-bs-theme="dark"] .card-header {
     background-color: #222222 !important;
     border-bottom: 1px solid #2a2a2a !important;
@@ -191,26 +250,36 @@ html[data-bs-theme="dark"] body {
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: var(--bs-primary, #0d6efd);
-    color: var(--bs-primary-text, #fff);
-    border: 2px solid rgba(255,255,255,0.45);
+    background: rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-bg-alpha));
+    color: #fff;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.2rem;
-    box-shadow: 0 4px 16px rgba(var(--bs-primary-rgb, 13,110,253),.45);
-    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-near-alpha)),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-far-alpha));
+    transition: transform .15s ease, box-shadow .15s ease;
     z-index: 1050;
     text-decoration: none;
 }
 .fab-btn:hover {
-    color: var(--bs-primary-text, #fff);
-    filter: brightness(0.88);
+    color: #fff;
     transform: scale(1.1);
-    box-shadow: 0 6px 22px rgba(var(--bs-primary-rgb, 13,110,253),.55);
+    box-shadow: 0 0 var(--glow-hover-near-px) rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-hover-near-alpha)),
+                0 0 var(--glow-hover-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-hover-far-alpha));
 }
 .fab-btn:active {
     transform: scale(0.95);
+}
+
+/* ── Navbar 光影風格 ── */
+.navbar.bg-primary {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.18) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 2px var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.40),
+                0 1px var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.18) !important;
 }
 
 /* ── 表單元件跟隨主題色 ── */
@@ -219,37 +288,52 @@ html[data-bs-theme="dark"] body {
     border-color: var(--bs-primary, #0d6efd);
     box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13,110,253), 0.25);
 }
+
+/* Toggle switch 光影 */
 .form-check-input:checked {
-    background-color: var(--bs-primary, #0d6efd);
-    border-color: var(--bs-primary, #0d6efd);
+    background-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.30) !important;
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.70) !important;
+    box-shadow: 0 0 var(--glow-sm-near-px) rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-sm-near-alpha)),
+                0 0 var(--glow-sm-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-sm-far-alpha)) !important;
 }
 .form-check-input:focus {
     border-color: var(--bs-primary, #0d6efd);
-    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13,110,253), 0.25);
+    box-shadow: 0 0 var(--glow-sm-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.45) !important;
 }
 .form-check-input[type="radio"]:checked {
-    background-color: var(--bs-primary, #0d6efd);
-    border-color: var(--bs-primary, #0d6efd);
+    background-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.30) !important;
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.70) !important;
 }
 
-/* ── btn-primary 文字色：直接覆蓋 Bootstrap 硬編碼 #fff ── */
+/* Range 滑桿光影 */
+.form-range::-webkit-slider-thumb {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.85) !important;
+    box-shadow: 0 0 var(--glow-sm-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.70),
+                0 0 var(--glow-sm-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.30) !important;
+}
+.form-range::-moz-range-thumb {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.85) !important;
+    box-shadow: 0 0 var(--glow-sm-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.70),
+                0 0 var(--glow-sm-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.30) !important;
+}
+
+/* ── btn-primary 光影風格（參數化） ── */
 .btn-primary,
 .btn-primary:hover,
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary.active,
 .show > .btn-primary.dropdown-toggle {
-    color: var(--bs-primary-text, #fff);
+    color: #fff !important;
+    background-color: rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-bg-alpha)) !important;
+    border: none !important;
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-near-alpha)),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-far-alpha)) !important;
 }
-
-/* ── 深色模式：btn-primary 加白色外框，確保按鈕在深色背景上永遠看得到 ── */
-[data-bs-theme="dark"] .btn-primary,
-[data-bs-theme="dark"] .btn-primary:hover,
-[data-bs-theme="dark"] .btn-primary:focus,
-[data-bs-theme="dark"] .btn-primary:disabled,
-[data-bs-theme="dark"] .btn-primary.disabled {
-    border-color: rgba(255,255,255,0.30) !important;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 var(--glow-hover-near-px) rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-hover-near-alpha)),
+                0 0 var(--glow-hover-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), var(--glow-hover-far-alpha)) !important;
 }
 
 /* ── btn-outline-primary hover/active 填滿主題色時文字用對比色 ── */
@@ -273,10 +357,6 @@ html[data-bs-theme="dark"] body {
     position: fixed;
     z-index: 99999;
     min-width: 140px;
-    background: #ffffff;
-    border: 2px solid var(--bs-primary, #0d6efd);
-    border-radius: 10px;
-    box-shadow: 0 8px 32px rgba(0,0,0,.28);
     padding: 4px 0;
     overflow: hidden;
 }
@@ -288,23 +368,6 @@ html[data-bs-theme="dark"] body {
     font-size: .9rem;
     font-weight: 500;
     cursor: pointer;
-    color: #212529;
-}
-.avd-pop-item:hover {
-    background: var(--bs-primary, #0d6efd);
-    color: var(--bs-primary-text, #fff);
-}
-[data-bs-theme="dark"] #avd-popup {
-    background: #333333;
-    border-color: var(--bs-primary, #0d6efd);
-    box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 1px var(--bs-primary, #0d6efd);
-}
-[data-bs-theme="dark"] .avd-pop-item {
-    color: #f0f0f0;
-}
-[data-bs-theme="dark"] .avd-pop-item:hover {
-    background: var(--bs-primary, #0d6efd);
-    color: var(--bs-primary-text, #fff);
 }
 
 /* ── 按讚 / 收藏按鈕黑白風格 ── */
@@ -344,14 +407,16 @@ html:not([data-bs-theme="dark"]) .btn-bookmark.bookmarked {
     border: none;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: 0 0 10px rgba(255,255,255,0.22), 0 0 28px rgba(255,255,255,0.09);
+    box-shadow: 0 0 var(--glow-white-near-px) rgba(255,255,255,var(--glow-white-near-alpha)),
+                0 0 var(--glow-white-far-px)  rgba(255,255,255,var(--glow-white-far-alpha));
     transition: box-shadow .2s ease, transform .15s ease, filter .15s ease;
 }
 .btn-glow-dark:hover {
     color: #ffffff;
     filter: brightness(1.12);
     transform: translateY(-1px);
-    box-shadow: 0 0 16px rgba(255,255,255,0.35), 0 0 40px rgba(255,255,255,0.14);
+    box-shadow: 0 0 var(--glow-white-hover-near-px) rgba(255,255,255,var(--glow-white-hover-near-alpha)),
+                0 0 var(--glow-white-hover-far-px)  rgba(255,255,255,var(--glow-white-hover-far-alpha));
     text-decoration: none;
 }
 .btn-glow-dark:active {
@@ -376,6 +441,39 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
     color: #ffffff;
 }
 
+/* ══ 彩色光暈按鈕 — 共用基底（顏色由 --glow-rgb 決定）══ */
+.btn.btn-glow-primary,
+.btn.btn-glow-green,
+[data-bs-theme="dark"] .btn.btn-glow-primary,
+[data-bs-theme="dark"] .btn.btn-glow-green {
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px;
+    font-weight: 600;
+    background: rgba(var(--glow-rgb), var(--glow-bg-alpha)) !important;
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--glow-rgb), var(--glow-near-alpha)),
+                0 0 var(--glow-far-px)  rgba(var(--glow-rgb), var(--glow-far-alpha)) !important;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+/* 各按鈕宣告自己的顏色 */
+.btn.btn-glow-primary { --glow-rgb: var(--bs-primary-rgb, 13,110,253); }
+.btn.btn-glow-green   { --glow-rgb: 46,204,113; }
+
+/* hover — 共用 */
+.btn.btn-glow-primary:hover,
+.btn.btn-glow-green:hover,
+[data-bs-theme="dark"] .btn.btn-glow-primary:hover,
+[data-bs-theme="dark"] .btn.btn-glow-green:hover {
+    background: rgba(var(--glow-rgb), var(--glow-bg-alpha)) !important;
+    color: #fff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 0 var(--glow-hover-near-px) rgba(var(--glow-rgb), var(--glow-hover-near-alpha)),
+                0 0 var(--glow-hover-far-px)  rgba(var(--glow-rgb), var(--glow-hover-far-alpha)) !important;
+}
+/* active — 共用 */
+.btn.btn-glow-primary:active,
+.btn.btn-glow-green:active { transform: translateY(0) scale(0.97); }
+
 /* ── 截止日期標示（黑白光暈名牌風） ── */
 .deadline-tag {
     display: inline-flex;
@@ -389,11 +487,13 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
     background: #1a1a1a;
     color: #f0f0f0;
     border: none;
-    box-shadow: 0 0 8px rgba(255,255,255,0.25), 0 0 20px rgba(255,255,255,0.10);
+    box-shadow: 0 0 var(--glow-white-near-px) rgba(255,255,255,var(--glow-white-near-alpha)),
+                0 0 var(--glow-white-far-px)  rgba(255,255,255,var(--glow-white-far-alpha));
     transition: box-shadow .2s ease;
 }
 .deadline-tag:hover {
-    box-shadow: 0 0 12px rgba(255,255,255,0.38), 0 0 28px rgba(255,255,255,0.15);
+    box-shadow: 0 0 var(--glow-white-hover-near-px) rgba(255,255,255,var(--glow-white-hover-near-alpha)),
+                0 0 var(--glow-white-hover-far-px)  rgba(255,255,255,var(--glow-white-hover-far-alpha));
 }
 .deadline-tag.deadline-expired {
     background: #111;
@@ -425,6 +525,255 @@ html:not([data-bs-theme="dark"]) .deadline-tag.deadline-expired {
 }
 .ql-content a:hover {
     color: #70b8ff !important;
+}
+
+/* ── 淺色模式：FAB & 聊天按鈕 補色（深色背景保可見） ── */
+[data-bs-theme="light"] .fab-btn,
+html:not([data-bs-theme="dark"]) .fab-btn {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.90) !important;
+    color: var(--bs-primary-text, #fff) !important;
+    box-shadow: 0 4px 18px rgba(var(--bs-primary-rgb, 13,110,253), 0.45),
+                0 2px 6px  rgba(var(--bs-primary-rgb, 13,110,253), 0.25) !important;
+}
+[data-bs-theme="light"] .fab-btn:hover,
+html:not([data-bs-theme="dark"]) .fab-btn:hover {
+    box-shadow: 0 6px 26px rgba(var(--bs-primary-rgb, 13,110,253), 0.62),
+                0 3px 10px rgba(var(--bs-primary-rgb, 13,110,253), 0.35) !important;
+}
+[data-bs-theme="light"] #chat-toggle-btn,
+html:not([data-bs-theme="dark"]) #chat-toggle-btn {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.90) !important;
+    color: var(--bs-primary-text, #fff) !important;
+    box-shadow: 0 4px 18px rgba(var(--bs-primary-rgb, 13,110,253), 0.45),
+                0 2px 6px  rgba(var(--bs-primary-rgb, 13,110,253), 0.25) !important;
+}
+[data-bs-theme="light"] #chat-toggle-btn:hover,
+html:not([data-bs-theme="dark"]) #chat-toggle-btn:hover {
+    box-shadow: 0 6px 26px rgba(var(--bs-primary-rgb, 13,110,253), 0.62),
+                0 3px 10px rgba(var(--bs-primary-rgb, 13,110,253), 0.35) !important;
+}
+
+/* ── 淺色模式：Navbar 文字 & 使用者名稱 改為深色 ── */
+[data-bs-theme="light"] .navbar.bg-primary .nav-link,
+[data-bs-theme="light"] .navbar.bg-primary .navbar-brand,
+[data-bs-theme="light"] .navbar.bg-primary .navbar-toggler-icon,
+html:not([data-bs-theme="dark"]) .navbar.bg-primary .nav-link,
+html:not([data-bs-theme="dark"]) .navbar.bg-primary .navbar-brand,
+html:not([data-bs-theme="dark"]) .navbar.bg-primary .navbar-toggler-icon {
+    color: var(--bs-primary-text, #fff) !important;
+    --bs-navbar-color: var(--bs-primary-text, #fff);
+}
+/* Navbar 在淺色模式加深背景確保可見度 */
+[data-bs-theme="light"] .navbar.bg-primary,
+html:not([data-bs-theme="dark"]) .navbar.bg-primary {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.88) !important;
+    box-shadow: 0 2px 16px rgba(var(--bs-primary-rgb, 13,110,253), 0.38),
+                0 1px 4px  rgba(var(--bs-primary-rgb, 13,110,253), 0.18) !important;
+}
+
+/* ── 淺色模式：btn-glow-primary / btn-glow-green 補不透明背景 ── */
+[data-bs-theme="light"] .btn.btn-glow-primary,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-primary {
+    background: rgba(var(--glow-rgb), 0.88) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(var(--glow-rgb), 0.45),
+                0 2px 6px  rgba(var(--glow-rgb), 0.25) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-primary:hover,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-primary:hover {
+    background: rgba(var(--glow-rgb), 0.95) !important;
+    box-shadow: 0 6px 22px rgba(var(--glow-rgb), 0.60),
+                0 2px 8px  rgba(var(--glow-rgb), 0.32) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-green,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-green {
+    background: rgba(46,204,113, 0.88) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(46,204,113, 0.45),
+                0 2px 6px  rgba(46,204,113, 0.25) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-green:hover,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-green:hover {
+    background: rgba(46,204,113, 0.95) !important;
+    box-shadow: 0 6px 22px rgba(46,204,113, 0.60),
+                0 2px 8px  rgba(46,204,113, 0.32) !important;
+}
+
+/* ── 搜尋+排序光影框 ── */
+.glow-sort-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(var(--bs-primary-rgb, 13,110,253), 0.28);
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.04);
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.10),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.05);
+    transition: border-color .18s, box-shadow .18s;
+}
+.glow-sort-bar:focus-within {
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.60);
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.28),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.12);
+}
+[data-bs-theme="dark"] .glow-sort-bar {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.07);
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.40);
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.20),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.09);
+}
+[data-bs-theme="dark"] .glow-sort-bar:focus-within {
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.72);
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.48),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.22);
+}
+/* 框內的 input/select 不要自己的邊框，讓外框統一管理 */
+.glow-sort-bar .form-control,
+.glow-sort-bar .form-select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--bs-body-color);
+}
+.glow-sort-bar .form-control:focus,
+.glow-sort-bar .form-select:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+[data-bs-theme="dark"] .glow-sort-bar .form-control,
+[data-bs-theme="dark"] .glow-sort-bar .form-select {
+    background: transparent !important;
+    color: #e0e0e0;
+}
+/* 分隔線 */
+.glow-sort-bar .sort-divider {
+    width: 1px;
+    align-self: stretch;
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.30);
+    flex-shrink: 0;
+}
+/* 排序表頭（admin table 可點擊） */
+.sortable-th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.sortable-th:hover { opacity: 0.75; }
+.sortable-th .sort-icon { font-size: .7rem; margin-left: 3px; opacity: .5; }
+.sortable-th.asc  .sort-icon::before { content: '▲'; opacity: 1; }
+.sortable-th.desc .sort-icon::before { content: '▼'; opacity: 1; }
+.sortable-th:not(.asc):not(.desc) .sort-icon::before { content: '⇅'; }
+
+/* ── 頭像彈出選單：光影風格 ── */
+#avd-popup {
+    background: var(--bs-body-bg, #ffffff);
+    border: 1.5px solid rgba(var(--bs-primary-rgb, 13,110,253), 0.55) !important;
+    border-radius: 12px;
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.38),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.16),
+                0 8px 24px rgba(0,0,0,0.18) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    overflow: hidden;
+}
+[data-bs-theme="light"] #avd-popup,
+html:not([data-bs-theme="dark"]) #avd-popup {
+    background: rgba(255,255,255,0.96);
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.50) !important;
+    box-shadow: 0 4px 20px rgba(var(--bs-primary-rgb, 13,110,253), 0.28),
+                0 0 40px  rgba(var(--bs-primary-rgb, 13,110,253), 0.12),
+                0 8px 24px rgba(0,0,0,0.14) !important;
+}
+[data-bs-theme="dark"] #avd-popup {
+    background: rgba(28,28,28,0.96);
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.60) !important;
+    box-shadow: 0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.50),
+                0 0 var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.22),
+                0 8px 24px rgba(0,0,0,0.50) !important;
+}
+.avd-pop-item {
+    color: var(--bs-body-color, #212529);
+    transition: background .15s, color .15s;
+}
+.avd-pop-item:hover {
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.90);
+    color: var(--bs-primary-text, #fff);
+}
+[data-bs-theme="dark"] .avd-pop-item {
+    color: #f0f0f0;
+}
+
+/* ── 留言輸入欄（trigger 觸發輸入框）光暈 ── */
+.top-reply-trigger-input {
+    border: 1.5px solid var(--bs-border-color);
+    transition: border-color .18s, box-shadow .18s;
+}
+.top-reply-trigger-input:hover,
+.top-reply-trigger-input:focus {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb, 13,110,253), 0.15),
+                0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.25) !important;
+    outline: none;
+}
+[data-bs-theme="dark"] .top-reply-trigger-input {
+    background: #111111;
+    border-color: #333;
+    color: #e0e0e0;
+}
+[data-bs-theme="dark"] .top-reply-trigger-input:hover,
+[data-bs-theme="dark"] .top-reply-trigger-input:focus {
+    border-color: var(--bs-primary, #0d6efd);
+    box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb, 13,110,253), 0.20),
+                0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.35) !important;
+}
+
+/* ── Quill 留言編輯器：展開即有主題光暈 ── */
+/* 光暈套在外層 wrapper，不受 ql-container overflow 影響 */
+.quill-comment-editor {
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb, 13,110,253), 0.50),
+                0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.28);
+    transition: box-shadow .18s;
+}
+.quill-comment-editor:focus-within {
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb, 13,110,253), 0.80),
+                0 0 var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.55);
+}
+/* 用更高特異性覆蓋 dark-mode 的 border-color: #333 !important */
+.quill-comment-editor .ql-toolbar,
+.quill-comment-editor .ql-container,
+[data-bs-theme="dark"] .quill-comment-editor .ql-toolbar,
+[data-bs-theme="dark"] .quill-comment-editor .ql-container {
+    border-color: rgba(var(--bs-primary-rgb, 13,110,253), 0.55) !important;
+}
+
+/* ── 已發布留言氣泡：黑白光暈（不套主題色）── */
+.comment-node .bg-light {
+    transition: box-shadow .18s;
+}
+/* 淺色模式：輕度灰色陰影 */
+[data-bs-theme="light"] .comment-node .bg-light,
+html:not([data-bs-theme="dark"]) .comment-node .bg-light {
+    box-shadow: 0 1px 6px rgba(0,0,0,0.10),
+                0 0 14px rgba(0,0,0,0.05) !important;
+}
+/* hover 時只亮起滑鼠所在的那則留言（:not(:has(...)) 排除父層冒泡） */
+[data-bs-theme="light"] .comment-node:hover:not(:has(.comment-node:hover)) > .d-flex > .flex-grow-1 > .bg-light,
+html:not([data-bs-theme="dark"]) .comment-node:hover:not(:has(.comment-node:hover)) > .d-flex > .flex-grow-1 > .bg-light {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.16),
+                0 0 22px rgba(0,0,0,0.09) !important;
+}
+/* 深色模式：白色光暈 */
+[data-bs-theme="dark"] .comment-node .bg-light {
+    box-shadow: 0 0 var(--glow-white-near-px) rgba(255,255,255,var(--glow-white-near-alpha)),
+                0 0 var(--glow-white-far-px)  rgba(255,255,255,var(--glow-white-far-alpha)),
+                0 2px 10px rgba(0,0,0,0.40) !important;
+}
+[data-bs-theme="dark"] .comment-node:hover:not(:has(.comment-node:hover)) > .d-flex > .flex-grow-1 > .bg-light {
+    box-shadow: 0 0 var(--glow-white-hover-near-px) rgba(255,255,255,var(--glow-white-hover-near-alpha)),
+                0 0 var(--glow-white-hover-far-px)  rgba(255,255,255,var(--glow-white-hover-far-alpha)),
+                0 2px 14px rgba(0,0,0,0.50) !important;
 }
 
 /* RWD 調整 */

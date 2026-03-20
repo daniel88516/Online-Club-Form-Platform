@@ -226,7 +226,7 @@ require_once '../config/header.php';
                 </div>
             </div>
             <div class="d-flex gap-2 mt-3 justify-content-end">
-                <button type="submit" class="btn btn-success px-4">
+                <button type="submit" class="btn btn-glow-green px-4">
                     <i class="bi bi-check-lg"></i> 儲存變更
                 </button>
             </div>
@@ -244,6 +244,10 @@ function hasOptions(type) { return ['radio','checkbox','dropdown'].includes(type
 function addField(type, label='', required=false, options='') {
     $('#empty-hint').hide();
     const idx = fieldCount++;
+    // 新增欄位時（label 為空）套用預設文字
+    if (!label && (type === 'short_text' || type === 'long_text')) {
+        label = '說說你的看法吧!!!';
+    }
     const optHTML = hasOptions(type) ? `
         <div class="mt-2">
             <label class="form-label small">選項（每行一個）</label>
@@ -253,6 +257,9 @@ function addField(type, label='', required=false, options='') {
     <div class="field-card" id="field-${idx}">
         <input type="hidden" name="fields[${idx}][type]" value="${type}">
         <div class="d-flex align-items-start gap-2">
+            <div class="drag-handle text-muted" title="拖曳排序" style="cursor:grab;padding-top:4px;font-size:1.1rem;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;">
+                <i class="bi bi-grip-vertical"></i>
+            </div>
             <div class="flex-grow-1">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <i class="${fieldIcons[type]} text-primary"></i>
@@ -294,7 +301,18 @@ $(document).ready(function () {
         if (typeof quillDesc !== 'undefined') {
             $('#description-hidden').val(quillDesc.root.innerHTML);
         }
-        if ($('.field-card').length === 0) { e.preventDefault(); alert('請至少新增一個欄位'); }
+        if ($('.field-card').length === 0) { e.preventDefault(); alert('請至少新增一個欄位'); return; }
+        // 依 DOM 順序重新排序欄位索引，確保拖曳後順序正確
+        let newIdx = 0;
+        $('#fields-container .field-card').each(function () {
+            $(this).find('[name]').each(function () {
+                const n = $(this).attr('name');
+                if (n && /^fields\[/.test(n)) {
+                    $(this).attr('name', n.replace(/^fields\[\d+\]/, 'fields[' + newIdx + ']'));
+                }
+            });
+            newIdx++;
+        });
     });
 });
 </script>
@@ -373,6 +391,18 @@ $(document).ready(function () {
     if (existingDesc) quillDesc.clipboard.dangerouslyPasteHTML(existingDesc);
     attachAutoLink(quillDesc);
     attachPasteImageHandler(quillDesc, 'forms');
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+// 拖曳排序欄位
+Sortable.create(document.getElementById('fields-container'), {
+    handle: '.drag-handle',
+    animation: 150,
+    ghostClass: 'opacity-50',
+    forceFallback: true,
+    fallbackOnBody: true,
+    fallbackTolerance: 3
 });
 </script>
 <?php require_once '../config/footer.php'; ?>

@@ -90,7 +90,7 @@ require_once '../config/header.php';
                           placeholder="介紹一下自己…" maxlength="200"><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
                 <div class="d-flex justify-content-between align-items-center">
                     <small class="text-muted"><span id="bio-len"><?= mb_strlen($user['bio'] ?? '') ?></span> / 200</small>
-                    <button class="btn btn-primary btn-sm" id="btn-save-bio">
+                    <button class="btn btn-glow-primary btn-sm" id="btn-save-bio">
                         <i class="bi bi-check-lg me-1"></i> 儲存簡介
                     </button>
                 </div>
@@ -254,6 +254,24 @@ require_once '../config/header.php';
             </div>
         </div>
 
+        <!-- 素材主題 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-stars me-1"></i> 素材主題
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">為整個網站加入全域環境動畫效果</p>
+                <div class="d-flex flex-wrap gap-2" id="ambient-options">
+                    <button class="btn btn-sm ambient-opt" data-theme="none">🚫 關閉</button>
+                    <button class="btn btn-sm ambient-opt" data-theme="snow">❄️ 下雪</button>
+                    <button class="btn btn-sm ambient-opt" data-theme="sakura">🌸 落花</button>
+                    <button class="btn btn-sm ambient-opt" data-theme="stars">⭐ 星空</button>
+                    <button class="btn btn-sm ambient-opt" data-theme="bubbles">🫧 泡泡</button>
+                </div>
+                <small class="text-muted mt-3 d-block"><i class="bi bi-info-circle me-1"></i>設定存於本機，不同裝置各自獨立</small>
+            </div>
+        </div>
+
         <!-- 帳號資訊 -->
         <div class="card mb-4">
             <div class="card-header">
@@ -352,14 +370,21 @@ require_once '../config/header.php';
     var hexVal  = document.getElementById('color-hex-val');
     var $presets = document.getElementById('color-presets');
 
+    // hex → "R,G,B" 字串，供 rgba() 使用
+    function hexToRgb(hex) {
+        return parseInt(hex.slice(1,3),16)+','+parseInt(hex.slice(3,5),16)+','+parseInt(hex.slice(5,7),16);
+    }
+
     // 渲染預設色票
     PRESETS.forEach(function (p) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.title = p.name;
         btn.dataset.color = p.color;
+        var rgb = hexToRgb(p.color);
         btn.style.cssText = 'width:34px;height:34px;border-radius:50%;background:' + p.color +
-            ';border:3px solid transparent;cursor:pointer;transition:transform .15s,box-shadow .15s;';
+            ';border:3px solid transparent;cursor:pointer;transition:transform .15s,box-shadow .15s;' +
+            'box-shadow:0 0 7px rgba(' + rgb + ',0.45),0 0 14px rgba(' + rgb + ',0.20);';
         btn.addEventListener('click', function () { setColor(p.color); });
         $presets.appendChild(btn);
     });
@@ -386,9 +411,12 @@ require_once '../config/header.php';
     function updateActive(hex) {
         $presets.querySelectorAll('button').forEach(function (btn) {
             var active = btn.dataset.color.toLowerCase() === hex.toLowerCase();
-            btn.style.transform   = active ? 'scale(1.18)' : 'scale(1)';
-            btn.style.boxShadow   = active ? '0 0 0 3px ' + btn.dataset.color + '66' : 'none';
-            btn.style.borderColor = active ? '#fff' : 'transparent';
+            var rgb = hexToRgb(btn.dataset.color);
+            btn.style.transform   = active ? 'scale(1.22)' : 'scale(1)';
+            btn.style.borderColor = active ? 'rgba(255,255,255,0.85)' : 'transparent';
+            btn.style.boxShadow   = active
+                ? '0 0 0 3px rgba('+rgb+',0.50),0 0 14px rgba('+rgb+',0.90),0 0 32px rgba('+rgb+',0.42)'
+                : '0 0 7px rgba('+rgb+',0.45),0 0 14px rgba('+rgb+',0.20)';
         });
     }
 })();
@@ -410,7 +438,7 @@ require_once '../config/header.php';
             <div class="modal-footer">
                 <small class="text-muted me-auto"><i class="bi bi-info-circle me-1"></i>拖曳調整範圍，滾輪縮放</small>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" id="btn-crop-confirm">
+                <button type="button" class="btn btn-glow-primary" id="btn-crop-confirm">
                     <i class="bi bi-check-lg me-1"></i>確認裁剪
                 </button>
             </div>
@@ -481,6 +509,21 @@ require_once '../config/header.php';
                     if (res.success) {
                         $status.html('<span class="text-success small"><i class="bi bi-check-circle me-1"></i>頭像已更新</span>');
                         setTimeout(function () { $status.html(''); }, 3000);
+                        // 同步右上角 navbar 頭像
+                        $('.site-avatar').each(function () {
+                            var el = this;
+                            if (el.tagName === 'IMG') {
+                                el.src = res.path;
+                            } else {
+                                // 字母頭像 → 換成圖片
+                                var img = document.createElement('img');
+                                img.src = res.path;
+                                img.className = 'site-avatar';
+                                img.style.cssText = el.style.cssText + 'object-fit:cover;';
+                                img.alt = '';
+                                el.parentNode.replaceChild(img, el);
+                            }
+                        });
                     } else {
                         $status.html('<span class="text-danger small">' + res.message + '</span>');
                     }
@@ -550,15 +593,16 @@ require_once '../config/header.php';
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='rgba(255,255,255,.75)'/%3E%3C/Svg%3E");
 }
 
-/* ── 深色模式：幅度 / 速度數值更醒目 ── */
-[data-bs-theme="dark"] #anim-amp-val,
-[data-bs-theme="dark"] #anim-spd-val {
+/* ── 幅度 / 速度數值光影 ── */
+#anim-amp-val,
+#anim-spd-val {
     color: #fff !important;
-    background: var(--bs-primary, #0d6efd);
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.20);
     border-radius: 4px;
     padding: 0 6px;
     font-size: .8rem;
     line-height: 1.6;
+    box-shadow: 0 0 8px rgba(var(--bs-primary-rgb, 13,110,253), 0.55), 0 0 18px rgba(var(--bs-primary-rgb, 13,110,253), 0.22);
 }
 </style>
 
@@ -726,19 +770,49 @@ window.addEventListener('load', function () {
     syncUI();
 
     $enabled.addEventListener('change', function () {
-        cfg.enabled = this.checked; save(cfg); updateDisabled();
+        cfg.enabled = this.checked; save(cfg); updateDisabled(); window.applyCardAnimCSS();
     });
     $amp.addEventListener('input', function () {
-        cfg.amplitude = parseInt(this.value); $ampVal.textContent = cfg.amplitude; save(cfg);
+        cfg.amplitude = parseInt(this.value); $ampVal.textContent = cfg.amplitude; save(cfg); window.applyCardAnimCSS();
     });
     $spd.addEventListener('input', function () {
-        cfg.speed = parseInt(this.value); $spdVal.textContent = cfg.speed; save(cfg);
+        cfg.speed = parseInt(this.value); $spdVal.textContent = cfg.speed; save(cfg); window.applyCardAnimCSS();
     });
     $ptcl.addEventListener('change', function () {
-        cfg.particles = this.checked; save(cfg);
+        cfg.particles = this.checked; save(cfg); window.applyCardAnimCSS();
     });
     document.getElementById('btn-reset-anim').addEventListener('click', function () {
-        cfg = Object.assign({}, DEFAULT); save(cfg); syncUI();
+        cfg = Object.assign({}, DEFAULT); save(cfg); syncUI(); window.applyCardAnimCSS();
+    });
+})();
+</script>
+
+<script>
+/* ── 素材主題選擇器 ── */
+(function () {
+    var KEY   = 'ambientTheme';
+    var saved = localStorage.getItem(KEY) || 'none';
+
+    function updateActive(t) {
+        document.querySelectorAll('.ambient-opt').forEach(function (btn) {
+            var active = btn.dataset.theme === t;
+            var rgb = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary-rgb').trim() || '13,110,253';
+            btn.style.background  = active ? 'rgba(' + rgb + ',0.18)' : '';
+            btn.style.color       = active ? '#fff' : '';
+            btn.style.borderColor = active ? 'rgba(' + rgb + ',0.60)' : '';
+            btn.style.boxShadow   = active ? '0 0 14px rgba(' + rgb + ',0.60),0 0 32px rgba(' + rgb + ',0.25)' : '';
+        });
+    }
+
+    updateActive(saved);
+
+    document.querySelectorAll('.ambient-opt').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var t = this.dataset.theme;
+            localStorage.setItem(KEY, t);
+            updateActive(t);
+            if (window.startAmbientTheme) window.startAmbientTheme(t);
+        });
     });
 })();
 </script>

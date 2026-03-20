@@ -85,17 +85,41 @@ require_once __DIR__ . '/session.php';
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top" style="position:relative;">
     <div class="container">
         <a class="navbar-brand fw-bold" href="/index.php">
             <i class="bi bi-file-earmark-text"></i> 線上表單系統
         </a>
+        <?php if (!empty($showNavSearch)): ?>
+        <!-- 搜尋群組：絕對置中於 navbar -->
+        <div style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;">
+            <button id="nav-search-toggle" class="btn btn-sm p-1"
+                    title="搜尋" style="color:rgba(255,255,255,0.85);background:transparent;border:none;line-height:1;">
+                <i class="bi bi-search" style="font-size:1rem;"></i>
+            </button>
+            <div id="nav-search-box" class="d-none d-flex align-items-center" style="gap:4px;">
+                <input type="text" id="nav-search-input" placeholder="搜尋..."
+                       autocomplete="off"
+                       style="background:rgba(255,255,255,0.15);border:none;border-radius:6px;
+                              padding:3px 10px;color:#fff;font-size:.875rem;width:260px;outline:none;
+                              caret-color:#fff;">
+                <button id="nav-search-close"
+                        style="background:transparent;border:none;color:rgba(255,255,255,0.7);
+                               cursor:pointer;font-size:.85rem;line-height:1;padding:2px 4px;">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+        <span class="me-auto"></span>
+        <?php else: ?>
+        <span class="me-auto"></span>
+        <?php endif; ?>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto"></ul>
-            <ul class="navbar-nav">
+            <ul class="navbar-nav align-items-center">
                 <?php if (isLoggedIn()):
                     $uid = $_SESSION['user_id'];
                     $unread_msg = 0;
@@ -161,6 +185,8 @@ require_once __DIR__ . '/session.php';
         </div>
     </div>
 </nav>
+
+
 <script>
 (function () {
     function getCur() { return localStorage.getItem('theme') || 'auto'; }

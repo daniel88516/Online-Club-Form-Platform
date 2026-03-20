@@ -78,7 +78,7 @@ require_once '../config/header.php';
                 <input type="text" name="add_desc" class="form-control" placeholder="群組說明（選填）">
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100">
+                <button type="submit" class="btn btn-glow-green w-100">
                     <i class="bi bi-plus"></i> 新增
                 </button>
             </div>
@@ -156,7 +156,7 @@ require_once '../config/header.php';
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">儲存</button>
+                    <button type="submit" class="btn btn-glow-green">儲存</button>
                 </div>
             </form>
         </div>

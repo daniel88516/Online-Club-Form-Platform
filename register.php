@@ -109,7 +109,7 @@ require_once 'config/header.php';
                                placeholder="再輸入一次密碼" required>
                         <div id="confirm-feedback" class="form-text"></div>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">
+                    <button type="submit" class="btn btn-glow-primary w-100">
                         <i class="bi bi-person-check"></i> 註冊
                     </button>
                 </form>

@@ -3,6 +3,13 @@
 $cid      = intval($id ?? 0);
 $cur_user = isLoggedIn() ? $_SESSION['user_id'] : 0;
 
+// 取目前登入者頭像（從DB，而非session，確保上傳後即時正確）
+$_cur_avatar = null;
+if ($cur_user) {
+    $__av = mysqli_fetch_assoc(mysqli_query($GLOBALS['conn'], "SELECT avatar FROM users WHERE id = $cur_user"));
+    $_cur_avatar = $__av['avatar'] ?? null;
+}
+
 // 取得所有留言（含按讚數）
 $all_comments = [];
 $clist = mysqli_query($GLOBALS['conn'], "
@@ -45,7 +52,7 @@ function renderComments($comments, $depth = 0) {
     <div class="d-flex gap-2">
         <!-- 頭像 + 垂直線 -->
         <div class="d-flex flex-column align-items-center" style="flex-shrink:0;">
-            <?= renderAvatar($c['username'], $c['avatar'] ?? null, 32) ?>
+            <?= renderAvatarDropdown($c['username'], $c['avatar'] ?? null, $c['user_id'], 32, $cur_user) ?>
             <?php if ($childCount > 0): ?>
             <div class="thread-line btn-toggle-replies"
                  data-comment-id="<?= $c['id'] ?>"
@@ -94,12 +101,12 @@ function renderComments($comments, $depth = 0) {
             <!-- 操作列 -->
             <div class="d-flex align-items-center gap-3 ps-1">
                 <?php if ($isLoggedIn): ?>
-                <button class="btn btn-sm p-0 btn-comment-like <?= $c['user_liked'] ? 'text-danger' : 'text-muted' ?>"
+                <button class="btn btn-sm px-2 btn-comment-like <?= $c['user_liked'] ? 'text-body-emphasis' : 'text-muted' ?>"
                         data-comment-id="<?= $c['id'] ?>">
                     <i class="bi <?= $c['user_liked'] ? 'bi-heart-fill' : 'bi-heart' ?>"></i>
                     <span class="comment-like-count small"><?= $c['like_count'] ?: '' ?></span>
                 </button>
-                <button class="btn btn-sm p-0 text-muted btn-reply"
+                <button class="btn btn-sm px-2 text-muted btn-reply"
                         data-comment-id="<?= $c['id'] ?>"
                         data-username="<?= htmlspecialchars($c['username']) ?>">
                     <small>回覆</small>
@@ -110,7 +117,7 @@ function renderComments($comments, $depth = 0) {
 
                 <!-- 展開子回覆按鈕 -->
                 <?php if ($childCount > 0): ?>
-                <button class="btn btn-sm p-0 text-muted btn-toggle-replies"
+                <button class="btn btn-sm px-2 text-muted btn-toggle-replies"
                         data-comment-id="<?= $c['id'] ?>">
                     <small><i class="bi bi-arrow-return-right"></i> <?= $childCount ?> 則回覆</small>
                 </button>
@@ -122,7 +129,7 @@ function renderComments($comments, $depth = 0) {
             <div class="reply-box mt-2" id="reply-box-<?= $c['id'] ?>" style="display:none;">
                 <div id="quill-reply-<?= $c['id'] ?>" class="quill-comment-editor mb-1"></div>
                 <div class="d-flex justify-content-end gap-1 mt-1">
-                    <button class="btn btn-primary btn-sm btn-submit-reply"
+                    <button class="btn btn-glow-primary btn-sm btn-submit-reply"
                             data-form-id="<?= $GLOBALS['id'] ?? 0 ?>"
                             data-parent-id="<?= $c['id'] ?>">
                         <i class="bi bi-send"></i> 送出
@@ -140,7 +147,7 @@ function renderComments($comments, $depth = 0) {
             <div class="edit-box mt-2" id="edit-box-<?= $c['id'] ?>" style="display:none;">
                 <div id="quill-edit-<?= $c['id'] ?>" class="quill-comment-editor mb-1"></div>
                 <div class="d-flex justify-content-end gap-1 mt-1">
-                    <button class="btn btn-primary btn-sm btn-submit-edit" data-comment-id="<?= $c['id'] ?>">
+                    <button class="btn btn-glow-primary btn-sm btn-submit-edit" data-comment-id="<?= $c['id'] ?>">
                         <i class="bi bi-check-lg"></i> 儲存
                     </button>
                     <button class="btn btn-outline-secondary btn-sm btn-cancel-edit" data-comment-id="<?= $c['id'] ?>">
@@ -200,7 +207,7 @@ $comment_count_total = count($all_comments);
         <!-- 頂層留言框 -->
         <?php if (isLoggedIn()): ?>
         <div class="d-flex gap-2 mb-3">
-            <?= renderAvatar($_SESSION['username'], $_SESSION['avatar'] ?? null, 32) ?>
+            <?= renderAvatar($_SESSION['username'], $_cur_avatar, 32) ?>
             <div class="flex-grow-1">
                 <!-- 收合狀態 -->
                 <div id="top-reply-collapsed">
@@ -212,7 +219,7 @@ $comment_count_total = count($all_comments);
                     <div id="quill-main" class="quill-comment-editor mb-2"></div>
                     <div class="d-flex justify-content-end gap-2 mt-1">
                         <button type="button" id="btn-cancel-top" class="btn btn-outline-secondary btn-sm">取消</button>
-                        <button type="submit" class="btn btn-primary btn-sm">
+                        <button type="submit" class="btn btn-glow-primary btn-sm">
                             <i class="bi bi-send"></i> 送出
                         </button>
                     </div>
@@ -240,6 +247,8 @@ $comment_count_total = count($all_comments);
 <script>
 const FORM_ID      = <?= intval($id ?? 0) ?>;
 const CUR_USER_ID  = <?= intval($cur_user) ?>;
+const CUR_USERNAME = <?= json_encode($_SESSION['username'] ?? '') ?>;
+const CUR_AVATAR   = <?= json_encode($_cur_avatar ?? '') ?>;
 const IS_ADMIN     = <?= isAdmin() ? 'true' : 'false' ?>;
 let quillMain = null;
 const quillInstances = {};
@@ -314,7 +323,7 @@ $(document).on('click', '#btn-like', function () {
     $.post('/api/like.php', { form_id: FORM_ID }, function (res) {
         if (!res.success) return;
         $('#like-count').text(res.count);
-        btn.toggleClass('text-muted', !res.liked).toggleClass('text-danger', res.liked);
+        btn.toggleClass('text-muted', !res.liked).toggleClass('text-body-emphasis', res.liked);
         btn.find('i').toggleClass('bi-heart', !res.liked).toggleClass('bi-heart-fill', res.liked);
     }, 'json');
 });
@@ -508,22 +517,40 @@ $(document).on('click', '.btn-comment-like', function () {
     $.post('/api/comment_like.php', { comment_id: commentId }, function (res) {
         if (!res.success) return;
         btn.find('.comment-like-count').text(res.count || '');
-        btn.toggleClass('text-muted', !res.liked).toggleClass('text-danger', res.liked);
+        btn.toggleClass('text-muted', !res.liked).toggleClass('text-body-emphasis', res.liked);
         btn.find('i').toggleClass('bi-heart', !res.liked).toggleClass('bi-heart-fill', res.liked);
     }, 'json');
 });
 
+// ── 產生頭像 HTML（支援圖片或字母頭像，可帶互動wrapper） ──
+function makeAvatarHTML(uid, username, avatarUrl, size, showInteract) {
+    size = size || 32;
+    const s = `width:${size}px;height:${size}px;border-radius:50%;flex-shrink:0;`;
+    let avatarInner;
+    if (avatarUrl) {
+        avatarInner = `<img src="${avatarUrl}" class="site-avatar" style="${s}object-fit:cover;" alt="">`;
+    } else {
+        const fs = Math.round(size * 0.44);
+        const initial = (username.charAt(0) || '?').toUpperCase();
+        avatarInner = `<span class="site-avatar" style="${s}background:var(--bs-primary,#0d6efd);color:var(--bs-primary-text,#fff);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:${fs}px;">${initial}</span>`;
+    }
+    if (showInteract && uid && uid != CUR_USER_ID) {
+        const showChat = uid != CUR_USER_ID ? 1 : 0;
+        const uname = username.replace(/"/g, '&quot;');
+        const av    = (avatarUrl || '').replace(/"/g, '&quot;');
+        return `<span class="avd-wrap" data-uid="${uid}" data-uname="${uname}" data-avatar="${av}" data-chat="${showChat}">${avatarInner}</span>`;
+    }
+    return avatarInner;
+}
+
 // ── 產生新留言 HTML（content 是 Quill HTML，直接插入） ──
 function makeCommentHTML(c) {
-    const colors  = ['bg-primary','bg-success','bg-danger','bg-warning text-dark','bg-info text-dark'];
-    const color   = colors[c.id % colors.length];
-    const initial = c.username.charAt(0).toUpperCase();
+    const avatarHtml = makeAvatarHTML(c.user_id || CUR_USER_ID, c.username, c.avatar || CUR_AVATAR, 32, true);
     return `
     <div class="comment-node" id="comment-${c.id}" style="margin-bottom:8px;">
         <div class="d-flex gap-2">
             <div class="d-flex flex-column align-items-center" style="flex-shrink:0;">
-                <div class="rounded-circle text-white d-flex align-items-center justify-content-center ${color}"
-                     style="width:32px;height:32px;font-size:0.8rem;font-weight:bold;">${initial}</div>
+                ${avatarHtml}
             </div>
             <div class="flex-grow-1 pb-2">
                 <div class="bg-light rounded px-3 py-2 mb-1 d-flex justify-content-between align-items-start gap-1">
@@ -550,10 +577,10 @@ function makeCommentHTML(c) {
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3 ps-1">
-                    <button class="btn btn-sm p-0 text-muted btn-comment-like" data-comment-id="${c.id}">
+                    <button class="btn btn-sm px-2 text-muted btn-comment-like" data-comment-id="${c.id}">
                         <i class="bi bi-heart"></i> <span class="comment-like-count small"></span>
                     </button>
-                    <button class="btn btn-sm p-0 text-muted btn-reply"
+                    <button class="btn btn-sm px-2 text-muted btn-reply"
                             data-comment-id="${c.id}" data-username="${c.username}">
                         <small>回覆</small>
                     </button>
@@ -561,7 +588,7 @@ function makeCommentHTML(c) {
                 <div class="reply-box mt-2" id="reply-box-${c.id}" style="display:none;">
                     <div id="quill-reply-${c.id}" class="quill-comment-editor mb-1"></div>
                     <div class="d-flex justify-content-end gap-1 mt-1">
-                        <button class="btn btn-primary btn-sm btn-submit-reply"
+                        <button class="btn btn-glow-primary btn-sm btn-submit-reply"
                                 data-form-id="${FORM_ID}" data-parent-id="${c.id}">
                             <i class="bi bi-send"></i> 送出
                         </button>
@@ -574,7 +601,7 @@ function makeCommentHTML(c) {
                 <div class="edit-box mt-2" id="edit-box-${c.id}" style="display:none;">
                     <div id="quill-edit-${c.id}" class="quill-comment-editor mb-1"></div>
                     <div class="d-flex justify-content-end gap-1 mt-1">
-                        <button class="btn btn-primary btn-sm btn-submit-edit" data-comment-id="${c.id}">
+                        <button class="btn btn-glow-primary btn-sm btn-submit-edit" data-comment-id="${c.id}">
                             <i class="bi bi-check-lg"></i> 儲存
                         </button>
                         <button class="btn btn-outline-secondary btn-sm btn-cancel-edit"

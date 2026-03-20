@@ -93,12 +93,12 @@ require_once 'config/header.php';
 <!-- 操作按鈕（卡片外） -->
 <div class="mb-4 d-flex justify-content-center gap-2">
     <?php if ($cur_uid && $cur_uid != $profile_uid): ?>
-        <button class="btn btn-primary btn-sm"
+        <button class="btn btn-glow-primary btn-sm"
                 onclick="openChatWith(<?= $profile_uid ?>, '<?= addslashes(htmlspecialchars($pu['username'])) ?>', '<?= addslashes($pu['avatar'] ?? '') ?>')">
             <i class="bi bi-chat me-1"></i> 聊天
         </button>
     <?php elseif ($cur_uid == $profile_uid): ?>
-        <a href="/member/settings.php" class="btn-glow-dark" style="display:inline-flex;padding:6px 16px;font-size:0.875rem;border-radius:10px;">
+        <a href="/member/settings.php" class="btn btn-glow-primary">
             <i class="bi bi-pencil me-1"></i> 編輯個人資料
         </a>
     <?php endif; ?>
@@ -141,7 +141,7 @@ require_once 'config/header.php';
                 </div>
                 <div class="card-footer bg-transparent">
                     <?php if (!$form['end_date'] || $form['end_date'] >= $now): ?>
-                        <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-primary btn-sm w-100">
+                        <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
                             <i class="bi bi-pencil"></i> 填寫表單
                         </a>
                     <?php else: ?>

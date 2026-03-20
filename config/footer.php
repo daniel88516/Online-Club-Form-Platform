@@ -7,9 +7,6 @@
     <div class="avd-pop-item" id="avd-go-profile"><i class="bi bi-person"></i> 個人頁面</div>
     <div class="avd-pop-item" id="avd-go-chat"><i class="bi bi-chat"></i> 聊天</div>
 </div>
-<footer class="bg-light text-center text-muted py-3 mt-5 border-top">
-    <small>&copy; <?= date('Y') ?> 線上表單系統</small>
-</footer>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/main.js"></script>

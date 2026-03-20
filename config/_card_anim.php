@@ -166,4 +166,141 @@
         if (this === lastCard) lastCard = null;
     });
 })();
+
+// ══ 全域環境主題引擎（下雪 / 落花 / 星空 / 泡泡）══
+(function () {
+    var KEY = 'ambientTheme';
+    var canvas, ctx, animId, particles = [], theme = 'none';
+    var W = 0, H = 0;
+
+    var CONFIGS = {
+        snow: {
+            count: 90,
+            make: function () {
+                return { x: Math.random() * W, y: Math.random() * H,
+                    r: 1.5 + Math.random() * 3.5, speed: 0.4 + Math.random() * 1.2,
+                    sway: 0.4 + Math.random() * 1.2, ang: Math.random() * Math.PI * 2,
+                    angSpd: 0.006 + Math.random() * 0.012, alpha: 0.5 + Math.random() * 0.5 };
+            },
+            update: function (p) {
+                p.ang += p.angSpd;
+                p.x   += Math.sin(p.ang) * p.sway;
+                p.y   += p.speed;
+                if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+                if (p.x >  W + 10) p.x = -10;
+                if (p.x < -10)     p.x =  W + 10;
+            },
+            draw: function (p) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,' + p.alpha + ')';
+                ctx.fill();
+            }
+        },
+        sakura: {
+            count: 55,
+            make: function () {
+                return { x: Math.random() * W, y: Math.random() * H,
+                    w: 7 + Math.random() * 9, h: 4 + Math.random() * 5,
+                    speed: 0.3 + Math.random() * 0.7, drift: 0.2 + Math.random() * 0.8,
+                    rot: Math.random() * Math.PI * 2, rotSpd: (Math.random() - 0.5) * 0.05,
+                    alpha: 0.5 + Math.random() * 0.45, hue: 338 + Math.random() * 18 };
+            },
+            update: function (p) {
+                p.y += p.speed; p.x += p.drift; p.rot += p.rotSpd;
+                if (p.y > H + 20 || p.x > W + 20) { p.y = -20; p.x = Math.random() * W; }
+            },
+            draw: function (p) {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, p.w, p.h, 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'hsl(' + p.hue + ',85%,82%)';
+                ctx.fill();
+                ctx.restore();
+            }
+        },
+        stars: {
+            count: 120,
+            make: function () {
+                return { x: Math.random() * W, y: Math.random() * H,
+                    r: 0.5 + Math.random() * 1.8, phase: Math.random() * Math.PI * 2,
+                    speed: 0.008 + Math.random() * 0.025 };
+            },
+            update: function (p) { p.phase += p.speed; },
+            draw: function (p) {
+                var a = 0.25 + Math.abs(Math.sin(p.phase)) * 0.75;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')';
+                ctx.fill();
+            }
+        },
+        bubbles: {
+            count: 45,
+            make: function () {
+                return { x: Math.random() * W, y: H + Math.random() * H,
+                    r: 5 + Math.random() * 22, speed: 0.25 + Math.random() * 0.7,
+                    drift: (Math.random() - 0.5) * 0.4, alpha: 0.08 + Math.random() * 0.22 };
+            },
+            update: function (p) {
+                p.y -= p.speed; p.x += p.drift;
+                if (p.y < -p.r * 2) { p.y = H + p.r; p.x = Math.random() * W; }
+            },
+            draw: function (p) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(160,210,255,0.9)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(p.x - p.r * 0.3, p.y - p.r * 0.32, p.r * 0.22, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+    };
+
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+    function clearAll() {
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+        particles = [];
+        if (ctx) ctx.clearRect(0, 0, W, H);
+    }
+
+    function startTheme(t) {
+        clearAll();
+        theme = t;
+        if (t === 'none' || !CONFIGS[t]) return;
+        var cfg = CONFIGS[t];
+        for (var i = 0; i < cfg.count; i++) particles.push(cfg.make());
+        loop();
+    }
+
+    function loop() {
+        var cfg = CONFIGS[theme];
+        if (!cfg) return;
+        ctx.clearRect(0, 0, W, H);
+        for (var i = 0; i < particles.length; i++) { cfg.update(particles[i]); cfg.draw(particles[i]); }
+        animId = requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:100;';
+        document.body.appendChild(canvas);
+        ctx = canvas.getContext('2d');
+        resize();
+        window.addEventListener('resize', resize);
+        startTheme(localStorage.getItem(KEY) || 'none');
+    });
+
+    window.startAmbientTheme = startTheme;
+})();
 </script>

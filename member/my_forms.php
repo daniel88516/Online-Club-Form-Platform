@@ -41,6 +41,7 @@ $created_forms = mysqli_stmt_get_result($stmtC);
 // ── 收藏的表單 ──────────────────────────────────────────────
 $stmtB = mysqli_prepare($conn, "
     SELECT f.id, f.user_id, f.title, f.description, f.end_date, f.is_published, f.show_stats,
+           f.created_at, fb.created_at AS bookmarked_at,
            u.username AS author, u.avatar AS author_avatar,
            COUNT(DISTINCT fr.id)  AS response_count,
            COUNT(DISTINCT fl.id)  AS like_count,
@@ -62,6 +63,7 @@ $bookmarked_forms = mysqli_stmt_get_result($stmtB);
 // ── 按讚的表單 ──────────────────────────────────────────────
 $stmtL = mysqli_prepare($conn, "
     SELECT f.id, f.user_id, f.title, f.description, f.end_date, f.is_published, f.show_stats,
+           f.created_at, fli.created_at AS liked_at,
            u.username AS author, u.avatar AS author_avatar,
            COUNT(DISTINCT fr.id)  AS response_count,
            COUNT(DISTINCT flc.id) AS like_count,
@@ -74,7 +76,7 @@ $stmtL = mysqli_prepare($conn, "
     LEFT JOIN form_bookmarks fb  ON f.id = fb.form_id
     WHERE fli.user_id = ?
     GROUP BY f.id
-    ORDER BY f.created_at DESC
+    ORDER BY fli.created_at DESC
 ");
 mysqli_stmt_bind_param($stmtL, 'i', $uid);
 mysqli_stmt_execute($stmtL);
@@ -121,23 +123,36 @@ require_once '../config/header.php';
 <?php if ($tab === 'created'): ?>
 <!-- ════════════════ 建立的表單 ════════════════ -->
 
-<!-- 即時搜尋 -->
-<div class="mb-3 position-relative">
-    <i class="bi bi-search position-absolute text-muted" style="left:.75rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:.9rem;"></i>
-    <input type="text" id="search-input" class="form-control ps-4" placeholder="搜尋表單標題...">
+<!-- 搜尋 + 排序 光影框 -->
+<div class="glow-sort-bar mb-3">
+    <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+    <input type="text" id="search-input" class="form-control ps-1" placeholder="搜尋表單標題...">
+    <div class="sort-divider"></div>
+    <i class="bi bi-sort-down-alt text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+    <select id="sort-select" class="form-select" style="width:auto;min-width:120px;">
+        <option value="date_desc">最新建立</option>
+        <option value="date_asc">最舊建立</option>
+        <option value="resp_desc">回應最多</option>
+        <option value="like_desc">按讚最多</option>
+        <option value="title_asc">標題 A→Z</option>
+    </select>
 </div>
 
 <?php if (mysqli_num_rows($created_forms) === 0): ?>
     <div class="text-center py-5 text-muted" id="tab-empty">
         <i class="bi bi-journal-plus" style="font-size:3rem;"></i>
         <p class="mt-3">還沒有建立任何表單</p>
-        <a href="/member/create_form.php" class="btn btn-primary btn-sm">建立第一個表單</a>
+        <a href="/member/create_form.php" class="btn btn-glow-primary btn-sm">建立第一個表單</a>
     </div>
 <?php else: ?>
     <div class="row g-3" id="cards-container">
         <?php while ($form = mysqli_fetch_assoc($created_forms)): ?>
         <div class="col-md-6 form-card-item" id="cr-col-<?= $form['id'] ?>"
-             data-search="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
+             data-search="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
+             data-date="<?= strtotime($form['created_at']) ?>"
+             data-resp="<?= $form['response_count'] ?>"
+             data-like="<?= $form['like_count'] ?>"
+             data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
             <div class="card h-100">
                 <div class="card-body">
                     <!-- 狀態 + 三連點 -->
@@ -218,7 +233,7 @@ require_once '../config/header.php';
                 </div>
                 <?php if ($form['is_published'] && (!$form['end_date'] || $form['end_date'] >= $now)): ?>
                 <div class="card-footer bg-transparent">
-                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-primary btn-sm w-100">
+                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
                         <i class="bi bi-pencil"></i> 填寫表單
                     </a>
                 </div>
@@ -236,23 +251,37 @@ require_once '../config/header.php';
 <?php elseif ($tab === 'bookmarks'): ?>
 <!-- ════════════════ 收藏的表單 ════════════════ -->
 
-<!-- 即時搜尋 -->
-<div class="mb-3 position-relative">
-    <i class="bi bi-search position-absolute text-muted" style="left:.75rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:.9rem;"></i>
-    <input type="text" id="search-input" class="form-control ps-4" placeholder="搜尋表單標題...">
+<!-- 搜尋 + 排序 光影框 -->
+<div class="glow-sort-bar mb-3">
+    <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+    <input type="text" id="search-input" class="form-control ps-1" placeholder="搜尋表單標題...">
+    <div class="sort-divider"></div>
+    <i class="bi bi-sort-down-alt text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+    <select id="sort-select" class="form-select" style="width:auto;min-width:120px;">
+        <option value="bookmarked_desc">最新收藏</option>
+        <option value="bookmarked_asc">最舊收藏</option>
+        <option value="resp_desc">回應最多</option>
+        <option value="like_desc">按讚最多</option>
+        <option value="title_asc">標題 A→Z</option>
+    </select>
 </div>
 
 <?php if (mysqli_num_rows($bookmarked_forms) === 0): ?>
     <div class="text-center py-5 text-muted" id="tab-empty">
         <i class="bi bi-bookmark" style="font-size:3rem;"></i>
         <p class="mt-3">尚未收藏任何表單</p>
-        <a href="/index.php" class="btn btn-outline-primary btn-sm">去探索表單</a>
+        <a href="/index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
     </div>
 <?php else: ?>
     <div class="row g-3" id="cards-container">
         <?php while ($form = mysqli_fetch_assoc($bookmarked_forms)): ?>
         <div class="col-md-6 form-card-item" id="bk-col-<?= $form['id'] ?>"
-             data-search="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
+             data-search="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
+             data-bookmarked="<?= strtotime($form['bookmarked_at']) ?>"
+             data-date="<?= strtotime($form['created_at']) ?>"
+             data-resp="<?= $form['response_count'] ?>"
+             data-like="<?= $form['like_count'] ?>"
+             data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
             <div class="card h-100">
                 <div class="card-body">
                     <!-- 作者 + 三連點 -->
@@ -327,7 +356,7 @@ require_once '../config/header.php';
                 </div>
                 <?php if ($form['is_published'] && (!$form['end_date'] || $form['end_date'] >= $now)): ?>
                 <div class="card-footer bg-transparent">
-                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-primary btn-sm w-100">
+                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
                         <i class="bi bi-pencil"></i> 填寫表單
                     </a>
                 </div>
@@ -345,23 +374,37 @@ require_once '../config/header.php';
 <?php else: ?>
 <!-- ════════════════ 按讚的表單 ════════════════ -->
 
-<!-- 即時搜尋 -->
-<div class="mb-3 position-relative">
-    <i class="bi bi-search position-absolute text-muted" style="left:.75rem;top:50%;transform:translateY(-50%);pointer-events:none;font-size:.9rem;"></i>
-    <input type="text" id="search-input" class="form-control ps-4" placeholder="搜尋表單標題...">
+<!-- 搜尋 + 排序 光影框 -->
+<div class="glow-sort-bar mb-3">
+    <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+    <input type="text" id="search-input" class="form-control ps-1" placeholder="搜尋表單標題...">
+    <div class="sort-divider"></div>
+    <i class="bi bi-sort-down-alt text-muted flex-shrink-0" style="font-size:.9rem;"></i>
+    <select id="sort-select" class="form-select" style="width:auto;min-width:120px;">
+        <option value="liked_desc">最新按讚</option>
+        <option value="liked_asc">最舊按讚</option>
+        <option value="resp_desc">回應最多</option>
+        <option value="like_desc">按讚最多</option>
+        <option value="title_asc">標題 A→Z</option>
+    </select>
 </div>
 
 <?php if (mysqli_num_rows($liked_forms) === 0): ?>
     <div class="text-center py-5 text-muted" id="tab-empty">
         <i class="bi bi-heart" style="font-size:3rem;"></i>
         <p class="mt-3">尚未對任何表單按讚</p>
-        <a href="/index.php" class="btn btn-outline-primary btn-sm">去探索表單</a>
+        <a href="/index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
     </div>
 <?php else: ?>
     <div class="row g-3" id="cards-container">
         <?php while ($form = mysqli_fetch_assoc($liked_forms)): ?>
         <div class="col-md-6 form-card-item" id="lk-col-<?= $form['id'] ?>"
-             data-search="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
+             data-search="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
+             data-liked="<?= strtotime($form['liked_at']) ?>"
+             data-date="<?= strtotime($form['created_at']) ?>"
+             data-resp="<?= $form['response_count'] ?>"
+             data-like="<?= $form['like_count'] ?>"
+             data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
             <div class="card h-100">
                 <div class="card-body">
                     <!-- 作者 + 三連點 -->
@@ -436,7 +479,7 @@ require_once '../config/header.php';
                 </div>
                 <?php if ($form['is_published'] && (!$form['end_date'] || $form['end_date'] >= $now)): ?>
                 <div class="card-footer bg-transparent">
-                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-primary btn-sm w-100">
+                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
                         <i class="bi bi-pencil"></i> 填寫表單
                     </a>
                 </div>
@@ -481,6 +524,27 @@ $('#search-input').on('input', function () {
         if (match) visible++;
     });
     $('#no-results').toggleClass('d-none', visible > 0 || !q);
+});
+
+// ── 排序 ──
+$('#sort-select').on('change', function () {
+    const mode = $(this).val();
+    const $container = $('#cards-container');
+    const $items = $container.children('.form-card-item').toArray();
+    $items.sort(function (a, b) {
+        const $a = $(a), $b = $(b);
+        if (mode === 'date_desc')       return $b.data('date')       - $a.data('date');
+        if (mode === 'date_asc')        return $a.data('date')       - $b.data('date');
+        if (mode === 'resp_desc')       return $b.data('resp')       - $a.data('resp');
+        if (mode === 'like_desc')       return $b.data('like')       - $a.data('like');
+        if (mode === 'bookmarked_desc') return $b.data('bookmarked') - $a.data('bookmarked');
+        if (mode === 'bookmarked_asc')  return $a.data('bookmarked') - $b.data('bookmarked');
+        if (mode === 'liked_desc')      return $b.data('liked')      - $a.data('liked');
+        if (mode === 'liked_asc')       return $a.data('liked')      - $b.data('liked');
+        if (mode === 'title_asc') return $a.data('title').localeCompare($b.data('title'), 'zh-Hant');
+        return 0;
+    });
+    $container.append($items);
 });
 
 // ── 預覽表單 ──

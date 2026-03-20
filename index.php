@@ -28,29 +28,53 @@ $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_d
         ORDER BY f.created_at DESC";
 
 $forms = mysqli_query($conn, $sql);
+$showNavSearch = true;
 require_once 'config/header.php';
 ?>
 
 <div class="row justify-content-center">
     <div class="col-lg-7">
 
-        <!-- 頂部標題列 -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0"><i class="bi bi-house-door"></i> 最新動態</h5>
+        <!-- 標題 = 排序下拉選單 -->
+        <div class="mb-3">
+            <div class="dropdown">
+                <button class="btn ps-0 fw-bold dropdown-toggle" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-house-door"></i> <span id="sort-label-text">最新動態</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><button class="dropdown-item sort-opt active" data-mode="date_desc"><i class="bi bi-clock-history me-2 text-primary"></i>最新動態</button></li>
+                    <li><button class="dropdown-item sort-opt" data-mode="date_asc"><i class="bi bi-clock me-2 text-secondary"></i>最舊動態</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item sort-opt" data-mode="resp_desc"><i class="bi bi-people me-2 text-info"></i>回應最多</button></li>
+                    <li><button class="dropdown-item sort-opt" data-mode="like_desc"><i class="bi bi-heart me-2 text-danger"></i>按讚最多</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item sort-opt" data-mode="title_asc"><i class="bi bi-sort-alpha-down me-2 text-success"></i>標題 A→Z</button></li>
+                </ul>
+            </div>
         </div>
 
         <?php if (mysqli_num_rows($forms) === 0): ?>
-            <div class="text-center py-5 text-muted">
+            <div class="text-center py-5 text-muted" id="feed-empty-state">
                 <i class="bi bi-inbox" style="font-size:3rem;"></i>
                 <p class="mt-3">目前沒有公開表單</p>
                 <?php if (!isLoggedIn()): ?>
-                    <a href="/login.php" class="btn btn-outline-primary">登入後新增表單</a>
+                    <a href="/login.php" class="btn btn-glow-primary">登入後新增表單</a>
                 <?php endif; ?>
             </div>
         <?php else: ?>
+        <div id="feed-no-results" class="text-center py-4 text-muted d-none">
+            <i class="bi bi-search" style="font-size:2rem;"></i>
+            <p class="mt-2">找不到符合的表單</p>
+        </div>
 
+        <div id="feed-container">
         <?php while ($form = mysqli_fetch_assoc($forms)): ?>
-        <div class="card mb-4" id="form-card-<?= $form['id'] ?>">
+        <div class="card mb-4 feed-card-item" id="form-card-<?= $form['id'] ?>"
+             data-date="<?= strtotime($form['created_at']) ?>"
+             data-resp="<?= $form['response_count'] ?>"
+             data-like="<?= $form['like_count'] ?>"
+             data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
             <!-- 作者資訊 header -->
             <div class="card-header d-flex align-items-center gap-2 py-2">
                 <?= renderAvatarDropdown($form['author'], $form['author_avatar'], $form['user_id'], 40, $user_id) ?>
@@ -146,7 +170,7 @@ require_once 'config/header.php';
                     <i class="bi bi-lock"></i> 已截止，無法填寫
                 </button>
                 <?php else: ?>
-                <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn-glow-dark w-100 mb-3">
+                <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3">
                     <i class="bi bi-pencil"></i> 填寫表單
                 </a>
                 <?php endif; ?>
@@ -191,6 +215,7 @@ require_once 'config/header.php';
                  id="feed-comments-<?= $form['id'] ?>" style="display:none;"></div>
         </div>
         <?php endwhile; ?>
+        </div><!-- /#feed-container -->
 
         <?php endif; ?>
     </div>
@@ -198,6 +223,52 @@ require_once 'config/header.php';
 
 
 <script>
+// ── Navbar 搜尋框 顯示/隱藏 ──
+$('#nav-search-toggle').on('click', function () {
+    $('#nav-search-box').removeClass('d-none');
+    $('#nav-search-input').focus();
+});
+$('#nav-search-close').on('click', function () {
+    $('#nav-search-input').val('').trigger('input');
+    $('#nav-search-box').addClass('d-none');
+});
+
+// ── 首頁搜尋 ──
+$('#nav-search-input').on('input', function () {
+    const q = $(this).val().toLowerCase().trim();
+    let visible = 0;
+    $('.feed-card-item').each(function () {
+        const match = !q || $(this).data('title').includes(q);
+        $(this).toggle(match);
+        if (match) visible++;
+    });
+    $('#feed-no-results').toggleClass('d-none', visible > 0 || !q);
+});
+
+// ── 首頁排序 ──
+function feedSort(mode) {
+    const $container = $('#feed-container');
+    const $items = $container.children('.feed-card-item').toArray();
+    $items.sort(function (a, b) {
+        const $a = $(a), $b = $(b);
+        if (mode === 'date_desc') return $b.data('date') - $a.data('date');
+        if (mode === 'date_asc')  return $a.data('date') - $b.data('date');
+        if (mode === 'resp_desc') return $b.data('resp') - $a.data('resp');
+        if (mode === 'like_desc') return $b.data('like') - $a.data('like');
+        if (mode === 'title_asc') return $a.data('title').localeCompare($b.data('title'), 'zh-Hant');
+        return 0;
+    });
+    $container.append($items);
+}
+$(document).on('click', '.sort-opt', function () {
+    const mode = $(this).data('mode');
+    const label = $(this).text().trim();
+    $('.sort-opt').removeClass('active');
+    $(this).addClass('active');
+    $('#sort-label-text').text(label);
+    feedSort(mode);
+});
+
 // 按讚
 $(document).on('click', '.btn-like', function () {
     const btn = $(this);

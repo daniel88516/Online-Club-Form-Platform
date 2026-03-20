@@ -39,7 +39,7 @@ require_once '../config/header.php';
     <div class="text-center py-5 text-muted">
         <i class="bi bi-bookmark" style="font-size:3rem;"></i>
         <p class="mt-3">尚未收藏任何表單</p>
-        <a href="/index.php" class="btn btn-outline-primary btn-sm">去探索表單</a>
+        <a href="/index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
     </div>
 <?php else: ?>
     <div class="row g-3">
@@ -66,7 +66,7 @@ require_once '../config/header.php';
                 </div>
                 <div class="card-footer bg-transparent d-flex gap-2">
                     <?php if ($form['is_published'] && (!$form['end_date'] || $form['end_date'] >= $now)): ?>
-                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
+                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm flex-grow-1">
                         <i class="bi bi-pencil"></i> 填寫
                     </a>
                     <?php endif; ?>

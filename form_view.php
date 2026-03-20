@@ -164,11 +164,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <i class="bi bi-eye-fill"></i>
             <span class="small">預覽模式 — 此頁面為草稿預覽，表單提交功能已停用</span>
         </div>
-        <?php else: ?>
-        <!-- 返回首頁（定位到該表單） -->
-        <a href="/index.php#form-card-<?= $id ?>" class="btn-glow-dark mb-3" style="display:inline-flex;padding:6px 16px;font-size:0.875rem;border-radius:10px;">
-            <i class="bi bi-arrow-left"></i> 返回
-        </a>
         <?php endif; ?>
 
         <?php if ($success): ?>
@@ -177,7 +172,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-check-circle text-success" style="font-size:4rem;"></i>
                     <h4 class="mt-3 fw-bold">填答完成！</h4>
                     <p class="text-muted">感謝您的填答</p>
-                    <a href="/index.php#form-card-<?= $id ?>" class="btn btn-primary mt-2">返回首頁</a>
+                    <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+                        <button onclick="history.back()" class="btn btn-glow-primary">
+                            <i class="bi bi-pencil-square me-1"></i> 修改上一個表單
+                        </button>
+                        <a href="/index.php" class="btn btn-glow-dark">
+                            <i class="bi bi-house me-1"></i> 回到首頁
+                        </a>
+                    </div>
                 </div>
             </div>
         <?php else: ?>
@@ -291,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
 
                 <div class="d-grid mb-4">
-                    <button type="submit" class="btn-glow-dark w-100" <?= $preview ? 'disabled title="預覽模式，無法提交"' : '' ?>>
+                    <button type="submit" class="btn btn-glow-primary w-100" <?= $preview ? 'disabled title="預覽模式，無法提交"' : '' ?>>
                         <i class="bi bi-send"></i> 提交
                     </button>
                 </div>

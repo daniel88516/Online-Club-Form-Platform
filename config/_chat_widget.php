@@ -11,17 +11,17 @@
 #chat-toggle-btn {
     width: 72px; height: 72px;
     border-radius: 50%;
-    background: var(--bs-primary, #0d6efd);
-    color: var(--bs-primary-text, #fff);
-    border: 2px solid rgba(255,255,255,0.45);
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.15);
+    color: #fff;
+    border: none;
     font-size: 2rem;
-    box-shadow: 0 4px 16px rgba(var(--bs-primary-rgb, 13,110,253),.45);
+    box-shadow: 0 0 22px rgba(var(--bs-primary-rgb, 13,110,253), 0.60), 0 0 55px rgba(var(--bs-primary-rgb, 13,110,253), 0.25);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     position: relative;
-    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    transition: transform .15s ease, box-shadow .15s ease;
 }
-#chat-toggle-btn:hover { filter: brightness(0.88); transform: scale(1.1); box-shadow: 0 6px 22px rgba(var(--bs-primary-rgb, 13,110,253),.55); }
+#chat-toggle-btn:hover { transform: scale(1.1); box-shadow: 0 0 32px rgba(var(--bs-primary-rgb, 13,110,253), 0.80), 0 0 70px rgba(var(--bs-primary-rgb, 13,110,253), 0.38); }
 #chat-unread-badge {
     position: absolute;
     top: -2px; right: -2px;
@@ -149,6 +149,7 @@
     display: flex;
     gap: 6px;
     flex-shrink: 0;
+    position: relative;
 }
 #chat-input-area textarea {
     flex: 1;
@@ -192,6 +193,11 @@
     align-items: flex-end;
     gap: 4px;
 }
+/* 自己的訊息：row 撐滿後 flex-end，bubble 永遠貼右邊 */
+.chat-bubble-wrap.me .chat-bubble-row {
+    width: 100%;
+    justify-content: flex-end;
+}
 .msg-del-btn {
     opacity: 0;
     pointer-events: none;
@@ -217,6 +223,94 @@
     color: var(--bs-danger, #dc3545);
     background: var(--bs-secondary-bg);
 }
+
+/* ── Emoji / Sticker Picker ── */
+.chat-picker-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: none;
+    border: none;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 1.05rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color .15s, background .15s;
+    align-self: center;
+}
+.chat-picker-btn:hover { color: var(--bs-primary); background: var(--bs-secondary-bg); }
+.chat-picker-btn.active { color: var(--bs-primary); }
+.chat-picker-panel {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    width: 276px;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    padding: 10px;
+    display: none;
+    z-index: 20;
+}
+.chat-picker-panel.open { display: block; }
+.chat-picker-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.chat-picker-tab {
+    flex: 1;
+    padding: 4px 0;
+    font-size: 0.78rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    color: var(--bs-secondary-color);
+    transition: background .1s, color .1s;
+}
+.chat-picker-tab.active { background: var(--bs-primary); color: #fff; border-color: var(--bs-primary); }
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+}
+.emoji-item {
+    font-size: 1.25rem;
+    cursor: pointer;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: 6px;
+    line-height: 1.4;
+    transition: background .1s;
+}
+.emoji-item:hover { background: var(--bs-secondary-bg); }
+.sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+}
+.sticker-item {
+    font-size: 2rem;
+    cursor: pointer;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 8px;
+    line-height: 1.2;
+    transition: background .12s, transform .1s;
+}
+.sticker-item:hover { background: var(--bs-secondary-bg); transform: scale(1.18); }
+/* 貼圖泡泡：透明背景，大 emoji */
+.chat-bubble.sticker {
+    background: transparent !important;
+    padding: 2px 4px !important;
+    font-size: 3rem;
+    line-height: 1.1;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.chat-bubble.sticker .time { font-size: 0.62rem; opacity: .6; margin-top: 2px; }
 </style>
 
 <div id="chat-widget">
@@ -255,7 +349,18 @@
             <div id="chat-msg-body"></div>
             <div id="chat-input-area">
                 <textarea id="chat-input" rows="1" placeholder="輸入訊息…"></textarea>
+                <button class="chat-picker-btn" id="chat-emoji-btn" title="表情 / 貼圖"><i class="bi bi-emoji-smile"></i></button>
                 <button id="chat-send-btn"><i class="bi bi-send-fill"></i></button>
+                <!-- 表情 / 貼圖選擇器 -->
+                <div class="chat-picker-panel" id="chat-picker-panel">
+                    <div class="chat-picker-tabs">
+                        <button class="chat-picker-tab active" id="tab-emoji">😀 表情</button>
+                        <button class="chat-picker-tab" id="tab-sticker">🖼 貼圖</button>
+                        <button class="chat-close-btn" id="picker-close-btn" title="關閉" style="margin-left:auto;"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div id="picker-emoji-grid" class="emoji-grid"></div>
+                    <div id="picker-sticker-grid" class="sticker-grid" style="display:none;"></div>
+                </div>
             </div>
         </div>
 
@@ -428,6 +533,28 @@
             </div>`;
         }
 
+        // 貼圖偵測
+        const stickerMatch = msg.content.match(/^\[sticker:([\s\S]+)\]$/);
+        if (stickerMatch) {
+            if (isDeleted(msg.id)) return '';
+            const emo = $('<span>').text(stickerMatch[1]).html();
+            if (isMe) {
+                return `<div class="chat-bubble-wrap me" data-msg-id="${msg.id}">
+                    <div class="chat-bubble-row">
+                        <button class="msg-del-btn" data-del-id="${msg.id}" title="刪除訊息"><i class="bi bi-trash3"></i></button>
+                        <div class="chat-bubble me sticker">${emo}<div class="time">${msg.created_at}</div></div>
+                    </div>
+                    <span class="read-receipt">已讀</span>
+                </div>`;
+            }
+            return `<div class="chat-bubble-wrap" data-msg-id="${msg.id}">
+                <div class="chat-bubble-row">
+                    <div class="chat-bubble other sticker">${emo}<div class="time">${msg.created_at}</div></div>
+                    <button class="msg-del-btn" data-del-id="${msg.id}" title="刪除訊息"><i class="bi bi-trash3"></i></button>
+                </div>
+            </div>`;
+        }
+
         const text = $('<span>').text(msg.content).html().replace(/\n/g, '<br>');
         if (isMe) {
             if (isDeleted(msg.id)) return '';   // 已被視覺刪除，不渲染
@@ -524,6 +651,80 @@
     $('#chat-send-btn').on('click', sendMessage);
     $('#chat-input').on('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    // ── Emoji / Sticker Picker ──
+    const EMOJIS = [
+        '😀','😂','🥰','😍','😎','🥳','😭','😡','🤔','🤩',
+        '😴','🥺','🤣','😅','😬','😱','👍','👎','❤️','🔥',
+        '💯','🎉','🙏','💪','✨','💀','👀','🤝','🫶','💔',
+        '🌟','🤯'
+    ];
+    const STICKERS = [
+        '🥰','😍','🤩','🥳','😊',
+        '😭','😤','🤬','😱','🥹',
+        '👍','👏','🙏','💪','🫶',
+        '❤️','🔥','💯','🎉','🌟',
+        '🐱','🐶','🐼','🦊','🐸'
+    ];
+
+    // 初始化格子
+    $('#picker-emoji-grid').html(EMOJIS.map(e => `<span class="emoji-item">${e}</span>`).join(''));
+    $('#picker-sticker-grid').html(STICKERS.map(s => `<span class="sticker-item">${s}</span>`).join(''));
+
+    // 分頁切換
+    let pickerTab = 'emoji';
+    $('#tab-emoji').on('click', function () {
+        pickerTab = 'emoji';
+        $(this).addClass('active'); $('#tab-sticker').removeClass('active');
+        $('#picker-emoji-grid').show(); $('#picker-sticker-grid').hide();
+    });
+    $('#tab-sticker').on('click', function () {
+        pickerTab = 'sticker';
+        $(this).addClass('active'); $('#tab-emoji').removeClass('active');
+        $('#picker-sticker-grid').show(); $('#picker-emoji-grid').hide();
+    });
+
+    // 開關 picker
+    function closePicker() {
+        $('#chat-picker-panel').removeClass('open');
+        $('#chat-emoji-btn').removeClass('active');
+    }
+    $('#chat-emoji-btn').on('click', function (e) {
+        e.stopPropagation();
+        const isOpen = $('#chat-picker-panel').hasClass('open');
+        closePicker();
+        if (!isOpen) { $('#chat-picker-panel').addClass('open'); $(this).addClass('active'); }
+    });
+    $(document).on('click', function () { closePicker(); });
+    $('#chat-picker-panel').on('click', function (e) { e.stopPropagation(); });
+
+    // 叉叉關閉
+    $('#picker-close-btn').on('click', function (e) { e.stopPropagation(); closePicker(); });
+
+    // Emoji → 插入到輸入框（不自動關閉）
+    $('#picker-emoji-grid').on('click', '.emoji-item', function () {
+        const emoji = $(this).text();
+        const $inp  = $('#chat-input')[0];
+        const s = $inp.selectionStart, e2 = $inp.selectionEnd;
+        const val = $inp.value;
+        $inp.value = val.slice(0, s) + emoji + val.slice(e2);
+        $inp.setSelectionRange(s + emoji.length, s + emoji.length);
+        $inp.focus();
+    });
+
+    // Sticker → 直接送出（不自動關閉）
+    $('#picker-sticker-grid').on('click', '.sticker-item', function () {
+        const sticker = $(this).text().trim();
+        if (!currentWith) return;
+        const content = `[sticker:${sticker}]`;
+        $.post('/api/send_message.php', { receiver_id: currentWith, content: content }, function (res) {
+            if (res.success) {
+                $msgBody.append(buildBubble({ id: res.message_id, sender_id: ME, content: content, created_at: res.created_at }));
+                lastMsgId = res.message_id;
+                $msgBody.scrollTop($msgBody[0].scrollHeight);
+            }
+        }, 'json');
     });
 
     // 輪詢
