@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['confirm_password'] ?? '';
-    $group_id = intval($_POST['group_id'] ?? 1);
+    $group_id = 1; // 預設加入「一般」群組
 
     // 驗證
     if (empty($username) || empty($email) || empty($password) || empty($confirm)) {
@@ -52,8 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 取得群組列表
-$groups = mysqli_query($conn, "SELECT id, name FROM `groups` ORDER BY id");
 
 require_once 'config/header.php';
 ?>
@@ -87,21 +85,15 @@ require_once 'config/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                        <input type="email" name="email" class="form-control"
+                        <input type="text" name="email" id="email" class="form-control"
                                placeholder="example@email.com" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">群組</label>
-                        <select name="group_id" class="form-select">
-                            <?php while ($g = mysqli_fetch_assoc($groups)): ?>
-                                <option value="<?= $g['id'] ?>"><?= htmlspecialchars($g['name']) ?></option>
-                            <?php endwhile; ?>
-                        </select>
+                        <div id="email-feedback" class="form-text"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">密碼 <span class="text-danger">*</span></label>
                         <input type="password" name="password" id="password" class="form-control"
                                placeholder="至少 6 字元" required minlength="6">
+                        <div id="password-feedback" class="form-text"></div>
                     </div>
                     <div class="mb-4">
                         <label class="form-label fw-semibold">確認密碼 <span class="text-danger">*</span></label>
@@ -109,7 +101,7 @@ require_once 'config/header.php';
                                placeholder="再輸入一次密碼" required>
                         <div id="confirm-feedback" class="form-text"></div>
                     </div>
-                    <button type="submit" class="btn btn-glow-primary w-100">
+                    <button type="submit" class="btn btn-success w-100">
                         <i class="bi bi-person-check"></i> 註冊
                     </button>
                 </form>
@@ -122,48 +114,138 @@ require_once 'config/header.php';
 </div>
 
 <script>
+// 輔助函式
+function setValid($input, $feedback, msg) {
+    $input.removeClass('is-invalid').addClass('is-valid');
+    $feedback.text(msg).removeClass('text-danger').addClass('text-success');
+}
+function setInvalid($input, $feedback, msg) {
+    $input.removeClass('is-valid').addClass('is-invalid');
+    $feedback.text(msg).removeClass('text-success').addClass('text-danger');
+}
+function clearState($input, $feedback) {
+    $input.removeClass('is-valid is-invalid');
+    $feedback.text('').removeClass('text-success text-danger');
+}
+
 $(document).ready(function () {
-    // Ajax 即時檢查帳號
-    let usernameTimer;
-    $('#username').on('input', function () {
-        clearTimeout(usernameTimer);
+
+    // 1. 帳號 - focus 清除 / blur 驗證 + Ajax 檢查
+    $('#username').on('focus', function () {
+        clearState($(this), $('#username-feedback'));
+    }).on('blur', function () {
         const val = $(this).val().trim();
-        if (val.length < 3) {
-            $('#username-feedback').text('').removeClass('text-success text-danger');
+        const $el = $(this);
+        if (val.length < 3 || val.length > 20) {
+            setInvalid($el, $('#username-feedback'), '帳號長度需為 3-20 字元');
             return;
         }
-        usernameTimer = setTimeout(function () {
-            $.ajax({
-                url: '/api/check_username.php',
-                type: 'POST',
-                data: { username: val },
-                success: function (res) {
-                    if (res.exists) {
-                        $('#username-feedback').text('此帳號已被使用').removeClass('text-success').addClass('text-danger');
-                    } else {
-                        $('#username-feedback').text('帳號可使用').removeClass('text-danger').addClass('text-success');
-                    }
+        $.ajax({
+            url: '/api/check_username.php',
+            type: 'POST',
+            data: { username: val },
+            success: function (res) {
+                if (res.exists) {
+                    setInvalid($el, $('#username-feedback'), '此帳號已被使用');
+                } else {
+                    setValid($el, $('#username-feedback'), '帳號可使用');
                 }
-            });
-        }, 500);
+            },
+            error: function () {
+                setInvalid($el, $('#username-feedback'), '檢查失敗，請稍後再試');
+            }
+        });
     });
 
-    // 即時確認密碼比對
-    $('#confirm_password').on('input', function () {
-        if ($(this).val() !== $('#password').val()) {
-            $('#confirm-feedback').text('兩次密碼不一致').addClass('text-danger').removeClass('text-success');
+    // 2. Email - focus 清除 / blur 驗證 + Ajax 檢查
+    $('#email').on('focus', function () {
+        clearState($(this), $('#email-feedback'));
+    }).on('blur', function () {
+        const val = $(this).val().trim();
+        const $el = $(this);
+        if (val.length === 0) {
+            clearState($el, $('#email-feedback'));
+            return;
+        }
+        $.ajax({
+            url: '/api/check_email.php',
+            type: 'POST',
+            data: { email: val },
+            success: function (res) {
+                if (!res.valid) {
+                    setInvalid($el, $('#email-feedback'), 'Email 格式不正確');
+                } else if (res.exists) {
+                    setInvalid($el, $('#email-feedback'), '此 Email 已被使用');
+                } else {
+                    setValid($el, $('#email-feedback'), 'Email 可使用');
+                }
+            },
+            error: function () {
+                setInvalid($el, $('#email-feedback'), '檢查失敗，請稍後再試');
+            }
+        });
+    });
+
+    // 3. 密碼 - focus 清除 / input 即時長度驗證 (is-valid/is-invalid)
+    $('#password').on('focus', function () {
+        clearState($(this), $('#password-feedback'));
+    }).on('input', function () {
+        const val = $(this).val();
+        const $el = $(this);
+        if (val.length === 0) {
+            clearState($el, $('#password-feedback'));
+        } else if (val.length < 6) {
+            setInvalid($el, $('#password-feedback'), '密碼至少需要 6 字元');
         } else {
-            $('#confirm-feedback').text('密碼一致').removeClass('text-danger').addClass('text-success');
+            setValid($el, $('#password-feedback'), '密碼長度符合');
+        }
+        if ($('#confirm_password').val().length > 0) {
+            $('#confirm_password').trigger('input');
         }
     });
 
-    // 表單送出前驗證
-    $('#registerForm').on('submit', function (e) {
-        if ($('#confirm_password').val() !== $('#password').val()) {
-            e.preventDefault();
-            alert('兩次密碼不一致，請重新確認');
+    // 4. 確認密碼 - focus 清除 / input 即時比對 (is-valid/is-invalid)
+    $('#confirm_password').on('focus', function () {
+        clearState($(this), $('#confirm-feedback'));
+    }).on('input', function () {
+        const $el = $(this);
+        if ($('#password').val().length < 6) {
+            setInvalid($el, $('#confirm-feedback'), '請先設定好密碼（至少 6 字元）');
+        } else if ($(this).val() !== $('#password').val()) {
+            setInvalid($el, $('#confirm-feedback'), '兩次密碼不一致');
+        } else {
+            setValid($el, $('#confirm-feedback'), '密碼一致');
         }
     });
+
+    // 5. 送出前完整驗證
+    $('#registerForm').on('submit', function (e) {
+        let valid = true;
+        const username = $('#username').val().trim();
+        const email    = $('#email').val().trim();
+        const password = $('#password').val();
+        const confirm  = $('#confirm_password').val();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (username.length < 3 || username.length > 20) {
+            setInvalid($('#username'), $('#username-feedback'), '帳號長度需為 3-20 字元');
+            valid = false;
+        }
+        if (!emailRegex.test(email)) {
+            setInvalid($('#email'), $('#email-feedback'), 'Email 格式不正確');
+            valid = false;
+        }
+        if (password.length < 6) {
+            setInvalid($('#password'), $('#password-feedback'), '密碼至少需要 6 字元');
+            valid = false;
+        }
+        if (password !== confirm) {
+            setInvalid($('#confirm_password'), $('#confirm-feedback'), '兩次密碼不一致');
+            valid = false;
+        }
+        if (!valid) e.preventDefault();
+    });
+
 });
 </script>
 
