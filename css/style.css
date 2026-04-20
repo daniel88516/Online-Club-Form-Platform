@@ -646,6 +646,15 @@ html:not([data-bs-theme="dark"]) .btn.btn-glow-green:hover {
     background: transparent !important;
     color: #e0e0e0;
 }
+/* select option 底色跟隨主題 */
+.glow-sort-bar .form-select option {
+    background: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+}
+[data-bs-theme="dark"] .glow-sort-bar .form-select option {
+    background: #1e1e1e;
+    color: #e0e0e0;
+}
 /* 分隔線 */
 .glow-sort-bar .sort-divider {
     width: 1px;
@@ -784,4 +793,16 @@ html:not([data-bs-theme="dark"]) .comment-node:hover:not(:has(.comment-node:hove
     .card {
         border-radius: 8px;
     }
+}
+
+/* ── 搜尋 highlight ── */
+mark.search-hl {
+    background: rgba(var(--bs-warning-rgb), 0.35);
+    color: inherit;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 600;
+}
+[data-bs-theme="dark"] mark.search-hl {
+    background: rgba(var(--bs-warning-rgb), 0.5);
 }

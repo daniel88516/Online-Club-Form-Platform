@@ -4,9 +4,9 @@
     if (c) applyThemeColor(c);
 })();
 
-/* ── 頭像彈出選單（fixed 定位，hover 1秒觸發）── */
+/* ── 頭像彈出選單（fixed 定位，hover 瞬間觸發）── */
 var _avdUid = 0, _avdUname = '', _avdAvatar = '', _avdEl = null;
-var _avdShowTimer = null, _avdHideTimer = null;
+var _avdHideTimer = null;
 
 function _avdPosition() {
     if (!_avdEl) return;
@@ -18,28 +18,9 @@ function _avdPosition() {
         $p.css('left', window.innerWidth - pw - 8);
     }
 }
-// 滑鼠移入頭像：0.5秒後顯示
+// 滑鼠移入頭像：瞬間顯示
 $(document).on('mouseenter', '.avd-wrap', function () {
-    var el = this;
     clearTimeout(_avdHideTimer);
-    _avdShowTimer = setTimeout(function () {
-        _avdEl     = el;
-        _avdUid    = $(el).data('uid');
-        _avdUname  = $(el).data('uname');
-        _avdAvatar = $(el).data('avatar') || '';
-        $('#avd-go-chat').toggle($(el).data('chat') == 1);
-        _avdPosition();
-        $('#avd-popup').show();
-    }, 500);
-});
-// 點擊頭像：popup 已顯示則關閉，否則立即顯示
-$(document).on('click', '.avd-wrap', function (e) {
-    e.stopPropagation();
-    clearTimeout(_avdShowTimer);
-    if ($('#avd-popup').is(':visible') && _avdEl === this) {
-        $('#avd-popup').hide();
-        return;
-    }
     _avdEl     = this;
     _avdUid    = $(this).data('uid');
     _avdUname  = $(this).data('uname');
@@ -48,9 +29,8 @@ $(document).on('click', '.avd-wrap', function (e) {
     _avdPosition();
     $('#avd-popup').show();
 });
-// 滑鼠離開頭像：取消計時、150ms 後關閉（讓使用者有時間移到 popup）
+// 滑鼠離開頭像：150ms 後關閉（讓使用者有時間移到 popup）
 $(document).on('mouseleave', '.avd-wrap', function () {
-    clearTimeout(_avdShowTimer);
     _avdHideTimer = setTimeout(function () { $('#avd-popup').hide(); }, 150);
 });
 // 滑鼠移入 popup：取消關閉計時

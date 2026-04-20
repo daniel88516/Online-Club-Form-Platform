@@ -74,7 +74,8 @@ require_once 'config/header.php';
              data-date="<?= strtotime($form['created_at']) ?>"
              data-resp="<?= $form['response_count'] ?>"
              data-like="<?= $form['like_count'] ?>"
-             data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>">
+             data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
+             data-desc="<?= htmlspecialchars(mb_strtolower(strip_tags($form['description'] ?? ''))) ?>">
             <!-- 作者資訊 header -->
             <div class="card-header d-flex align-items-center gap-2 py-2">
                 <?= renderAvatarDropdown($form['author'], $form['author_avatar'], $form['user_id'], 40, $user_id) ?>
@@ -148,10 +149,10 @@ require_once 'config/header.php';
 
             <!-- 標題與內容 -->
             <div class="card-body pb-2">
-                <h5 class="fw-bold mb-2"><?= htmlspecialchars($form['title']) ?></h5>
+                <h5 class="fw-bold mb-2 feed-title"><?= htmlspecialchars($form['title']) ?></h5>
                 <?php if ($form['description']): ?>
                     <?php $plainDesc = strip_tags($form['description']); ?>
-                    <p class="text-muted mb-2"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
+                    <p class="text-muted mb-2 feed-desc"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
                 <?php endif; ?>
                 <?php if ($form['cover_image']): ?>
                     <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="rounded mb-3 w-100"
@@ -234,14 +235,37 @@ $('#nav-search-close').on('click', function () {
 });
 
 // ── 首頁搜尋 ──
+function escapeReg(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function highlightText($el, q) {
+    const orig = $el.data('orig-text') ?? $el.text();
+    $el.data('orig-text', orig);
+    if (!q) { $el.html(escapeHtml(orig)); return; }
+    const re = new RegExp('(' + escapeReg(q) + ')', 'gi');
+    $el.html(escapeHtml(orig).replace(re, '<mark class="search-hl">$1</mark>'));
+}
+function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 $('#nav-search-input').on('input', function () {
     const q = $(this).val().toLowerCase().trim();
     let visible = 0;
     $('.feed-card-item').each(function () {
-        const match = !q || $(this).data('title').includes(q);
+        const title = $(this).data('title') || '';
+        const desc  = $(this).data('desc')  || '';
+        const match = !q || title.includes(q) || desc.includes(q);
         $(this).toggle(match);
-        if (match) visible++;
+        if (match) {
+            highlightText($(this).find('.feed-title'), q);
+            highlightText($(this).find('.feed-desc'), q);
+            visible++;
+        }
     });
+    if (!q) {
+        $('.feed-title, .feed-desc').each(function () {
+            const orig = $(this).data('orig-text');
+            if (orig !== undefined) $(this).html(escapeHtml(orig));
+        });
+    }
     $('#feed-no-results').toggleClass('d-none', visible > 0 || !q);
 });
 

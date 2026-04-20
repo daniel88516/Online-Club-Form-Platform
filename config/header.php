@@ -38,10 +38,10 @@ require_once __DIR__ . '/session.php';
     <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' - ' : '' ?>線上表單系統</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . '/css/style.css') ?>">
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="/js/theme-color.js"></script>
+    <script src="/js/theme-color.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'].'/js/theme-color.js') ?>"></script>
     <script>(function(){ var c = localStorage.getItem('themeColor'); if (c) applyThemeColor(c); })();</script>
     <style>
         /* ── 導覽列主題切換三段式元件 ── */

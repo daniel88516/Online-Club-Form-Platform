@@ -34,8 +34,6 @@
 }
 #chat-panel {
     position: absolute;
-    bottom: 0;
-    left: -124px;
     width: 320px;
     height: 460px;
     background: var(--bs-body-bg);
@@ -400,6 +398,25 @@
     const $badge       = $('#chat-unread-badge');
     const $navBadge    = $('#nav-msg-badge');
 
+    // 根據按鈕位置決定面板展開方向，盡量水平置中對齊按鈕
+    function positionPanel() {
+        const rect   = document.getElementById('chat-widget').getBoundingClientRect();
+        const btnW   = 72, btnH = 72, panelW = 320, panelH = 460;
+        const vw     = window.innerWidth;
+        const margin = 8;
+        // 水平：以按鈕為中心，超出邊界時夾住
+        let idealLeft = (btnW - panelW) / 2;               // 相對 widget 的理想 left
+        const absLeft = rect.left + idealLeft;              // 轉成視窗絕對座標
+        const clamped = Math.min(Math.max(absLeft, margin), vw - panelW - margin);
+        $panel.css({ left: (clamped - rect.left) + 'px', right: 'auto' });
+        // 垂直：上方夠放就往上展開，否則往下展開
+        if (rect.top >= panelH + margin) {
+            $panel.css({ bottom: '0', top: 'auto' });
+        } else {
+            $panel.css({ top: btnH + 'px', bottom: 'auto' });
+        }
+    }
+
     // 開關面板（拖曳結束後 300ms 內忽略 click，避免拖曳觸發開關）
     $('#chat-toggle-btn').on('click', function () {
         if (window._fabLastDragEnd && Date.now() - window._fabLastDragEnd < 300) return;
@@ -408,6 +425,7 @@
             $panel.removeClass('open');
             stopPoll();
         } else {
+            positionPanel();
             $panel.addClass('open');
             showConvList();
         }
@@ -749,6 +767,7 @@
 
     // 外部觸發：openChatWith(uid, name, avatar)
     window.openChatWith = function (uid, name, avatar) {
+        positionPanel();
         $panel.addClass('open');
         $convView.hide();
         $msgPanel.addClass('active');
