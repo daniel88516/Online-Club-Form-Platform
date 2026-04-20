@@ -137,12 +137,30 @@ require_once '../config/header.php';
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">開始時間</label>
-                        <input type="datetime-local" name="start_date" class="form-control">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold mb-0">開始時間</label>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input time-toggle" type="checkbox" id="start_time_toggle" data-target="start_date">
+                                <label class="form-check-label small" for="start_time_toggle">精確到時間</label>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input type="date" name="start_date" id="start_date" class="form-control">
+                            <button type="button" class="btn btn-outline-secondary native-dp-toggle" data-target="start_date"><i class="bi bi-calendar"></i></button>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">截止時間</label>
-                        <input type="datetime-local" name="end_date" class="form-control">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold mb-0">截止時間</label>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input time-toggle" type="checkbox" id="end_time_toggle" data-target="end_date">
+                                <label class="form-check-label small" for="end_time_toggle">精確到時間</label>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input type="date" name="end_date" id="end_date" class="form-control">
+                            <button type="button" class="btn btn-outline-secondary native-dp-toggle" data-target="end_date"><i class="bi bi-calendar"></i></button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
@@ -440,6 +458,30 @@ Sortable.create(document.getElementById('fields-container'), {
     forceFallback: true,
     fallbackOnBody: true,
     fallbackTolerance: 3
+});
+</script>
+<script>
+$('.time-toggle').on('change', function () {
+    const input = document.getElementById($(this).data('target'));
+    const val = input.value;
+    input.type = this.checked ? 'datetime-local' : 'date';
+    input.value = val.substring(0, this.checked ? 16 : 10);
+});
+
+const _dpOpen = {};
+$(document).on('click', '.native-dp-toggle', function () {
+    const id = $(this).data('target');
+    const input = document.getElementById(id);
+    if (_dpOpen[id]) {
+        input.blur();
+        _dpOpen[id] = false;
+    } else {
+        input.showPicker();
+        _dpOpen[id] = true;
+    }
+});
+$(document).on('blur', 'input[type="datetime-local"], input[type="date"]', function () {
+    _dpOpen[this.id] = false;
 });
 </script>
 <?php require_once '../config/footer.php'; ?>

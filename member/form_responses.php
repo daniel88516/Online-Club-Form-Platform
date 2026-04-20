@@ -36,10 +36,24 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
 $total = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM form_responses WHERE form_id = $id"))['cnt'];
 
 // 每個欄位的答案統計
+$text_types  = ['short_text', 'long_text'];
 $field_stats = [];
 foreach ($fields as $field) {
-    $fid = $field['id'];
-    $answers_result = mysqli_query($conn, "SELECT ra.answer, COUNT(*) AS cnt FROM response_answers ra WHERE ra.field_id = $fid AND ra.answer != '' GROUP BY ra.answer ORDER BY cnt DESC");
+    $fid  = $field['id'];
+    $type = $field['field_type'];
+    if (in_array($type, $text_types)) {
+        // 文字欄位：帶使用者資訊，不 GROUP BY
+        $answers_result = mysqli_query($conn, "
+            SELECT ra.answer, u.id AS user_id, u.username, u.avatar
+            FROM response_answers ra
+            JOIN form_responses fr ON ra.response_id = fr.id
+            LEFT JOIN users u ON fr.user_id = u.id
+            WHERE ra.field_id = $fid AND ra.answer != ''
+            ORDER BY fr.submitted_at DESC
+        ");
+    } else {
+        $answers_result = mysqli_query($conn, "SELECT ra.answer, COUNT(*) AS cnt FROM response_answers ra WHERE ra.field_id = $fid AND ra.answer != '' GROUP BY ra.answer ORDER BY cnt DESC");
+    }
     $answers = [];
     while ($row = mysqli_fetch_assoc($answers_result)) {
         $answers[] = $row;
@@ -49,7 +63,7 @@ foreach ($fields as $field) {
 
 // 詳細填答列表
 $responses_result = mysqli_query($conn, "
-    SELECT fr.id, fr.submitted_at, u.username
+    SELECT fr.id, fr.submitted_at, u.id AS user_id, u.username, u.avatar
     FROM form_responses fr
     LEFT JOIN users u ON fr.user_id = u.id
     WHERE fr.form_id = $id
@@ -107,7 +121,7 @@ var _chartGrid = getComputedStyle(document.documentElement)
         <small class="text-muted">建立者：<?= htmlspecialchars($form['author']) ?></small>
     </div>
     <div class="col-auto">
-        <a href="/member/my_forms.php" class="btn btn-outline-secondary btn-sm">
+        <a href="/member/my_forms.php" class="btn btn-glow-primary">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -241,13 +255,38 @@ var _chartGrid = getComputedStyle(document.documentElement)
             })();
             </script>
 
+        <?php elseif (in_array($field['field_type'], $text_types)): ?>
+            <!-- 簡答/詳答：帶頭像、截斷、可點擊展開 -->
+            <ul class="list-group list-group-flush">
+                <?php foreach (array_slice($stats, 0, 20) as $s): ?>
+                    <?php $isAnon = ($form['anonymous_responses'] ?? 0) || empty($s['username']); ?>
+                    <li class="list-group-item py-2 text-answer-row" style="cursor:pointer;"
+                        data-answer="<?= htmlspecialchars($s['answer'], ENT_QUOTES) ?>"
+                        data-username="<?= $isAnon ? '' : htmlspecialchars($s['username'], ENT_QUOTES) ?>"
+                        data-avatar="<?= $isAnon ? '' : htmlspecialchars($s['avatar'] ?? '', ENT_QUOTES) ?>"
+                        data-uid="<?= $isAnon ? 0 : intval($s['user_id']) ?>">
+                        <div class="d-flex align-items-center gap-2">
+                            <?php if ($isAnon): ?>
+                                <span class="text-muted"><i class="bi bi-incognito"></i></span>
+                            <?php else: ?>
+                                <?= renderAvatarDropdown($s['username'], $s['avatar'] ?? null, $s['user_id'], 24, $_SESSION['user_id'] ?? 0) ?>
+                                <span class="small fw-semibold text-nowrap"><?= htmlspecialchars($s['username']) ?></span>
+                            <?php endif; ?>
+                            <span class="small answer-preview flex-grow-1" style="min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></span>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+                <?php if (count($stats) > 20): ?>
+                    <li class="list-group-item small text-muted py-2">...還有 <?= count($stats) - 20 ?> 筆答案</li>
+                <?php endif; ?>
+            </ul>
         <?php else: ?>
-            <!-- 文字答案列表（簡答/詳答/日期/時間） -->
+            <!-- 文字答案列表（日期/時間） -->
             <ul class="list-group list-group-flush">
                 <?php foreach (array_slice($stats, 0, 10) as $s): ?>
                     <li class="list-group-item small py-2">
-                        <?= nl2br(htmlspecialchars($s['answer'])) ?>
-                        <?php if ($s['cnt'] > 1): ?>
+                        <?= htmlspecialchars($s['answer']) ?>
+                        <?php if (!empty($s['cnt']) && $s['cnt'] > 1): ?>
                             <span class="badge bg-secondary ms-2"><?= $s['cnt'] ?></span>
                         <?php endif; ?>
                     </li>
@@ -260,6 +299,53 @@ var _chartGrid = getComputedStyle(document.documentElement)
     </div>
 </div>
 <?php endforeach; ?>
+
+<!-- 文字答案展開 Modal -->
+<div class="modal fade" id="textAnswerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2" id="tam-user">
+                    <span class="text-muted"><i class="bi bi-incognito"></i> 匿名</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="tam-body" style="white-space:pre-wrap;word-break:break-word;"></div>
+        </div>
+    </div>
+</div>
+<script>
+$(document).on('click', '.text-answer-row', function (e) {
+    if ($(e.target).closest('.avd-wrap').length) return;
+    const answer   = $(this).data('answer');
+    const username = $(this).data('username');
+    const avatar   = $(this).data('avatar');
+
+    if (username) {
+        const img = avatar
+            ? '<img src="' + $('<span>').text(avatar).html() + '" class="rounded-circle" width="32" height="32" style="object-fit:cover;">'
+            : '<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:32px;height:32px;font-size:.85rem;">' + $('<span>').text(username.charAt(0).toUpperCase()).html() + '</div>';
+        $('#tam-user').html('<div class="d-flex align-items-center gap-2">' + img + '<span class="fw-semibold">' + $('<span>').text(username).html() + '</span></div>');
+    } else {
+        $('#tam-user').html('<span class="text-muted"><i class="bi bi-incognito"></i> 匿名</span>');
+    }
+    $('#tam-body').text(answer);
+    new bootstrap.Modal(document.getElementById('textAnswerModal')).show();
+});
+
+// 取第一行顯示，有更多內容時補主題色 ···
+$(function () {
+    $('.answer-preview').each(function () {
+        const answer = $(this).closest('.text-answer-row').data('answer') || '';
+        const firstLine = answer.split('\n')[0];
+        const hasMore = answer.includes('\n') || answer.length > firstLine.length;
+        $(this).text(firstLine);
+        if (hasMore || this.scrollWidth > this.clientWidth + 2) {
+            $(this).append('<span style="color:var(--bs-primary);font-weight:600;font-size:.8rem;">...展開以查看完整回答</span>');
+        }
+    });
+});
+</script>
 
 <!-- 詳細填答記錄 -->
 <h5 class="fw-bold mb-3 mt-4"><i class="bi bi-list-ul"></i> 詳細填答記錄</h5>
@@ -278,10 +364,21 @@ var _chartGrid = getComputedStyle(document.documentElement)
                 <?php $i = 1; while ($r = mysqli_fetch_assoc($responses_result)): ?>
                 <tr>
                     <td><?= $i++ ?></td>
-                    <td><?= ($form['anonymous_responses'] ?? 0) ? '<span class="text-muted fst-italic"><i class="bi bi-incognito"></i> 匿名</span>' : ($r['username'] ? htmlspecialchars($r['username']) : '<span class="text-muted fst-italic">匿名</span>') ?></td>
+                    <td>
+                        <?php if ($form['anonymous_responses'] ?? 0): ?>
+                            <span class="text-muted fst-italic"><i class="bi bi-incognito"></i> 匿名</span>
+                        <?php elseif ($r['username']): ?>
+                            <div class="d-flex align-items-center gap-2">
+                                <?= renderAvatarDropdown($r['username'], $r['avatar'] ?? null, $r['user_id'], 28, $_SESSION['user_id'] ?? 0) ?>
+                                <span><?= htmlspecialchars($r['username']) ?></span>
+                            </div>
+                        <?php else: ?>
+                            <span class="text-muted fst-italic">匿名</span>
+                        <?php endif; ?>
+                    </td>
                     <td class="small text-muted"><?= date('Y/m/d H:i', strtotime($r['submitted_at'])) ?></td>
                     <td class="text-center">
-                        <button class="btn btn-outline-primary btn-sm btn-view-response" data-id="<?= $r['id'] ?>">
+                        <button class="btn btn-glow-primary btn-view-response" data-id="<?= $r['id'] ?>">
                             <i class="bi bi-eye"></i> 查看
                         </button>
                     </td>

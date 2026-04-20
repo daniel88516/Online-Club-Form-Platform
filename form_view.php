@@ -57,6 +57,21 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
 
 $success = false;
 $error   = '';
+$user_id = isLoggedIn() ? $_SESSION['user_id'] : 0;
+
+// 修改模式：預載舊答案
+$edit_response_id = intval($_GET['edit_response'] ?? 0);
+$prefill = [];
+if ($edit_response_id && $user_id) {
+    $chkEdit = mysqli_prepare($conn, "SELECT id FROM form_responses WHERE id = ? AND form_id = ? AND user_id = ?");
+    mysqli_stmt_bind_param($chkEdit, 'iii', $edit_response_id, $id, $user_id);
+    mysqli_stmt_execute($chkEdit);
+    if (!mysqli_stmt_get_result($chkEdit)->fetch_assoc()) $edit_response_id = 0;
+}
+if ($edit_response_id) {
+    $paResult = mysqli_query($conn, "SELECT field_id, answer FROM response_answers WHERE response_id = $edit_response_id");
+    while ($row = mysqli_fetch_assoc($paResult)) $prefill[$row['field_id']] = $row['answer'];
+}
 
 // 社交功能：按讚 / 收藏狀態
 $user_id = isLoggedIn() ? $_SESSION['user_id'] : 0;
@@ -103,11 +118,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($missing) {
         $error = '請填寫所有必填欄位';
     } else {
-        // 插入填答記錄
-        $stmt = mysqli_prepare($conn, "INSERT INTO form_responses (form_id, user_id) VALUES (?, ?)");
-        mysqli_stmt_bind_param($stmt, 'ii', $id, $user_id);
-        mysqli_stmt_execute($stmt);
-        $response_id = mysqli_insert_id($conn);
+        $edit_id = intval($_POST['edit_response_id'] ?? 0);
+
+        if ($edit_id) {
+            // 修改模式：確認這筆 response 屬於此表單與此使用者
+            $chk = mysqli_prepare($conn, "SELECT id FROM form_responses WHERE id = ? AND form_id = ? AND user_id = ?");
+            mysqli_stmt_bind_param($chk, 'iii', $edit_id, $id, $user_id);
+            mysqli_stmt_execute($chk);
+            $valid = mysqli_stmt_get_result($chk)->fetch_assoc();
+            if ($valid) {
+                $response_id = $edit_id;
+                $del = mysqli_prepare($conn, "DELETE FROM response_answers WHERE response_id = ?");
+                mysqli_stmt_bind_param($del, 'i', $response_id);
+                mysqli_stmt_execute($del);
+                $upd = mysqli_prepare($conn, "UPDATE form_responses SET submitted_at = NOW() WHERE id = ?");
+                mysqli_stmt_bind_param($upd, 'i', $response_id);
+                mysqli_stmt_execute($upd);
+            } else {
+                $edit_id = 0;
+            }
+        }
+
+        if (!$edit_id) {
+            $stmt = mysqli_prepare($conn, "INSERT INTO form_responses (form_id, user_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, 'ii', $id, $user_id);
+            mysqli_stmt_execute($stmt);
+            $response_id = mysqli_insert_id($conn);
+        }
 
         // 插入答案
         foreach ($fields as $field) {
@@ -172,11 +209,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="bi bi-check-circle text-success" style="font-size:4rem;"></i>
                     <h4 class="mt-3 fw-bold">填答完成！</h4>
                     <p class="text-muted">感謝您的填答</p>
-                    <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
-                        <button onclick="history.back()" class="btn btn-glow-primary">
-                            <i class="bi bi-pencil-square me-1"></i> 修改上一個表單
-                        </button>
-                        <a href="/index.php" class="btn btn-glow-dark">
+                    <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                        <a href="/form_view.php?id=<?= $id ?>&edit_response=<?= $response_id ?>" class="btn btn-glow-red">
+                            <i class="bi bi-pencil-square me-1"></i> 修改填答
+                        </a>
+                        <?php if (!empty($form['show_stats']) || $form['user_id'] == $user_id): ?>
+                        <a href="/member/form_responses.php?id=<?= $id ?>" class="btn btn-glow-cyan">
+                            <i class="bi bi-bar-chart me-1"></i> 查看統計
+                        </a>
+                        <?php endif; ?>
+                        <a href="/index.php" class="btn btn-glow-green">
                             <i class="bi bi-house me-1"></i> 回到首頁
                         </a>
                     </div>
@@ -234,6 +276,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST" action="" id="fillForm">
+                <?php if ($edit_response_id): ?>
+                <input type="hidden" name="edit_response_id" value="<?= $edit_response_id ?>">
+                <?php endif; ?>
                 <?php foreach ($fields as $field): ?>
                 <div class="card mb-3">
                     <div class="card-body">
@@ -242,20 +287,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php if ($field['is_required']): ?><span class="text-danger"> *</span><?php endif; ?>
                         </label>
 
+                        <?php
+                            $fid = $field['id'];
+                            $pre = htmlspecialchars($prefill[$fid] ?? '', ENT_QUOTES);
+                            $preChecked = array_map('trim', explode(', ', $prefill[$fid] ?? ''));
+                        ?>
                         <?php if ($field['field_type'] === 'short_text'): ?>
-                            <input type="text" name="answers[<?= $field['id'] ?>]" class="form-control"
-                                   <?= $field['is_required'] ? 'required' : '' ?>>
+                            <input type="text" name="answers[<?= $fid ?>]" class="form-control"
+                                   value="<?= $pre ?>" <?= $field['is_required'] ? 'required' : '' ?>>
 
                         <?php elseif ($field['field_type'] === 'long_text'): ?>
-                            <textarea name="answers[<?= $field['id'] ?>]" class="form-control" rows="4"
-                                      <?= $field['is_required'] ? 'required' : '' ?>></textarea>
+                            <textarea name="answers[<?= $fid ?>]" class="form-control" rows="4"
+                                      <?= $field['is_required'] ? 'required' : '' ?>><?= $pre ?></textarea>
 
                         <?php elseif ($field['field_type'] === 'radio'): ?>
                             <?php foreach ($field['options'] as $opt): ?>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio"
-                                           name="answers[<?= $field['id'] ?>]"
+                                           name="answers[<?= $fid ?>]"
                                            value="<?= htmlspecialchars($opt) ?>"
+                                           <?= ($prefill[$fid] ?? '') === $opt ? 'checked' : '' ?>
                                            <?= $field['is_required'] ? 'required' : '' ?>>
                                     <label class="form-check-label"><?= htmlspecialchars($opt) ?></label>
                                 </div>
@@ -265,28 +316,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php foreach ($field['options'] as $opt): ?>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox"
-                                           name="answers[<?= $field['id'] ?>][]"
-                                           value="<?= htmlspecialchars($opt) ?>">
+                                           name="answers[<?= $fid ?>][]"
+                                           value="<?= htmlspecialchars($opt) ?>"
+                                           <?= in_array($opt, $preChecked) ? 'checked' : '' ?>>
                                     <label class="form-check-label"><?= htmlspecialchars($opt) ?></label>
                                 </div>
                             <?php endforeach; ?>
 
                         <?php elseif ($field['field_type'] === 'dropdown'): ?>
-                            <select name="answers[<?= $field['id'] ?>]" class="form-select"
+                            <select name="answers[<?= $fid ?>]" class="form-select"
                                     <?= $field['is_required'] ? 'required' : '' ?>>
                                 <option value="">-- 請選擇 --</option>
                                 <?php foreach ($field['options'] as $opt): ?>
-                                    <option value="<?= htmlspecialchars($opt) ?>"><?= htmlspecialchars($opt) ?></option>
+                                    <option value="<?= htmlspecialchars($opt) ?>" <?= ($prefill[$fid] ?? '') === $opt ? 'selected' : '' ?>><?= htmlspecialchars($opt) ?></option>
                                 <?php endforeach; ?>
                             </select>
 
                         <?php elseif ($field['field_type'] === 'date'): ?>
-                            <input type="date" name="answers[<?= $field['id'] ?>]" class="form-control"
-                                   <?= $field['is_required'] ? 'required' : '' ?>>
+                            <div class="input-group">
+                                <input type="date" name="answers[<?= $fid ?>]" id="dp_<?= $fid ?>" class="form-control" value="<?= $pre ?>" <?= $field['is_required'] ? 'required' : '' ?>>
+                                <button type="button" class="btn btn-outline-secondary native-dp-toggle" data-target="dp_<?= $fid ?>"><i class="bi bi-calendar"></i></button>
+                            </div>
 
                         <?php elseif ($field['field_type'] === 'time'): ?>
-                            <input type="time" name="answers[<?= $field['id'] ?>]" class="form-control"
-                                   <?= $field['is_required'] ? 'required' : '' ?>>
+                            <input type="time" name="answers[<?= $fid ?>]" class="form-control"
+                                   value="<?= $pre ?>" <?= $field['is_required'] ? 'required' : '' ?>>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -307,6 +361,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <!-- 所有社交功能 script 統一在 _social_section.php 管理 -->
+<script>
+const _dpOpen = {};
+$(document).on('click', '.native-dp-toggle', function () {
+    const id = $(this).data('target');
+    const input = document.getElementById(id);
+    if (_dpOpen[id]) {
+        input.blur();
+        _dpOpen[id] = false;
+    } else {
+        input.showPicker();
+        _dpOpen[id] = true;
+    }
+});
+$(document).on('blur', 'input[type="date"]', function () {
+    _dpOpen[this.id] = false;
+});
+</script>
 
 <?php if ($preview): ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

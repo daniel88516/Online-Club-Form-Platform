@@ -83,6 +83,7 @@ require_once __DIR__ . '/session.php';
         /* 說明框編輯器最小高度 */
         .quill-desc-editor .ql-editor { min-height:120px; }
     </style>
+    <?php if (!empty($extraHead)) echo $extraHead; ?>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top" style="position:relative;">

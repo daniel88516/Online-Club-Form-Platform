@@ -444,8 +444,12 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
 /* ══ 彩色光暈按鈕 — 共用基底（顏色由 --glow-rgb 決定）══ */
 .btn.btn-glow-primary,
 .btn.btn-glow-green,
+.btn.btn-glow-red,
+.btn.btn-glow-cyan,
 [data-bs-theme="dark"] .btn.btn-glow-primary,
-[data-bs-theme="dark"] .btn.btn-glow-green {
+[data-bs-theme="dark"] .btn.btn-glow-green,
+[data-bs-theme="dark"] .btn.btn-glow-red,
+[data-bs-theme="dark"] .btn.btn-glow-cyan {
     color: #fff !important;
     border: none !important;
     border-radius: 10px;
@@ -458,12 +462,18 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
 /* 各按鈕宣告自己的顏色 */
 .btn.btn-glow-primary { --glow-rgb: var(--bs-primary-rgb, 13,110,253); }
 .btn.btn-glow-green   { --glow-rgb: 46,204,113; }
+.btn.btn-glow-red     { --glow-rgb: 231,76,60; }
+.btn.btn-glow-cyan    { --glow-rgb: 23,190,207; }
 
 /* hover — 共用 */
 .btn.btn-glow-primary:hover,
 .btn.btn-glow-green:hover,
+.btn.btn-glow-red:hover,
+.btn.btn-glow-cyan:hover,
 [data-bs-theme="dark"] .btn.btn-glow-primary:hover,
-[data-bs-theme="dark"] .btn.btn-glow-green:hover {
+[data-bs-theme="dark"] .btn.btn-glow-green:hover,
+[data-bs-theme="dark"] .btn.btn-glow-red:hover,
+[data-bs-theme="dark"] .btn.btn-glow-cyan:hover {
     background: rgba(var(--glow-rgb), var(--glow-bg-alpha)) !important;
     color: #fff !important;
     transform: translateY(-2px);
@@ -472,7 +482,9 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
 }
 /* active — 共用 */
 .btn.btn-glow-primary:active,
-.btn.btn-glow-green:active { transform: translateY(0) scale(0.97); }
+.btn.btn-glow-green:active,
+.btn.btn-glow-red:active,
+.btn.btn-glow-cyan:active { transform: translateY(0) scale(0.97); }
 
 /* ── 截止日期標示（黑白光暈名牌風） ── */
 .deadline-tag {
@@ -805,4 +817,10 @@ mark.search-hl {
 }
 [data-bs-theme="dark"] mark.search-hl {
     background: rgba(var(--bs-warning-rgb), 0.5);
+}
+
+/* 隱藏原生日期選擇器內建圖示 */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    display: none;
 }

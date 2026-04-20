@@ -3,11 +3,6 @@ require_once '../config/session.php';
 require_once '../config/db.php';
 header('Content-Type: application/json');
 
-if (!isLoggedIn()) {
-    echo json_encode(['success' => false, 'message' => '請先登入']);
-    exit();
-}
-
 $response_id = intval($_GET['id'] ?? 0);
 if (!$response_id) {
     echo json_encode(['success' => false, 'message' => '參數錯誤']);
@@ -17,7 +12,7 @@ if (!$response_id) {
 // 取得填答記錄（只有表單擁有者或 admin 可查看）
 $stmt = mysqli_prepare($conn, "
     SELECT fr.submitted_at, f.user_id AS form_owner, f.title AS form_title,
-           f.anonymous_responses,
+           f.anonymous_responses, f.show_stats,
            COALESCE(u.username, '匿名') AS respondent
     FROM form_responses fr
     JOIN forms f ON fr.form_id = f.id
@@ -28,7 +23,10 @@ mysqli_stmt_bind_param($stmt, 'i', $response_id);
 mysqli_stmt_execute($stmt);
 $response = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
-if (!$response || (!isAdmin() && $response['form_owner'] != $_SESSION['user_id'])) {
+$canView = isAdmin()
+    || $response['form_owner'] == ($_SESSION['user_id'] ?? 0)
+    || !empty($response['show_stats']);
+if (!$response || !$canView) {
     echo json_encode(['success' => false, 'message' => '無查看權限']);
     exit();
 }

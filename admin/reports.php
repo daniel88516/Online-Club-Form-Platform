@@ -15,14 +15,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resolve_id'])) {
 
 // 刪除被檢舉內容並標記已處理
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_target_id'], $_POST['delete_target_type'], $_POST['delete_report_id'])) {
-    $rtype = $_POST['delete_target_type'] === 'comment' ? 'comment' : 'form';
-    $tid   = intval($_POST['delete_target_id']);
-    $rid   = intval($_POST['delete_report_id']);
+    $rtype  = $_POST['delete_target_type'] === 'comment' ? 'comment' : 'form';
+    $tid    = intval($_POST['delete_target_id']);
+    $rid    = intval($_POST['delete_report_id']);
+    $reason = trim($_POST['delete_reason'] ?? '');
 
     if ($rtype === 'comment') {
         mysqli_query($conn, "DELETE FROM form_comments WHERE id = $tid");
     } else {
+        // 取得表單資訊以發通知
+        $finfo = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user_id, title FROM forms WHERE id = $tid"));
         mysqli_query($conn, "DELETE FROM forms WHERE id = $tid");
+
+        if ($finfo) {
+            $sys_id  = getSystemUserId($conn);
+            $content = "【表單刪除通知】\n您的表單「{$finfo['title']}」已因檢舉被刪除。\n檢舉原因：{$reason}";
+            $ins = mysqli_prepare($conn, "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)");
+            mysqli_stmt_bind_param($ins, 'iis', $sys_id, $finfo['user_id'], $content);
+            mysqli_stmt_execute($ins);
+        }
     }
     mysqli_query($conn, "UPDATE reports SET status = 'resolved' WHERE id = $rid");
     $success = '已刪除內容並標記為處理完成';

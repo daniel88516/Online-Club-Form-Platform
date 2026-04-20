@@ -27,11 +27,22 @@ $type_label = $report['type'] === 'comment' ? '留言' : '表單';
 
 if ($report['type'] === 'comment') {
     $d = mysqli_prepare($conn, "DELETE FROM form_comments WHERE id = ?");
+    mysqli_stmt_bind_param($d, 'i', $report['target_id']);
+    mysqli_stmt_execute($d);
 } else {
+    $finfo = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user_id, title FROM forms WHERE id = {$report['target_id']}"));
     $d = mysqli_prepare($conn, "DELETE FROM forms WHERE id = ?");
+    mysqli_stmt_bind_param($d, 'i', $report['target_id']);
+    mysqli_stmt_execute($d);
+
+    if ($finfo) {
+        $sys_id  = getSystemUserId($conn);
+        $content = "【表單刪除通知】\n您的表單「{$finfo['title']}」已因檢舉被刪除。\n檢舉原因：{$report['reason']}";
+        $ins = mysqli_prepare($conn, "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)");
+        mysqli_stmt_bind_param($ins, 'iis', $sys_id, $finfo['user_id'], $content);
+        mysqli_stmt_execute($ins);
+    }
 }
-mysqli_stmt_bind_param($d, 'i', $report['target_id']);
-mysqli_stmt_execute($d);
 
 $u = mysqli_prepare($conn, "UPDATE reports SET status = 'resolved', delete_token = NULL WHERE id = ?");
 mysqli_stmt_bind_param($u, 'i', $report['id']);
