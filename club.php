@@ -24,7 +24,7 @@ $club = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 if (!$club) { header('Location: /clubs.php'); exit(); }
 
 // 私人社團：非成員無法進入
-if (!$club['is_public'] && $club['my_role'] === null) {
+if (!$club['is_public'] && ($club['my_role'] === null || $club['my_status'] === 'pending')) {
     header('Location: /clubs.php?err=private'); exit();
 }
 
@@ -113,7 +113,7 @@ require_once 'config/header.php';
                             <p class="text-muted small mb-2"><?= htmlspecialchars($club['description']) ?></p>
                         <?php endif; ?>
                         <span class="small text-muted d-flex align-items-center gap-1 flex-wrap">
-                            <i class="bi bi-people"></i> <?= $club['member_count'] ?> 位成員 &nbsp;·&nbsp; admin：
+                            admin：
                             <?= renderAvatarDropdown($club['owner_name'], $club['owner_avatar'] ?? null, $club['owner_id'], 24, $user_id) ?>
                             <span><?= htmlspecialchars($club['owner_name']) ?></span>
                         </span>
@@ -133,10 +133,9 @@ require_once 'config/header.php';
                             <?php endif; ?>
                         <?php elseif ($club['my_status'] === 'pending'): ?>
                             <span class="btn btn-outline-secondary btn-sm disabled"><i class="bi bi-hourglass-split"></i> 申請中</span>
-                            <button class="btn btn-outline-danger btn-sm" id="btn-cancel-apply" title="取消申請"><i class="bi bi-x-lg"></i></button>
                         <?php elseif ($club['my_status'] === 'invited'): ?>
                             <button class="btn btn-glow-green btn-sm" id="btn-accept-invite"><i class="bi bi-check-lg"></i> 接受邀請</button>
-                            <button class="btn btn-outline-danger btn-sm" id="btn-decline-invite" title="拒絕邀請"><i class="bi bi-x-lg"></i></button>
+                            <button class="btn btn-glow-red btn-sm" id="btn-decline-invite" title="拒絕邀請"><i class="bi bi-x-lg"></i></button>
                         <?php elseif ($club['my_role'] === 'member'): ?>
                             <button class="btn btn-glow-red btn-sm" id="btn-leave">
                                 <i class="bi bi-person-dash"></i> 離開
@@ -159,15 +158,12 @@ require_once 'config/header.php';
                     </div>
                 </div>
 
-                <!-- 成員頭像列 -->
-                <?php if (mysqli_num_rows($members) > 0): ?>
-                <div class="d-flex flex-wrap gap-1 mt-3">
-                    <?php mysqli_data_seek($members, 0); while ($m = mysqli_fetch_assoc($members)): ?>
-                        <?= renderAvatarDropdown($m['username'], $m['avatar'] ?? null, $m['id'], 28, $user_id) ?>
-                    <?php endwhile; ?>
-                    <?php if ($club['member_count'] > 12): ?>
-                        <span class="small text-muted align-self-center ms-1">+<?= $club['member_count'] - 12 ?></span>
-                    <?php endif; ?>
+                <!-- 查看成員按鈕 -->
+                <?php if (in_array($club['my_role'], ['owner','member'])): ?>
+                <div class="mt-3">
+                    <button class="btn btn-glow-dark btn-sm" data-bs-toggle="modal" data-bs-target="#memberListModal" style="font-size:0.9rem;padding:0.28rem 0.7rem;">
+                        <i class="bi bi-people-fill"></i> 查看成員（<?= $club['member_count'] ?>）
+                    </button>
                 </div>
                 <?php endif; ?>
             </div>
@@ -186,7 +182,7 @@ require_once 'config/header.php';
                     <?= renderAvatarDropdown($p['username'], $p['avatar'] ?? null, $p['id'], 36, $user_id) ?>
                     <span class="flex-grow-1 fw-semibold"><?= htmlspecialchars($p['username']) ?></span>
                     <button class="btn btn-glow-green btn-sm btn-approve-member" data-uid="<?= $p['id'] ?>"><i class="bi bi-check-lg"></i> 批准</button>
-                    <button class="btn btn-outline-danger btn-sm btn-reject-member" data-uid="<?= $p['id'] ?>"><i class="bi bi-x-lg"></i> 拒絕</button>
+                    <button class="btn btn-glow-red btn-sm btn-reject-member" data-uid="<?= $p['id'] ?>"><i class="bi bi-x-lg"></i> 拒絕</button>
                 </div>
                 <?php endwhile; ?>
             </div>
@@ -210,11 +206,6 @@ require_once 'config/header.php';
                     <li><button class="dropdown-item sort-opt" data-mode="title_asc"><i class="bi bi-sort-alpha-down me-2 text-success"></i>標題 A→Z</button></li>
                 </ul>
             </div>
-            <?php if ($club['my_role']): ?>
-            <a href="/member/create_form.php?club_id=<?= $club_id ?>" class="btn btn-glow-primary btn-sm">
-                <i class="bi bi-plus-lg"></i> 新增表單
-            </a>
-            <?php endif; ?>
         </div>
 
         <?php if (mysqli_num_rows($forms) === 0): ?>
@@ -345,14 +336,6 @@ $('#btn-apply').on('click', function () {
         else alert(res.message);
     });
 });
-$('#btn-cancel-apply').on('click', function () {
-    cuteConfirm({ msg: '確定取消申請？', sub: '', icon: '↩️', okText: '取消申請' }, function (ok) {
-        if (!ok) return;
-        $.post('/api/club_action.php', { action: 'leave', club_id: CLUB_ID }, function (res) {
-            if (res.success) location.reload();
-        });
-    });
-});
 $('#btn-accept-invite').on('click', function () {
     $.post('/api/club_action.php', { action: 'accept_invite', club_id: CLUB_ID }, function (res) {
         if (res.success) location.reload();
@@ -411,7 +394,7 @@ $('#btn-toggle-public').on('click', function () {
 $(document).on('click', '.btn-approve-member', function () {
     const uid = $(this).data('uid');
     $.post('/api/club_action.php', { action: 'approve', club_id: CLUB_ID, target_uid: uid }, function (res) {
-        if (res.success) $('#pending-row-' + uid).fadeOut(300, function () { $(this).remove(); });
+        if (res.success) location.reload();
         else alert(res.message);
     });
 });
@@ -420,7 +403,7 @@ $(document).on('click', '.btn-reject-member', function () {
     cuteConfirm({ msg: '確定拒絕此申請？', sub: '', icon: '🚫', okText: '拒絕' }, function (ok) {
         if (!ok) return;
         $.post('/api/club_action.php', { action: 'reject', club_id: CLUB_ID, target_uid: uid }, function (res) {
-            if (res.success) $('#pending-row-' + uid).fadeOut(300, function () { $(this).remove(); });
+            if (res.success) location.reload();
             else alert(res.message);
         });
     });
@@ -428,7 +411,7 @@ $(document).on('click', '.btn-reject-member', function () {
 
 // 邀請搜尋
 let _inviteTimer;
-$('#invite-search-input').on('input', function () {
+$(document).on('input', '#invite-search-input', function () {
     clearTimeout(_inviteTimer);
     const q = $(this).val().trim();
     if (!q) { $('#invite-search-results').empty(); return; }
@@ -444,13 +427,21 @@ $('#invite-search-input').on('input', function () {
                     ? `<img src="${u.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`
                     : `<span style="width:32px;height:32px;border-radius:50%;background:var(--bs-secondary-bg);display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${u.username.charAt(0).toUpperCase()}</span>`;
                 const safeName = $('<span>').text(u.username).html();
+                let action;
+                if (u.member_status === 'active') {
+                    action = '<span class="text-muted small"><i class="bi bi-person-check"></i> 已是成員</span>';
+                } else if (u.member_status === 'invited') {
+                    action = `<button class="btn btn-glow-amber btn-sm btn-cancel-invite" data-uid="${u.id}"><i class="bi bi-x-lg"></i> 取消邀請</button>`;
+                } else if (u.member_status === 'pending') {
+                    action = `<button class="btn btn-glow-red btn-sm btn-reject-apply" data-uid="${u.id}"><i class="bi bi-x-lg"></i> 拒絕申請</button>`;
+                } else {
+                    action = `<button class="btn btn-glow-cyan btn-sm btn-do-invite" data-uid="${u.id}"><i class="bi bi-send"></i> 邀請</button>`;
+                }
                 $r.append(`
                     <div class="d-flex align-items-center gap-2 py-2 border-bottom">
                         ${av}
                         <span class="flex-grow-1">${safeName}</span>
-                        <button class="btn btn-glow-cyan btn-sm btn-do-invite" data-uid="${u.id}">
-                            <i class="bi bi-send"></i> 邀請
-                        </button>
+                        ${action}
                     </div>
                 `);
             });
@@ -464,11 +455,95 @@ $(document).on('click', '.btn-do-invite', function () {
     $btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i>');
     $.post('/api/club_action.php', { action: 'invite', club_id: CLUB_ID, target_uid: uid }, function (res) {
         if (res.success) {
-            $btn.closest('.d-flex').find('button').replaceWith('<span class="text-success small"><i class="bi bi-check-lg"></i> 已邀請</span>');
+            $btn.replaceWith(`<button class="btn btn-glow-amber btn-sm btn-cancel-invite" data-uid="${uid}"><i class="bi bi-x-lg"></i> 取消邀請</button>`);
         } else {
             alert(res.message);
             $btn.prop('disabled', false).html('<i class="bi bi-send"></i> 邀請');
         }
+    });
+});
+
+$(document).on('click', '.btn-cancel-invite', function () {
+    const $btn = $(this);
+    const uid  = $btn.data('uid');
+    $btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i>');
+    $.post('/api/club_action.php', { action: 'cancel_invite', club_id: CLUB_ID, target_uid: uid }, function (res) {
+        if (res.success) {
+            $btn.replaceWith(`<button class="btn btn-glow-cyan btn-sm btn-do-invite" data-uid="${uid}"><i class="bi bi-send"></i> 邀請</button>`);
+        } else {
+            alert(res.message);
+            $btn.prop('disabled', false).html('<i class="bi bi-x-lg"></i> 取消邀請');
+        }
+    });
+});
+
+$(document).on('click', '.btn-reject-apply', function () {
+    const $btn = $(this);
+    const uid  = $btn.data('uid');
+    $btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i>');
+    $.post('/api/club_action.php', { action: 'reject', club_id: CLUB_ID, target_uid: uid }, function (res) {
+        if (res.success) {
+            $btn.replaceWith(`<button class="btn btn-glow-cyan btn-sm btn-do-invite" data-uid="${uid}"><i class="bi bi-send"></i> 邀請</button>`);
+        } else {
+            alert(res.message);
+            $btn.prop('disabled', false).html('<i class="bi bi-x-lg"></i> 拒絕申請');
+        }
+    });
+});
+
+// 查看成員 Modal
+const IS_OWNER = <?= $club['my_role'] === 'owner' ? 'true' : 'false' ?>;
+const CUR_UID  = <?= $user_id ?>;
+
+function loadMemberList(q) {
+    q = q || '';
+    $('#member-list-results').html('<p class="text-muted small text-center mt-2">載入中...</p>');
+    $.post('/api/club_action.php', { action: 'list_members', club_id: CLUB_ID, q: q }, function (res) {
+        const $r = $('#member-list-results').empty();
+        if (!res.members || !res.members.length) {
+            $r.html('<p class="text-muted small text-center mt-2">找不到成員</p>'); return;
+        }
+        res.members.forEach(function (m) {
+            const av = m.avatar
+                ? `<img src="${m.avatar}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                : `<span style="width:36px;height:36px;border-radius:50%;background:var(--bs-secondary-bg);display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${m.username.charAt(0).toUpperCase()}</span>`;
+            const badge = m.role === 'owner' ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">管理員</span>' : '';
+            const kickBtn = (IS_OWNER && m.role !== 'owner')
+                ? `<button class="btn btn-glow-red btn-sm btn-kick-member" data-uid="${m.id}"><i class="bi bi-person-dash"></i> 踢除</button>`
+                : '';
+            $r.append(`
+                <div class="d-flex align-items-center gap-2 py-2 border-bottom" id="member-row-${m.id}">
+                    ${av}
+                    <span class="flex-grow-1 fw-semibold">${$('<span>').text(m.username).html()}${badge}</span>
+                    ${kickBtn}
+                </div>
+            `);
+        });
+    }, 'json');
+}
+
+$(document).on('show.bs.modal', '#memberListModal', function () {
+    $('#member-list-search').val('');
+    loadMemberList('');
+});
+
+let _memberSearchTimer;
+$(document).on('input', '#member-list-search', function () {
+    clearTimeout(_memberSearchTimer);
+    const q = $(this).val().trim();
+    _memberSearchTimer = setTimeout(function () { loadMemberList(q); }, 300);
+});
+
+$(document).on('click', '.btn-kick-member', function () {
+    const $btn = $(this);
+    const uid  = $btn.data('uid');
+    cuteConfirm({ msg: '確定踢除此成員？', sub: '', icon: '🚫', okText: '踢除' }, function (ok) {
+        if (!ok) return;
+        $btn.prop('disabled', true);
+        $.post('/api/club_action.php', { action: 'kick', club_id: CLUB_ID, target_uid: uid }, function (res) {
+            if (res.success) $('#member-row-' + uid).fadeOut(300, function () { $(this).remove(); });
+            else { alert(res.message); $btn.prop('disabled', false); }
+        }, 'json');
     });
 });
 
@@ -630,6 +705,23 @@ $(document).on('click', '.sort-opt', function () {
             <div class="modal-body">
                 <input type="text" id="invite-search-input" class="form-control mb-3" placeholder="搜尋用戶名稱...">
                 <div id="invite-search-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (in_array($club['my_role'], ['owner','member'])): ?>
+<div class="modal fade" id="memberListModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-people-fill"></i> 社團成員</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="member-list-search" class="form-control mb-3" placeholder="搜尋成員名稱...">
+                <div id="member-list-results" style="max-height:260px;overflow-y:auto;"></div>
             </div>
         </div>
     </div>
@@ -841,4 +933,12 @@ $('#btn-owner-leave').on('click', function () {
     });
 })();
 </script>
+<?php if ($club['my_role']): ?>
+<a href="/member/create_form.php?club_id=<?= $club_id ?>"
+   class="fab-btn"
+   title="新增表單">
+    <i class="bi bi-plus-lg"></i>
+</a>
+<?php endif; ?>
+
 <?php require_once 'config/footer.php'; ?>

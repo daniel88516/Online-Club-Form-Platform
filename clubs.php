@@ -48,12 +48,42 @@ $q       = trim($_GET['q'] ?? '');
             <i class="bi bi-bookmark-heart"></i> 我的社團
         </a>
     </li>
+    <?php
+    $pending_count_stmt = mysqli_prepare($conn, "SELECT COUNT(*) FROM club_members WHERE user_id = ? AND status IN ('pending','invited')");
+    mysqli_stmt_bind_param($pending_count_stmt, 'i', $user_id);
+    mysqli_stmt_execute($pending_count_stmt);
+    $pending_count = mysqli_fetch_row(mysqli_stmt_get_result($pending_count_stmt))[0];
+    ?>
+    <li class="nav-item">
+        <a class="nav-link <?= $tab === 'pending' ? 'active' : '' ?>" href="?tab=pending">
+            <i class="bi bi-hourglass-split"></i> 待處理社團
+            <?php if ($pending_count > 0): ?>
+            <span class="badge bg-warning text-dark ms-1"><?= $pending_count ?></span>
+            <?php endif; ?>
+        </a>
+    </li>
     <?php endif; ?>
 </ul>
 
 <!-- 社團列表 -->
     <?php
-    if ($tab === 'mine' && $user_id) {
+    if ($tab === 'pending' && $user_id) {
+        $stmt = mysqli_prepare($conn, "
+            SELECT c.*, u.username AS owner_name, u.avatar AS owner_avatar,
+                   (SELECT COUNT(*) FROM club_members cm2 WHERE cm2.club_id = c.id AND cm2.status = 'active') AS member_count,
+                   cm.role AS my_role, cm.status AS my_status,
+                   (SELECT COUNT(*) FROM club_members cm5 WHERE cm5.club_id = c.id AND cm5.status = 'pending') AS pending_count
+            FROM clubs c
+            JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ?
+            JOIN users u ON c.owner_id = u.id
+            WHERE cm.status IN ('pending','invited')
+               OR (cm.role = 'owner' AND EXISTS (SELECT 1 FROM club_members WHERE club_id = c.id AND status = 'pending'))
+            ORDER BY cm.joined_at DESC
+        ");
+        mysqli_stmt_bind_param($stmt, 'i', $user_id);
+        mysqli_stmt_execute($stmt);
+        $clubs = mysqli_stmt_get_result($stmt);
+    } elseif ($tab === 'mine' && $user_id) {
         $stmt = mysqli_prepare($conn, "
             SELECT c.*, u.username AS owner_name, u.avatar AS owner_avatar,
                    (SELECT COUNT(*) FROM club_members cm2 WHERE cm2.club_id = c.id AND cm2.status = 'active') AS member_count,
@@ -126,6 +156,9 @@ $q       = trim($_GET['q'] ?? '');
                 <div class="card-footer d-flex gap-2">
                     <a href="/club.php?id=<?= $club['id'] ?>" class="btn btn-glow-primary btn-sm flex-grow-1">
                         <i class="bi bi-door-open"></i> 進入
+                        <?php if ($tab === 'pending' && ($club['pending_count'] ?? 0) > 0 && $club['my_role'] === 'owner'): ?>
+                        <span class="badge bg-warning text-dark ms-1"><?= $club['pending_count'] ?> 待審</span>
+                        <?php endif; ?>
                     </a>
                     <?php if (!$user_id): ?>
                         <!-- 未登入 -->
@@ -135,16 +168,17 @@ $q       = trim($_GET['q'] ?? '');
                             <i class="bi bi-person-plus"></i> 加入
                         </button>
                         <?php else: ?>
-                        <button class="btn btn-outline-primary btn-sm btn-apply-club" data-id="<?= $club['id'] ?>">
+                        <button class="btn btn-glow-primary btn-sm btn-apply-club" data-id="<?= $club['id'] ?>">
                             <i class="bi bi-send"></i> 申請
                         </button>
                         <?php endif; ?>
                     <?php elseif ($club['my_status'] === 'pending'): ?>
-                        <span class="btn btn-outline-secondary btn-sm disabled"><i class="bi bi-hourglass-split"></i> 申請中</span>
+                        <button class="btn btn-glow-red btn-sm btn-cancel-apply-club" data-id="<?= $club['id'] ?>"><i class="bi bi-x-lg"></i> 取消申請</button>
                     <?php elseif ($club['my_status'] === 'invited'): ?>
                         <button class="btn btn-glow-green btn-sm btn-accept-invite-club" data-id="<?= $club['id'] ?>">
                             <i class="bi bi-check-lg"></i> 接受邀請
                         </button>
+                        <button class="btn btn-glow-red btn-sm btn-decline-invite-club" data-id="<?= $club['id'] ?>"><i class="bi bi-x-lg"></i> 拒絕邀約</button>
                     <?php elseif ($club['my_role'] === 'member'): ?>
                         <button class="btn btn-glow-red btn-sm btn-leave-club" data-id="<?= $club['id'] ?>">
                             <i class="bi bi-person-dash"></i> 離開
@@ -478,16 +512,44 @@ $(document).on('click', '.btn-join-club', function () {
 });
 
 $(document).on('click', '.btn-apply-club', function () {
-    const id = $(this).data('id');
+    const $btn = $(this);
+    const id = $btn.data('id');
     $.post('/api/club_action.php', { action: 'join', club_id: id }, function (res) {
-        if (res.success) location.reload();
-        else alert(res.message);
+        if (res.success && res.pending) {
+            $btn.removeClass('btn-glow-primary btn-apply-club').addClass('btn-glow-red btn-cancel-apply-club')
+                .html('<i class="bi bi-x-lg"></i> 取消申請');
+        } else if (res.success) {
+            location.reload();
+        } else {
+            alert(res.message);
+        }
+    });
+});
+
+$(document).on('click', '.btn-cancel-apply-club', function () {
+    const $btn = $(this);
+    const id = $btn.data('id');
+    $.post('/api/club_action.php', { action: 'leave', club_id: id }, function (res) {
+        if (res.success) {
+            $btn.removeClass('btn-glow-red btn-cancel-apply-club').addClass('btn-glow-primary btn-apply-club')
+                .html('<i class="bi bi-send"></i> 申請');
+        } else {
+            alert(res.message);
+        }
     });
 });
 
 $(document).on('click', '.btn-accept-invite-club', function () {
     const id = $(this).data('id');
     $.post('/api/club_action.php', { action: 'accept_invite', club_id: id }, function (res) {
+        if (res.success) location.href = '/club.php?id=' + id;
+        else alert(res.message);
+    });
+});
+
+$(document).on('click', '.btn-decline-invite-club', function () {
+    const id = $(this).data('id');
+    $.post('/api/club_action.php', { action: 'decline_invite', club_id: id }, function (res) {
         if (res.success) location.reload();
         else alert(res.message);
     });

@@ -532,10 +532,19 @@
         const isSys    = (senderId === SYSTEM_UID);
 
         if (isSys) {
-            const match     = msg.content.match(/\[REPORT:(\d+)\]/);
-            const cleanText = $('<span>').text(msg.content.replace(/\[REPORT:\d+\]/, '').trim()).html().replace(/\n/g, '<br>');
-            const btnHtml   = match
-                ? `<a href="/admin/reports.php?highlight=${match[1]}" class="btn btn-sm w-100 mt-2 fw-semibold d-flex align-items-center justify-content-center gap-1" style="background:#f59e0b;border-color:#f59e0b;color:#fff;font-size:0.8rem;"><i class="bi bi-arrow-right-circle"></i> 前往處理此檢舉</a>`
+            const reportMatch  = msg.content.match(/\[REPORT:(\d+)\]/);
+            const clubMatch    = msg.content.match(/\[CLUB:(\d+)\]/);
+            const pendingMatch = msg.content.match(/\[CLUBS_PENDING\]/);
+            const exploreMatch = msg.content.match(/\[CLUBS_EXPLORE\]/);
+            const cleanText = $('<span>').text(msg.content.replace(/\[REPORT:\d+\]|\[CLUB:\d+\]|\[CLUBS_PENDING\]|\[CLUBS_EXPLORE\]/g, '').trim()).html().replace(/\n/g, '<br>');
+            const btnHtml   = reportMatch
+                ? `<a href="/admin/reports.php?highlight=${reportMatch[1]}" class="btn btn-sm w-100 mt-2 fw-semibold d-flex align-items-center justify-content-center gap-1" style="background:#f59e0b;border-color:#f59e0b;color:#fff;font-size:0.8rem;"><i class="bi bi-arrow-right-circle"></i> 前往處理此檢舉</a>`
+                : clubMatch
+                ? `<a href="/club.php?id=${clubMatch[1]}" class="btn btn-glow-primary btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-arrow-right-circle"></i> 前往社團</a>`
+                : pendingMatch
+                ? `<a href="/clubs.php?tab=pending" class="btn btn-glow-amber btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-hourglass-split"></i> 前往待處理社團</a>`
+                : exploreMatch
+                ? `<a href="/clubs.php" class="btn btn-glow-dark btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-compass"></i> 探索社團</a>`
                 : '';
             return `<div class="chat-bubble-wrap">
                 <div class="chat-bubble system">
