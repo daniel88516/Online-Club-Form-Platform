@@ -153,6 +153,8 @@ require_once __DIR__ . '/session.php';
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/member/my_forms.php"><i class="bi bi-journal-text me-2"></i> 我的表單</a></li>
                         <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/clubs.php"><i class="bi bi-people me-2"></i> 社團</a></li>
+                        <li><hr class="dropdown-divider"></li>
                         <?php endif; ?>
                         <?php if (isAdmin()): ?>
                         <li><a class="dropdown-item" href="/admin/dashboard.php"><i class="bi bi-speedometer2 me-2"></i> 管理後台</a></li>

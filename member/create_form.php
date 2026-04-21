@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $target_group = !empty($_POST['target_group']) ? intval($_POST['target_group']) : null;
     $start_date   = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date     = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+    $club_id             = !empty($_POST['club_id']) ? intval($_POST['club_id']) : null;
     $allow_multiple      = isset($_POST['allow_multiple']) ? 1 : 0;
     $is_published        = isset($_POST['is_published']) ? 1 : 0;
     $show_stats          = isset($_POST['show_stats']) ? 1 : 0;
@@ -43,10 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        : null;
 
         // 插入表單
-        $stmt = mysqli_prepare($conn, "INSERT INTO forms (user_id, title, description, cover_image, target_group, start_date, end_date, allow_multiple, is_published, show_stats, anonymous_responses) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'issssissiii',
+        $stmt = mysqli_prepare($conn, "INSERT INTO forms (user_id, title, description, cover_image, target_group, start_date, end_date, allow_multiple, is_published, show_stats, anonymous_responses, club_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issssissiiii',
             $_SESSION['user_id'], $title, $description, $cover_image, $target_group,
-            $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses
+            $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $club_id
         );
 
         if (mysqli_stmt_execute($stmt)) {
@@ -79,8 +80,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 取得群組列表（不限制，等社團功能完成後再處理）
 $groups = mysqli_query($conn, "SELECT id, name FROM `groups` ORDER BY id");
+
+// 取得使用者所屬社團（供表單關聯選擇）
+$my_clubs_stmt = mysqli_prepare($conn, "
+    SELECT c.id, c.name FROM clubs c
+    JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ?
+    ORDER BY cm.joined_at DESC
+");
+mysqli_stmt_bind_param($my_clubs_stmt, 'i', $_SESSION['user_id']);
+mysqli_stmt_execute($my_clubs_stmt);
+$my_clubs = mysqli_stmt_get_result($my_clubs_stmt);
 
 require_once '../config/header.php';
 ?>
@@ -136,6 +146,17 @@ require_once '../config/header.php';
                             <?php endwhile; ?>
                         </select>
                     </div>
+                    <?php if (mysqli_num_rows($my_clubs) > 0): ?>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">所屬社團</label>
+                        <select name="club_id" class="form-select">
+                            <option value="">不屬於任何社團</option>
+                            <?php while ($c = mysqli_fetch_assoc($my_clubs)): ?>
+                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                     <div class="mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <label class="form-label fw-semibold mb-0">開始時間</label>

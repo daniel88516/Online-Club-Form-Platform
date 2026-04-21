@@ -5,11 +5,16 @@ require_once '../config/db.php';
 requireLogin();
 
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("SELECT username, email, role, created_at, avatar, bio, profile_bg FROM users WHERE id = ?");
+
+// auto-migrate: 加 profile_bg_ratio 欄位
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_bg_ratio TINYINT NOT NULL DEFAULT 7");
+
+$stmt = $conn->prepare("SELECT username, email, role, created_at, avatar, bio, profile_bg, profile_bg_ratio FROM users WHERE id = ?");
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+$bg_ratio = intval($user['profile_bg_ratio'] ?? 7);
 
 require_once '../config/header.php';
 ?>
@@ -25,7 +30,7 @@ require_once '../config/header.php';
             <div class="card-header">
                 <i class="bi bi-person-circle me-1"></i> 頭像
             </div>
-            <div class="card-body p-0" style="position:relative;min-height:280px;overflow:hidden;">
+            <div class="card-body p-0" id="bg-preview-card" style="position:relative;aspect-ratio:<?= $bg_ratio ?>/3;overflow:hidden;transition:aspect-ratio .3s;">
                 <!-- 背景圖（填滿整個 card-body） -->
                 <div style="position:absolute;inset:0;background:var(--bs-secondary-bg);">
                     <?php if (!empty($user['profile_bg'])): ?>
@@ -77,6 +82,21 @@ require_once '../config/header.php';
                 <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;">
                 <div id="avatar-status" style="position:absolute;bottom:6px;left:110px;z-index:2;"></div>
                 <div id="bg-status" style="position:absolute;bottom:6px;left:110px;z-index:2;"></div>
+            </div>
+        </div>
+
+        <!-- 背景比例 -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-aspect-ratio me-1"></i> 個人頁背景比例</div>
+            <div class="card-body">
+                <div class="d-flex gap-2">
+                    <?php foreach ([6, 7, 8] as $r): ?>
+                    <button class="btn btn-sm flex-grow-1 btn-ratio <?= $bg_ratio === $r ? 'btn-glow-primary' : 'btn-outline-secondary' ?>"
+                            data-ratio="<?= $r ?>">
+                        <?= $r ?>:3
+                    </button>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
@@ -303,34 +323,85 @@ require_once '../config/header.php';
 </div>
 
 <script>
-/* ── 背景圖片上傳 ── */
+window._bgRatio = <?= $bg_ratio ?>;
+
+/* ── 背景比例選擇 ── */
+$(document).on('click', '.btn-ratio', function () {
+    window._bgRatio = parseInt($(this).data('ratio'));
+    $('.btn-ratio').removeClass('btn-glow-primary').addClass('btn-outline-secondary');
+    $(this).removeClass('btn-outline-secondary').addClass('btn-glow-primary');
+    // 即時更新預覽
+    document.getElementById('bg-preview-card').style.aspectRatio = window._bgRatio + '/3';
+    $.post('/api/save_bg_ratio.php', { ratio: window._bgRatio }, null, 'json');
+});
+
+/* ── 背景圖片上傳（含裁切）── */
 (function () {
+    var bgCropModal = null, bgCropperInstance = null;
+
     document.getElementById('bg-file-input').addEventListener('change', function () {
         var file = this.files[0];
         if (!file) return;
         this.value = '';
-        var $status = $('#bg-status');
-        $status.html('<span class="text-muted small"><i class="bi bi-arrow-repeat me-1"></i>上傳中…</span>');
-        var fd = new FormData();
-        fd.append('profile_bg', file);
-        $.ajax({
-            url: '/api/upload_profile_bg.php', type: 'POST',
-            data: fd, contentType: false, processData: false,
-            success: function (res) {
-                if (res.success) {
-                    var img = document.getElementById('profile-bg-img');
-                    img.src = res.path;
-                    img.style.display = 'block';
-                    $status.html('<span class="text-success small"><i class="bi bi-check-circle me-1"></i>背景已更新</span>');
-                    setTimeout(function () { $status.html(''); }, 3000);
-                } else {
-                    $status.html('<span class="text-danger small">' + res.message + '</span>');
-                }
-            },
-            error: function () {
-                $status.html('<span class="text-danger small">上傳失敗，請重試</span>');
-            }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('bg-crop-img').src = e.target.result;
+            if (bgCropperInstance) { bgCropperInstance.destroy(); bgCropperInstance = null; }
+            if (!bgCropModal) bgCropModal = new bootstrap.Modal(document.getElementById('bgCropModal'));
+            bgCropModal.show();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $(document).on('shown.bs.modal', '#bgCropModal', function () {
+        bgCropperInstance = new Cropper(document.getElementById('bg-crop-img'), {
+            aspectRatio: window._bgRatio / 3,
+            viewMode: 2,
+            dragMode: 'move',
+            autoCropArea: 0.9,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
         });
+    });
+
+    $(document).on('hidden.bs.modal', '#bgCropModal', function () {
+        if (bgCropperInstance) { bgCropperInstance.destroy(); bgCropperInstance = null; }
+    });
+
+    $(document).on('click', '#btn-bg-crop-confirm', function () {
+        if (!bgCropperInstance) return;
+        var $status = $('#bg-status');
+        bgCropperInstance.getCroppedCanvas({ maxWidth: 2400,
+            imageSmoothingEnabled: true, imageSmoothingQuality: 'high' })
+        .toBlob(function (blob) {
+            bgCropModal.hide();
+            $status.html('<span class="text-muted small"><i class="bi bi-arrow-repeat me-1"></i>上傳中…</span>');
+            var fd = new FormData();
+            fd.append('profile_bg', blob, 'bg.jpg');
+            $.ajax({
+                url: '/api/upload_profile_bg.php', type: 'POST',
+                data: fd, contentType: false, processData: false,
+                success: function (res) {
+                    if (res.success) {
+                        var img = document.getElementById('profile-bg-img');
+                        img.src = res.path;
+                        img.style.display = 'block';
+                        $status.html('<span class="text-success small"><i class="bi bi-check-circle me-1"></i>背景已更新</span>');
+                        setTimeout(function () { $status.html(''); }, 3000);
+                    } else {
+                        $status.html('<span class="text-danger small">' + res.message + '</span>');
+                    }
+                },
+                error: function () {
+                    $status.html('<span class="text-danger small">上傳失敗，請重試</span>');
+                }
+            });
+        }, 'image/jpeg', 0.92);
     });
 })();
 
@@ -422,7 +493,31 @@ require_once '../config/header.php';
 })();
 </script>
 
-<!-- 裁切 Modal -->
+<!-- 背景圖裁切 Modal -->
+<div class="modal fade" id="bgCropModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-crop me-2"></i>裁剪背景圖</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-2" style="background:#111;">
+                <div style="max-height:380px;overflow:hidden;">
+                    <img id="bg-crop-img" src="" style="display:block;max-width:100%;" alt="">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto"><i class="bi bi-info-circle me-1"></i>拖曳調整範圍，滾輪縮放</small>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-glow-primary" id="btn-bg-crop-confirm">
+                    <i class="bi bi-check-lg me-1"></i>確認裁剪
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 頭像裁切 Modal -->
 <div class="modal fade" id="cropModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

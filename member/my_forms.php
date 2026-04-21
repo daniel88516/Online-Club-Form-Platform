@@ -93,6 +93,7 @@ $liked_forms = mysqli_stmt_get_result($stmtL);
 $msg        = $_GET['msg'] ?? '';
 $me_name    = $_SESSION['username'] ?? '';
 $me_avatar  = $_SESSION['avatar']   ?? null;
+$showNavSearch = true;
 require_once '../config/header.php';
 
 function timeAgo($dt) {
@@ -105,8 +106,44 @@ function timeAgo($dt) {
 }
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold mb-0"><i class="bi bi-journal-text"></i> 我的表單</h4>
+<div class="mb-3">
+    <div class="dropdown">
+        <button class="btn ps-0 fw-bold dropdown-toggle" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
+                data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-journal-text"></i> <span id="sort-label-text"><?php
+                if ($tab === 'bookmarks') echo '最新收藏';
+                elseif ($tab === 'likes') echo '最新按讚';
+                else echo '最新建立';
+            ?></span>
+        </button>
+        <ul class="dropdown-menu">
+            <?php if ($tab === 'created'): ?>
+            <li><button class="dropdown-item sort-opt active" data-mode="date_desc"><i class="bi bi-clock-history me-2 text-primary"></i>最新建立</button></li>
+            <li><button class="dropdown-item sort-opt" data-mode="date_asc"><i class="bi bi-clock me-2 text-secondary"></i>最舊建立</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item sort-opt" data-mode="resp_desc"><i class="bi bi-people me-2 text-info"></i>回應最多</button></li>
+            <li><button class="dropdown-item sort-opt" data-mode="like_desc"><i class="bi bi-heart me-2 text-danger"></i>按讚最多</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item sort-opt" data-mode="title_asc"><i class="bi bi-sort-alpha-down me-2 text-success"></i>標題 A→Z</button></li>
+            <?php elseif ($tab === 'bookmarks'): ?>
+            <li><button class="dropdown-item sort-opt active" data-mode="bookmarked_desc"><i class="bi bi-bookmark-fill me-2 text-primary"></i>最新收藏</button></li>
+            <li><button class="dropdown-item sort-opt" data-mode="bookmarked_asc"><i class="bi bi-bookmark me-2 text-secondary"></i>最舊收藏</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item sort-opt" data-mode="resp_desc"><i class="bi bi-people me-2 text-info"></i>回應最多</button></li>
+            <li><button class="dropdown-item sort-opt" data-mode="like_desc"><i class="bi bi-heart me-2 text-danger"></i>按讚最多</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item sort-opt" data-mode="title_asc"><i class="bi bi-sort-alpha-down me-2 text-success"></i>標題 A→Z</button></li>
+            <?php else: ?>
+            <li><button class="dropdown-item sort-opt active" data-mode="liked_desc"><i class="bi bi-heart-fill me-2 text-danger"></i>最新按讚</button></li>
+            <li><button class="dropdown-item sort-opt" data-mode="liked_asc"><i class="bi bi-heart me-2 text-secondary"></i>最舊按讚</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item sort-opt" data-mode="resp_desc"><i class="bi bi-people me-2 text-info"></i>回應最多</button></li>
+            <li><button class="dropdown-item sort-opt" data-mode="like_desc"><i class="bi bi-heart me-2 text-primary"></i>按讚最多</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="dropdown-item sort-opt" data-mode="title_asc"><i class="bi bi-sort-alpha-down me-2 text-success"></i>標題 A→Z</button></li>
+            <?php endif; ?>
+        </ul>
+    </div>
 </div>
 
 <?php if ($msg === 'created'): ?>
@@ -141,20 +178,6 @@ function timeAgo($dt) {
 
 <?php if ($tab === 'created'): ?>
 <!-- ════════════════ 建立的表單 ════════════════ -->
-<div class="glow-sort-bar mb-3">
-    <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-    <input type="text" id="search-input" class="form-control ps-1" placeholder="搜尋表單標題...">
-    <div class="sort-divider"></div>
-    <i class="bi bi-sort-down-alt text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-    <select id="sort-select" class="form-select" style="width:auto;min-width:120px;">
-        <option value="date_desc">最新建立</option>
-        <option value="date_asc">最舊建立</option>
-        <option value="resp_desc">回應最多</option>
-        <option value="like_desc">按讚最多</option>
-        <option value="title_asc">標題 A→Z</option>
-    </select>
-</div>
-
 <?php if (mysqli_num_rows($created_forms) === 0): ?>
     <div class="text-center py-5 text-muted">
         <i class="bi bi-journal-plus" style="font-size:3rem;"></i>
@@ -258,20 +281,6 @@ function timeAgo($dt) {
 
 <?php elseif ($tab === 'bookmarks'): ?>
 <!-- ════════════════ 收藏的表單 ════════════════ -->
-<div class="glow-sort-bar mb-3">
-    <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-    <input type="text" id="search-input" class="form-control ps-1" placeholder="搜尋表單標題...">
-    <div class="sort-divider"></div>
-    <i class="bi bi-sort-down-alt text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-    <select id="sort-select" class="form-select" style="width:auto;min-width:120px;">
-        <option value="bookmarked_desc">最新收藏</option>
-        <option value="bookmarked_asc">最舊收藏</option>
-        <option value="resp_desc">回應最多</option>
-        <option value="like_desc">按讚最多</option>
-        <option value="title_asc">標題 A→Z</option>
-    </select>
-</div>
-
 <?php if (mysqli_num_rows($bookmarked_forms) === 0): ?>
     <div class="text-center py-5 text-muted">
         <i class="bi bi-bookmark" style="font-size:3rem;"></i>
@@ -368,19 +377,6 @@ function timeAgo($dt) {
 
 <?php else: ?>
 <!-- ════════════════ 按讚的表單 ════════════════ -->
-<div class="glow-sort-bar mb-3">
-    <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-    <input type="text" id="search-input" class="form-control ps-1" placeholder="搜尋表單標題...">
-    <div class="sort-divider"></div>
-    <i class="bi bi-sort-down-alt text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-    <select id="sort-select" class="form-select" style="width:auto;min-width:120px;">
-        <option value="liked_desc">最新按讚</option>
-        <option value="liked_asc">最舊按讚</option>
-        <option value="resp_desc">回應最多</option>
-        <option value="like_desc">按讚最多</option>
-        <option value="title_asc">標題 A→Z</option>
-    </select>
-</div>
 
 <?php if (mysqli_num_rows($liked_forms) === 0): ?>
     <div class="text-center py-5 text-muted">
@@ -494,7 +490,16 @@ function timeAgo($dt) {
 </div>
 
 <script>
-// ── 搜尋（標題 + 內文，含 highlight）──
+// ── Navbar 搜尋 ──
+$('#nav-search-toggle').on('click', function () {
+    $('#nav-search-box').removeClass('d-none');
+    $('#nav-search-input').focus();
+});
+$('#nav-search-close').on('click', function () {
+    $('#nav-search-input').val('').trigger('input');
+    $('#nav-search-box').addClass('d-none');
+});
+
 function mfEscReg(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function mfEscHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function mfHighlight($el, q) {
@@ -503,13 +508,11 @@ function mfHighlight($el, q) {
     if (!q) { $el.html(mfEscHtml(orig)); return; }
     $el.html(mfEscHtml(orig).replace(new RegExp('(' + mfEscReg(q) + ')', 'gi'), '<mark class="search-hl">$1</mark>'));
 }
-$('#search-input').on('input', function () {
+$('#nav-search-input').on('input', function () {
     const q = $(this).val().toLowerCase().trim();
     let visible = 0;
     $('.form-card-item').each(function () {
-        const title = $(this).data('title') || '';
-        const desc  = $(this).data('desc')  || '';
-        const match = !q || title.includes(q) || desc.includes(q);
+        const match = !q || ($(this).data('title')||'').includes(q) || ($(this).data('desc')||'').includes(q);
         $(this).toggle(match);
         if (match) {
             mfHighlight($(this).find('.myf-title'), q);
@@ -525,8 +528,12 @@ $('#search-input').on('input', function () {
 });
 
 // ── 排序 ──
-$('#sort-select').on('change', function () {
-    const mode = $(this).val();
+$(document).on('click', '.sort-opt', function () {
+    const mode  = $(this).data('mode');
+    const label = $(this).text().trim();
+    $('.sort-opt').removeClass('active');
+    $(this).addClass('active');
+    $('#sort-label-text').text(label);
     const $c = $('#cards-container');
     const $items = $c.children('.form-card-item').toArray();
     $items.sort(function (a, b) {
@@ -539,7 +546,7 @@ $('#sort-select').on('change', function () {
         if (mode === 'bookmarked_asc')  return $a.data('bookmarked') - $b.data('bookmarked');
         if (mode === 'liked_desc')      return $b.data('liked')      - $a.data('liked');
         if (mode === 'liked_asc')       return $a.data('liked')      - $b.data('liked');
-        if (mode === 'title_asc') return $a.data('title').localeCompare($b.data('title'), 'zh-Hant');
+        if (mode === 'title_asc')       return $a.data('title').localeCompare($b.data('title'), 'zh-Hant');
         return 0;
     });
     $c.append($items);

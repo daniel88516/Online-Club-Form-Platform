@@ -446,10 +446,12 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
 .btn.btn-glow-green,
 .btn.btn-glow-red,
 .btn.btn-glow-cyan,
+.btn.btn-glow-amber,
 [data-bs-theme="dark"] .btn.btn-glow-primary,
 [data-bs-theme="dark"] .btn.btn-glow-green,
 [data-bs-theme="dark"] .btn.btn-glow-red,
-[data-bs-theme="dark"] .btn.btn-glow-cyan {
+[data-bs-theme="dark"] .btn.btn-glow-cyan,
+[data-bs-theme="dark"] .btn.btn-glow-amber {
     color: #fff !important;
     border: none !important;
     border-radius: 10px;
@@ -464,16 +466,19 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
 .btn.btn-glow-green   { --glow-rgb: 46,204,113; }
 .btn.btn-glow-red     { --glow-rgb: 231,76,60; }
 .btn.btn-glow-cyan    { --glow-rgb: 23,190,207; }
+.btn.btn-glow-amber   { --glow-rgb: 230,162,0; }
 
 /* hover — 共用 */
 .btn.btn-glow-primary:hover,
 .btn.btn-glow-green:hover,
 .btn.btn-glow-red:hover,
 .btn.btn-glow-cyan:hover,
+.btn.btn-glow-amber:hover,
 [data-bs-theme="dark"] .btn.btn-glow-primary:hover,
 [data-bs-theme="dark"] .btn.btn-glow-green:hover,
 [data-bs-theme="dark"] .btn.btn-glow-red:hover,
-[data-bs-theme="dark"] .btn.btn-glow-cyan:hover {
+[data-bs-theme="dark"] .btn.btn-glow-cyan:hover,
+[data-bs-theme="dark"] .btn.btn-glow-amber:hover {
     background: rgba(var(--glow-rgb), var(--glow-bg-alpha)) !important;
     color: #fff !important;
     transform: translateY(-2px);
@@ -484,7 +489,8 @@ html:not([data-bs-theme="dark"]) .btn-glow-dark:hover {
 .btn.btn-glow-primary:active,
 .btn.btn-glow-green:active,
 .btn.btn-glow-red:active,
-.btn.btn-glow-cyan:active { transform: translateY(0) scale(0.97); }
+.btn.btn-glow-cyan:active,
+.btn.btn-glow-amber:active { transform: translateY(0) scale(0.97); }
 
 /* ── 截止日期標示（黑白光暈名牌風） ── */
 .deadline-tag {
@@ -609,6 +615,45 @@ html:not([data-bs-theme="dark"]) .btn.btn-glow-green:hover {
     background: rgba(46,204,113, 0.95) !important;
     box-shadow: 0 6px 22px rgba(46,204,113, 0.60),
                 0 2px 8px  rgba(46,204,113, 0.32) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-red,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-red {
+    background: rgba(231,76,60, 0.88) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(231,76,60, 0.45),
+                0 2px 6px  rgba(231,76,60, 0.25) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-red:hover,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-red:hover {
+    background: rgba(231,76,60, 0.95) !important;
+    box-shadow: 0 6px 22px rgba(231,76,60, 0.60),
+                0 2px 8px  rgba(231,76,60, 0.32) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-cyan,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-cyan {
+    background: rgba(23,190,207, 0.88) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(23,190,207, 0.45),
+                0 2px 6px  rgba(23,190,207, 0.25) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-cyan:hover,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-cyan:hover {
+    background: rgba(23,190,207, 0.95) !important;
+    box-shadow: 0 6px 22px rgba(23,190,207, 0.60),
+                0 2px 8px  rgba(23,190,207, 0.32) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-amber,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-amber {
+    background: rgba(230,162,0, 0.88) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(230,162,0, 0.45),
+                0 2px 6px  rgba(230,162,0, 0.25) !important;
+}
+[data-bs-theme="light"] .btn.btn-glow-amber:hover,
+html:not([data-bs-theme="dark"]) .btn.btn-glow-amber:hover {
+    background: rgba(230,162,0, 0.95) !important;
+    box-shadow: 0 6px 22px rgba(230,162,0, 0.60),
+                0 2px 8px  rgba(230,162,0, 0.32) !important;
 }
 
 /* ── 搜尋+排序光影框 ── */

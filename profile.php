@@ -9,8 +9,11 @@ if (!$profile_uid) {
     exit();
 }
 
+// auto-migrate
+mysqli_query($conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_bg_ratio TINYINT NOT NULL DEFAULT 7");
+
 // 取用戶資料
-$stmt = mysqli_prepare($conn, "SELECT id, username, avatar, bio, created_at, profile_bg FROM users WHERE id = ?");
+$stmt = mysqli_prepare($conn, "SELECT id, username, avatar, bio, created_at, profile_bg, profile_bg_ratio FROM users WHERE id = ?");
 mysqli_stmt_bind_param($stmt, 'i', $profile_uid);
 mysqli_stmt_execute($stmt);
 $pu = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -50,7 +53,8 @@ require_once 'config/header.php';
 
 <!-- 個人資訊卡 -->
 <?php $has_bg = !empty($pu['profile_bg']); ?>
-<div class="card mb-3" style="overflow:hidden;position:relative;min-height:300px;">
+<?php $bg_ratio = intval($pu['profile_bg_ratio'] ?? 7); ?>
+<div class="card mb-3" style="overflow:hidden;position:relative;aspect-ratio:<?= $bg_ratio ?>/3;">
     <!-- 背景圖（填滿整張卡片） -->
     <div style="position:absolute;inset:0;">
         <?php if ($has_bg): ?>
@@ -65,7 +69,7 @@ require_once 'config/header.php';
     </div>
 
     <!-- 內容貼齊底部 -->
-    <div style="position:relative;z-index:1;min-height:300px;
+    <div style="position:absolute;inset:0;z-index:1;
                 display:flex;flex-direction:column;justify-content:flex-end;padding:20px 24px;">
         <!-- 頭像 -->
         <div class="mb-2" style="display:inline-block;border-radius:50%;align-self:flex-start;
