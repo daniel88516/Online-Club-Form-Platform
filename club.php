@@ -192,7 +192,7 @@ require_once 'config/header.php';
         <!-- 社團表單列表 -->
         <div class="mb-3 d-flex align-items-center justify-content-between">
             <div class="dropdown">
-                <button class="btn ps-0 fw-bold dropdown-toggle" style="font-size:1.05rem;background:transparent;border:none;color:inherit;"
+                <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.05rem;background:transparent;border:none;color:inherit;"
                         data-bs-toggle="dropdown">
                     <i class="bi bi-journal-text"></i> <span id="sort-label-text">最新動態</span>
                 </button>

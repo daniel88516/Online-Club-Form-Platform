@@ -6,8 +6,7 @@ requireLogin();
 
 $user_id = $_SESSION['user_id'];
 
-// auto-migrate: 加 profile_bg_ratio 欄位
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_bg_ratio TINYINT NOT NULL DEFAULT 7");
+addColumnIfNotExists($conn, 'users', 'profile_bg_ratio', 'TINYINT NOT NULL DEFAULT 7');
 
 $stmt = $conn->prepare("SELECT username, email, role, created_at, avatar, bio, profile_bg, profile_bg_ratio FROM users WHERE id = ?");
 $stmt->bind_param('i', $user_id);
@@ -423,10 +422,11 @@ $(document).on('click', '.btn-ratio', function () {
 
 /* ── 主題顏色 ── */
 (function () {
-    var DEFAULT = '#0d6efd';
+    var DEFAULT = '#6610f2';
     var PRESETS = [
-        { name: '預設藍',  color: '#0d6efd' },
         { name: '靛藍',    color: '#6610f2' },
+        { name: '純黑',    color: '#111111' },
+        { name: '預設藍',  color: '#0d6efd' },
         { name: '紫色',    color: '#6f42c1' },
         { name: '粉紅',    color: '#d63384' },
         { name: '紅色',    color: '#dc3545' },

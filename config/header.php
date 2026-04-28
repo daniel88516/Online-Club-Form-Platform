@@ -11,7 +11,8 @@ require_once __DIR__ . '/session.php';
             var isDark;
             if (t === 'dark')       isDark = true;
             else if (t === 'light') isDark = false;
-            else isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            else if (t === 'auto')  isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            else                    isDark = true; /* 預設深色 */
 
             document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
             /* 直接寫 inline style，確保背景立即生效，不依賴 CSS 載入時序 */
@@ -21,7 +22,7 @@ require_once __DIR__ . '/session.php';
             }
 
             /* 提前套用主題顏色，讓 navbar（bg-primary）不會閃爍 */
-            var c = localStorage.getItem('themeColor');
+            var c = localStorage.getItem('themeColor') || '#6610f2';
             if (c && /^#[0-9a-fA-F]{6}$/.test(c)) {
                 var n = parseInt(c.slice(1), 16);
                 var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
@@ -42,7 +43,7 @@ require_once __DIR__ . '/session.php';
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="/js/theme-color.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'].'/js/theme-color.js') ?>"></script>
-    <script>(function(){ var c = localStorage.getItem('themeColor'); if (c) applyThemeColor(c); })();</script>
+    <script>(function(){ var c = localStorage.getItem('themeColor') || '#6610f2'; applyThemeColor(c); })();</script>
     <style>
         /* ── 導覽列主題切換三段式元件 ── */
         .nav-theme-seg {

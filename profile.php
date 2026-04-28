@@ -9,8 +9,7 @@ if (!$profile_uid) {
     exit();
 }
 
-// auto-migrate
-mysqli_query($conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_bg_ratio TINYINT NOT NULL DEFAULT 7");
+addColumnIfNotExists($conn, 'users', 'profile_bg_ratio', 'TINYINT NOT NULL DEFAULT 7');
 
 // 取用戶資料
 $stmt = mysqli_prepare($conn, "SELECT id, username, avatar, bio, created_at, profile_bg, profile_bg_ratio FROM users WHERE id = ?");

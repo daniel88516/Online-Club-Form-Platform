@@ -12,8 +12,17 @@ if (!$conn) {
 
 mysqli_set_charset($conn, 'utf8mb4');
 
-// 確保 users 有 bio 欄位（一次性遷移，IF NOT EXISTS 讓它冪等）
-mysqli_query($conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT NULL");
+// 相容舊版 MySQL 的欄位遷移輔助函式
+function addColumnIfNotExists($conn, $table, $column, $definition) {
+    $db = DB_NAME;
+    $res = mysqli_query($conn, "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA='$db' AND TABLE_NAME='$table' AND COLUMN_NAME='$column'");
+    if ($res && mysqli_num_rows($res) === 0) {
+        mysqli_query($conn, "ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+    }
+}
+
+addColumnIfNotExists($conn, 'users', 'bio', 'TEXT DEFAULT NULL');
 
 // 社團功能遷移
 mysqli_query($conn, "CREATE TABLE IF NOT EXISTS clubs (
@@ -35,8 +44,6 @@ mysqli_query($conn, "CREATE TABLE IF NOT EXISTS club_members (
     UNIQUE KEY uq_club_user (club_id, user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-mysqli_query($conn, "ALTER TABLE forms ADD COLUMN IF NOT EXISTS club_id INT DEFAULT NULL");
-
-// 社團成員狀態（active=正式成員, pending=申請中, invited=邀請中）
-mysqli_query($conn, "ALTER TABLE club_members ADD COLUMN IF NOT EXISTS status ENUM('active','pending','invited') DEFAULT 'active'");
+addColumnIfNotExists($conn, 'forms', 'club_id', 'INT DEFAULT NULL');
+addColumnIfNotExists($conn, 'club_members', 'status', "ENUM('active','pending','invited') DEFAULT 'active'");
 mysqli_query($conn, "UPDATE club_members SET status = 'active' WHERE status IS NULL");

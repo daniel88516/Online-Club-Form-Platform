@@ -16,7 +16,7 @@ $q       = trim($_GET['q'] ?? '');
 <!-- 標題排序 + 建立按鈕 -->
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="dropdown">
-        <button class="btn ps-0 fw-bold dropdown-toggle" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
+        <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
                 data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-people"></i> <span id="sort-label-text">探索社團</span>
         </button>

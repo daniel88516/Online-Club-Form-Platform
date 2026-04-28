@@ -38,7 +38,7 @@ require_once 'config/header.php';
         <!-- 標題 = 排序下拉選單 -->
         <div class="mb-3">
             <div class="dropdown">
-                <button class="btn ps-0 fw-bold dropdown-toggle" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
+                <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
                         data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-house-door"></i> <span id="sort-label-text">最新動態</span>
                 </button>
