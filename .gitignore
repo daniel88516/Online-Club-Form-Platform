@@ -1,4 +1,3 @@
 # 資料庫備份（不追蹤，避免回滾時連帶資料）
-*.sql
-BackUp Database/
+/group_13.sql
 .last_backup
