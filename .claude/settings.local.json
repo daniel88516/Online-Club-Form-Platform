@@ -169,7 +169,20 @@
       "Bash(printf '@echo off\\\\r\\\\nset \"NGROK_PATH=C:\\\\\\\\ngrok\\\\\\\\ngrok.exe\"\\\\r\\\\nset \"MY_URL=damply-overslow-zana.ngrok-free.dev\"\\\\r\\\\ntaskkill /f /im ngrok.exe >nul 2>&1\\\\r\\\\n\"%%NGROK_PATH%%\" http --url=%%MY_URL%% 80\\\\r\\\\npause\\\\r\\\\n')",
       "Bash(cmd.exe /c \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\ngrok.bat\")",
       "Bash(curl -s http://127.0.0.1:4040/api/tunnels)",
-      "Bash(python -c \"import sys,json; t=json.load\\(sys.stdin\\)['tunnels'][0]; print\\(t['public_url'], '->', t['config']['addr']\\)\")"
+      "Bash(python -c \"import sys,json; t=json.load\\(sys.stdin\\)['tunnels'][0]; print\\(t['public_url'], '->', t['config']['addr']\\)\")",
+      "Bash(docker exec *)",
+      "Bash(docker rm *)",
+      "Bash(wsl sudo *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:80/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -H \"ngrok-skip-browser-warning: true\" https://damply-overslow-zana.ngrok-free.dev/)",
+      "Read(//c/Users/danie/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/62544bb4-de57-431a-b422-d89e7ba71875/6ff6b96d-56d7-449c-a277-35bda068922d/skills/docx/**)",
+      "Bash(python scripts/office/soffice.py --headless --convert-to docx \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\網際網路資料庫期末報告\\\\期末報告.doc\")",
+      "Bash(python scripts/office/soffice.py --headless --convert-to docx \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\網際網路資料庫期末報告\\\\期末報告.doc\" --outdir \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\網際網路資料庫期末報告\")",
+      "Bash(pandoc \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\網際網路資料庫期末報告\\\\期末報告1 - 資料庫.docx\" -t markdown)",
+      "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\網際網路資料庫期末報告\\\\期末報告1 - 資料庫.docx\" \"C:\\\\Users\\\\danie\\\\Desktop\\\\form\\\\網際網路資料庫期末報告\\\\unpacked1\")",
+      "PowerShell(python --version 2>&1)",
+      "PowerShell(pip show python-docx 2>&1)",
+      "Bash(git fetch *)"
     ]
   }
 }

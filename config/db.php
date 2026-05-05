@@ -12,38 +12,32 @@ if (!$conn) {
 
 mysqli_set_charset($conn, 'utf8mb4');
 
-// 相容舊版 MySQL 的欄位遷移輔助函式
+// 每次 POST 操作後自動備份資料庫
+function auto_backup_db() {
+    $lock_file = __DIR__ . '/../.last_backup';
+
+    // 同一分鐘內只備份一次
+    if (file_exists($lock_file) && (time() - filemtime($lock_file)) < 60) return;
+
+    $out = __DIR__ . '/../group_13.sql';
+    $cmd = '"C:/xampp/mysql/bin/mysqldump.exe" -u ' . DB_USER . ' -p' . DB_PASS
+         . ' --routines --triggers --single-transaction --databases ' . DB_NAME
+         . ' > "' . $out . '" 2>NUL';
+    shell_exec($cmd);
+
+    if (file_exists($out) && filesize($out) > 0) touch($lock_file);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    auto_backup_db();
+}
+
 function addColumnIfNotExists($conn, $table, $column, $definition) {
     $db = DB_NAME;
-    $res = mysqli_query($conn, "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+    $res = mysqli_query($conn, "SELECT 1 FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA='$db' AND TABLE_NAME='$table' AND COLUMN_NAME='$column'");
-    if ($res && mysqli_num_rows($res) === 0) {
+    if (!mysqli_fetch_row($res)) {
         mysqli_query($conn, "ALTER TABLE `$table` ADD COLUMN `$column` $definition");
     }
 }
 
-addColumnIfNotExists($conn, 'users', 'bio', 'TEXT DEFAULT NULL');
-
-// 社團功能遷移
-mysqli_query($conn, "CREATE TABLE IF NOT EXISTS clubs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    cover_image VARCHAR(255) DEFAULT NULL,
-    owner_id INT NOT NULL,
-    is_public TINYINT(1) DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-mysqli_query($conn, "CREATE TABLE IF NOT EXISTS club_members (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    club_id INT NOT NULL,
-    user_id INT NOT NULL,
-    role ENUM('owner','member') DEFAULT 'member',
-    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_club_user (club_id, user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-addColumnIfNotExists($conn, 'forms', 'club_id', 'INT DEFAULT NULL');
-addColumnIfNotExists($conn, 'club_members', 'status', "ENUM('active','pending','invited') DEFAULT 'active'");
-mysqli_query($conn, "UPDATE club_members SET status = 'active' WHERE status IS NULL");
