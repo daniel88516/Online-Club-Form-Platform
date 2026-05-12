@@ -34,6 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '請填寫表單標題';
     } elseif (empty($fields)) {
         $error = '請至少新增一個欄位';
+    } elseif (!empty($start_date) && empty($end_date)) {
+        $error = '已填開始時間，請一併填寫截止時間';
+    } elseif (empty($start_date) && !empty($end_date)) {
+        $error = '已填截止時間，請一併填寫開始時間';
     } elseif ($optionError) {
         $error = '單選題、核取方塊、下拉選單必須至少填入一個選項';
     } else {
@@ -356,9 +360,27 @@ $(document).ready(function () {
 
         if ($('.field-card').length === 0) {
             e.preventDefault();
-            alert('請至少新增一個欄位');
+            window.cuteToast({ type: 'error', msg: '請至少新增一個欄位' });
             return;
         }
+
+        // 檢查開始時間與截止時間：只填其中一個才提示
+        const startDate = $('#start_date').val();
+        const endDate   = $('#end_date').val();
+        if (startDate && !endDate) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '已填開始時間，請一併填寫截止時間' });
+            $('#end_date').addClass('is-invalid').focus();
+            return;
+        }
+        if (!startDate && endDate) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '已填截止時間，請一併填寫開始時間' });
+            $('#start_date').addClass('is-invalid').focus();
+            return;
+        }
+        $('#start_date, #end_date').removeClass('is-invalid');
+
         // 檢查選擇類型欄位是否有填入選項
         let hasError = false;
         $('.field-card').each(function () {
@@ -375,7 +397,7 @@ $(document).ready(function () {
         });
         if (hasError) {
             e.preventDefault();
-            alert('單選題、核取方塊、下拉選單必須至少填入一個選項');
+            window.cuteToast({ type: 'error', msg: '單選題、核取方塊、下拉選單必須至少填入一個選項' });
             return;
         }
         // 依 DOM 順序重新排序欄位索引，確保拖曳後順序正確
@@ -410,7 +432,7 @@ $('#cover-image-input').on('change', function () {
                 $('#cover-image-thumb').attr('src', res.path);
                 $('#cover-image-preview').show();
             } else {
-                alert(res.message || '封面圖上傳失敗');
+                window.cuteToast({ type: 'error', msg: res.message || '封面圖上傳失敗' });
             }
         }
     });

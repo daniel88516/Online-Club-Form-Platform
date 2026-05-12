@@ -167,6 +167,13 @@
     });
 })();
 
+// ══ Dropdown 開啟時暫停 will-change（避免 stacking context 截斷 fixed 定位）══
+$(document).on('show.bs.dropdown', '.card .dropdown', function () {
+    $(this).closest('.card').css('will-change', 'auto');
+}).on('hidden.bs.dropdown', '.card .dropdown', function () {
+    $(this).closest('.card').css('will-change', 'transform');
+});
+
 // ══ 全域環境主題引擎（下雪 / 落花 / 星空 / 泡泡）══
 (function () {
     var KEY = 'ambientTheme';

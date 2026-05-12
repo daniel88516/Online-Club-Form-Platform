@@ -61,7 +61,7 @@ function panelRender($comments, $isLoggedIn, $cur_user, $fid) {
                     <div class="small mt-1 ql-content"><?= autolink($c['content']) ?></div>
                 </div>
                 <div class="dropdown" style="flex-shrink:0;">
-                    <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed" aria-expanded="false">
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -470,7 +470,7 @@ if ($cur_user) {
                             <div class="small mt-1 ql-content">${c.content}</div>
                         </div>
                         <div class="dropdown" style="flex-shrink:0;">
-                            <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown">
+                            <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed">
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">

@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title          = trim($_POST['title'] ?? '');
     $description    = trim($_POST['description'] ?? '');
     $target_group   = !empty($_POST['target_group']) ? intval($_POST['target_group']) : null;
+    $club_id        = !empty($_POST['club_id']) ? intval($_POST['club_id']) : null;
     $start_date     = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date       = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $allow_multiple      = isset($_POST['allow_multiple']) ? 1 : 0;
@@ -52,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '請填寫表單標題';
     } elseif (empty($fields)) {
         $error = '請至少新增一個欄位';
+    } elseif (!empty($start_date) && empty($end_date)) {
+        $error = '已填開始時間，請一併填寫截止時間';
+    } elseif (empty($start_date) && !empty($end_date)) {
+        $error = '已填截止時間，請一併填寫開始時間';
     } elseif ($optionError) {
         $error = '單選題、核取方塊、下拉選單必須至少填入一個選項';
     } else {
@@ -62,10 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        : $form['cover_image'];
 
         // 更新表單
-        $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=? WHERE id=? AND user_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssssssiiiiii',
+        $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, club_id=? WHERE id=? AND user_id=?");
+        mysqli_stmt_bind_param($stmt, 'ssssssiiiiiii',
             $title, $description, $cover_image, $target_group, $start_date, $end_date,
-            $allow_multiple, $is_published, $show_stats, $anonymous_responses, $id, $_SESSION['user_id']
+            $allow_multiple, $is_published, $show_stats, $anonymous_responses, $club_id, $id, $_SESSION['user_id']
         );
         mysqli_stmt_execute($stmt);
 
@@ -97,6 +102,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $groups = mysqli_query($conn, "SELECT id, name FROM `groups` ORDER BY id");
+
+$my_clubs_stmt = mysqli_prepare($conn, "
+    SELECT c.id, c.name FROM clubs c
+    JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ?
+    ORDER BY cm.joined_at DESC
+");
+mysqli_stmt_bind_param($my_clubs_stmt, 'i', $_SESSION['user_id']);
+mysqli_stmt_execute($my_clubs_stmt);
+$my_clubs = mysqli_stmt_get_result($my_clubs_stmt);
+
 require_once '../config/header.php';
 ?>
 
@@ -156,15 +171,48 @@ require_once '../config/header.php';
                             <?php endwhile; ?>
                         </select>
                     </div>
+                    <?php if (mysqli_num_rows($my_clubs) > 0): ?>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">開始時間</label>
-                        <input type="datetime-local" name="start_date" class="form-control"
-                               value="<?= $form['start_date'] ? date('Y-m-d\TH:i', strtotime($form['start_date'])) : '' ?>">
+                        <label class="form-label fw-semibold">所屬社團</label>
+                        <select name="club_id" class="form-select">
+                            <option value="">不屬於任何社團</option>
+                            <?php while ($c = mysqli_fetch_assoc($my_clubs)): ?>
+                                <option value="<?= $c['id'] ?>" <?= $form['club_id'] == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+                    <?php
+                        $hasStartTime = $form['start_date'] && date('H:i', strtotime($form['start_date'])) !== '00:00';
+                        $hasEndTime   = $form['end_date']   && date('H:i', strtotime($form['end_date']))   !== '00:00';
+                        $startVal = $form['start_date'] ? date($hasStartTime ? 'Y-m-d\TH:i' : 'Y-m-d', strtotime($form['start_date'])) : '';
+                        $endVal   = $form['end_date']   ? date($hasEndTime   ? 'Y-m-d\TH:i' : 'Y-m-d', strtotime($form['end_date']))   : '';
+                    ?>
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold mb-0">開始時間</label>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input time-toggle" type="checkbox" id="start_time_toggle" data-target="start_date" <?= $hasStartTime ? 'checked' : '' ?>>
+                                <label class="form-check-label small" for="start_time_toggle">精確到時間</label>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input type="<?= $hasStartTime ? 'datetime-local' : 'date' ?>" name="start_date" id="start_date" class="form-control" value="<?= htmlspecialchars($startVal) ?>">
+                            <button type="button" class="btn btn-outline-secondary native-dp-toggle" data-target="start_date"><i class="bi bi-calendar"></i></button>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">截止時間</label>
-                        <input type="datetime-local" name="end_date" class="form-control"
-                               value="<?= $form['end_date'] ? date('Y-m-d\TH:i', strtotime($form['end_date'])) : '' ?>">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold mb-0">截止時間</label>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input time-toggle" type="checkbox" id="end_time_toggle" data-target="end_date" <?= $hasEndTime ? 'checked' : '' ?>>
+                                <label class="form-check-label small" for="end_time_toggle">精確到時間</label>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input type="<?= $hasEndTime ? 'datetime-local' : 'date' ?>" name="end_date" id="end_date" class="form-control" value="<?= htmlspecialchars($endVal) ?>">
+                            <button type="button" class="btn btn-outline-secondary native-dp-toggle" data-target="end_date"><i class="bi bi-calendar"></i></button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
@@ -205,7 +253,7 @@ require_once '../config/header.php';
 
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-list-check"></i> 表單欄位</span>
                 </div>
                 <div class="card-body">
@@ -301,7 +349,24 @@ $(document).ready(function () {
         if (typeof quillDesc !== 'undefined') {
             $('#description-hidden').val(quillDesc.root.innerHTML);
         }
-        if ($('.field-card').length === 0) { e.preventDefault(); alert('請至少新增一個欄位'); return; }
+        if ($('.field-card').length === 0) { e.preventDefault(); window.cuteToast({ type: 'error', msg: '請至少新增一個欄位' }); return; }
+
+        // 檢查開始時間與截止時間：只填其中一個才提示
+        const startDate = $('input[name="start_date"]').val();
+        const endDate   = $('input[name="end_date"]').val();
+        if (startDate && !endDate) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '已填開始時間，請一併填寫截止時間' });
+            $('input[name="end_date"]').addClass('is-invalid').focus();
+            return;
+        }
+        if (!startDate && endDate) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '已填截止時間，請一併填寫開始時間' });
+            $('input[name="start_date"]').addClass('is-invalid').focus();
+            return;
+        }
+        $('input[name="start_date"], input[name="end_date"]').removeClass('is-invalid');
         // 依 DOM 順序重新排序欄位索引，確保拖曳後順序正確
         let newIdx = 0;
         $('#fields-container .field-card').each(function () {
@@ -334,7 +399,7 @@ $('#cover-image-input').on('change', function () {
                 $('#cover-image-thumb').attr('src', res.path);
                 $('#cover-image-preview').show();
             } else {
-                alert(res.message || '封面圖上傳失敗');
+                window.cuteToast({ type: 'error', msg: res.message || '封面圖上傳失敗' });
             }
         }
     });
@@ -391,6 +456,22 @@ $(document).ready(function () {
     if (existingDesc) quillDesc.clipboard.dangerouslyPasteHTML(existingDesc);
     attachAutoLink(quillDesc);
     attachPasteImageHandler(quillDesc, 'forms');
+});
+</script>
+<script>
+// 時間欄位切換精確到時間
+$('.time-toggle').on('change', function () {
+    const input = document.getElementById($(this).data('target'));
+    const val = input.value;
+    input.type = this.checked ? 'datetime-local' : 'date';
+    input.value = val.substring(0, this.checked ? 16 : 10);
+});
+const _dpOpen = {};
+$(document).on('click', '.native-dp-toggle', function () {
+    const id = $(this).data('target');
+    const input = document.getElementById(id);
+    if (_dpOpen[id]) { input.blur(); _dpOpen[id] = false; }
+    else { input.showPicker(); _dpOpen[id] = true; }
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
