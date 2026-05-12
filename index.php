@@ -59,7 +59,7 @@ require_once 'config/header.php';
                 <i class="bi bi-inbox" style="font-size:3rem;"></i>
                 <p class="mt-3">目前沒有公開表單</p>
                 <?php if (!isLoggedIn()): ?>
-                    <a href="/login.php" class="btn btn-glow-primary">登入後新增表單</a>
+                    <a href="<?= REL_BASE ?>login.php" class="btn btn-glow-primary">登入後新增表單</a>
                 <?php endif; ?>
             </div>
         <?php else: ?>
@@ -80,7 +80,7 @@ require_once 'config/header.php';
             <div class="card-header d-flex align-items-center gap-2 py-2">
                 <?= renderAvatarDropdown($form['author'], $form['author_avatar'], $form['user_id'], 40, $user_id) ?>
                 <div>
-                    <a href="/profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis">
+                    <a href="<?= REL_BASE ?>profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis">
                         <?= htmlspecialchars($form['author']) ?>
                     </a>
                     <div class="text-muted small">
@@ -109,7 +109,7 @@ require_once 'config/header.php';
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <?php if ($form['user_id'] == $user_id): ?>
                                 <li>
-                                    <a class="dropdown-item" href="/member/edit_form.php?id=<?= $form['id'] ?>">
+                                    <a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>">
                                         <i class="bi bi-pencil me-2"></i> 編輯表單
                                     </a>
                                 </li>
@@ -117,7 +117,7 @@ require_once 'config/header.php';
 
                                 <?php if (isAdmin() || $form['user_id'] == $user_id || !empty($form['show_stats'])): ?>
                                 <li>
-                                    <a class="dropdown-item" href="/member/form_responses.php?id=<?= $form['id'] ?>">
+                                    <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>">
                                         <i class="bi bi-bar-chart text-info me-2"></i> 查看統計
                                         <?php if (empty($form['show_stats']) && (isAdmin() || $form['user_id'] == $user_id)): ?>
                                             <i class="bi bi-lock-fill text-secondary ms-1 small" title="統計未公開"></i>
@@ -171,7 +171,7 @@ require_once 'config/header.php';
                     <i class="bi bi-lock"></i> 已截止，無法填寫
                 </button>
                 <?php else: ?>
-                <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3">
+                <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3">
                     <i class="bi bi-pencil"></i> 填寫表單
                 </a>
                 <?php endif; ?>
@@ -297,7 +297,7 @@ $(document).on('click', '.sort-opt', function () {
 $(document).on('click', '.btn-like', function () {
     const btn = $(this);
     const formId = btn.data('id');
-    $.post('/api/like.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/like.php', { form_id: formId }, function (res) {
         if (res.success) {
             btn.find('.like-count').text(res.count);
             if (res.liked) {
@@ -315,7 +315,7 @@ $(document).on('click', '.btn-like', function () {
 $(document).on('click', '.btn-bookmark', function () {
     const btn = $(this);
     const formId = btn.data('id');
-    $.post('/api/bookmark.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/bookmark.php', { form_id: formId }, function (res) {
         if (res.success) {
             btn.find('.bookmark-count').text(res.count);
             if (res.bookmarked) {
@@ -352,7 +352,7 @@ $(document).on('click', '.btn-toggle-feed-comments', function () {
     $panel.html('<div class="text-center py-3 border-top"><span class="spinner-border spinner-border-sm text-muted"></span></div>');
     $panel.slideDown(200);
 
-    $.get('/api/comments_panel.php', { form_id: formId }, function (html) {
+    $.get('<?= REL_BASE ?>api/comments_panel.php', { form_id: formId }, function (html) {
         $panel.html(html);
         $panel.data('loaded', true);
     });
@@ -364,7 +364,7 @@ $(document).on('click', '.btn-delete-feed-form', function () {
     const $card  = $(this).closest('.card.mb-4');
     window.cuteConfirm({ icon: '📋', msg: '確定要刪除這個表單嗎？', sub: '此操作無法復原。' }, function (ok) {
         if (!ok) return;
-        $.post('/api/delete_form.php', { form_id: formId }, function (res) {
+        $.post('<?= REL_BASE ?>api/delete_form.php', { form_id: formId }, function (res) {
             if (res.success) {
                 $card.fadeOut(300, function () { $(this).remove(); });
             } else {
@@ -388,7 +388,7 @@ $(document).on('click', '.btn-report-comment', function () {
 
 <?php if (isMember()): ?>
 <!-- 新增表單 FAB -->
-<a href="/member/create_form.php"
+<a href="<?= REL_BASE ?>member/create_form.php"
    class="fab-btn"
    title="新增表單">
     <i class="bi bi-plus-lg"></i>

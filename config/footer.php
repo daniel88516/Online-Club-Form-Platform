@@ -9,7 +9,7 @@
 </div>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/main.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'].'/js/main.js') ?>"></script>
-<script src="/js/fab-drag.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'].'/js/fab-drag.js') ?>"></script>
+<script src="<?= REL_BASE ?>js/main.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/js/main.js') ?>"></script>
+<script src="<?= REL_BASE ?>js/fab-drag.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/js/fab-drag.js') ?>"></script>
 </body>
 </html>

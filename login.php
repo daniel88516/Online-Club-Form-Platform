@@ -73,7 +73,7 @@ require_once 'config/header.php';
                 </form>
             </div>
             <div class="card-footer text-center py-3">
-                還沒有帳號？<a href="/register.php">立即註冊</a>
+                還沒有帳號？<a href="<?= REL_BASE ?>register.php">立即註冊</a>
             </div>
         </div>
     </div>

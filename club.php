@@ -229,7 +229,7 @@ require_once 'config/header.php';
             <div class="card-header d-flex align-items-center gap-2 py-2">
                 <?= renderAvatarDropdown($form['author'], $form['author_avatar'], $form['user_id'], 40, $user_id) ?>
                 <div>
-                    <a href="/profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis">
+                    <a href="<?= REL_BASE ?>profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis">
                         <?= htmlspecialchars($form['author']) ?>
                     </a>
                     <div class="text-muted small">
@@ -257,10 +257,10 @@ require_once 'config/header.php';
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <?php if ($form['user_id'] == $user_id): ?>
-                            <li><a class="dropdown-item" href="/member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                            <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
                             <?php endif; ?>
                             <?php if (isAdmin() || $form['user_id'] == $user_id || !empty($form['show_stats'])): ?>
-                            <li><a class="dropdown-item" href="/member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                            <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                             <?php endif; ?>
                             <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
                             <li><hr class="dropdown-divider"></li>
@@ -287,7 +287,7 @@ require_once 'config/header.php';
                 <?php if ($expired): ?>
                 <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
                 <?php else: ?>
-                <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
+                <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
                 <?php endif; ?>
             </div>
             <div class="card-footer bg-transparent border-top d-flex justify-content-around py-2">
@@ -325,26 +325,26 @@ require_once 'config/header.php';
 const CLUB_ID = <?= $club_id ?>;
 
 $('#btn-join').on('click', function () {
-    $.post('/api/club_action.php', { action: 'join', club_id: CLUB_ID }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'join', club_id: CLUB_ID }, function (res) {
         if (res.success) location.reload();
         else alert(res.message);
     });
 });
 $('#btn-apply').on('click', function () {
-    $.post('/api/club_action.php', { action: 'join', club_id: CLUB_ID }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'join', club_id: CLUB_ID }, function (res) {
         if (res.success) location.reload();
         else alert(res.message);
     });
 });
 $('#btn-accept-invite').on('click', function () {
-    $.post('/api/club_action.php', { action: 'accept_invite', club_id: CLUB_ID }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'accept_invite', club_id: CLUB_ID }, function (res) {
         if (res.success) location.reload();
     });
 });
 $('#btn-decline-invite').on('click', function () {
     cuteConfirm({ msg: '確定拒絕邀請？', sub: '', icon: '🚫', okText: '拒絕' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'decline_invite', club_id: CLUB_ID }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'decline_invite', club_id: CLUB_ID }, function (res) {
             if (res.success) location.reload();
         });
     });
@@ -352,8 +352,8 @@ $('#btn-decline-invite').on('click', function () {
 $('#btn-leave').on('click', function () {
     cuteConfirm({ msg: '確定要離開此社團？', sub: '離開後可重新申請加入。', icon: '👋', okText: '離開' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'leave', club_id: CLUB_ID }, function (res) {
-            if (res.success) location.href = '/clubs.php';
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'leave', club_id: CLUB_ID }, function (res) {
+            if (res.success) location.href = REL_BASE + 'clubs.php';
             else alert(res.message);
         });
     });
@@ -377,7 +377,7 @@ $('#club-cover-file').on('change', function () {
 // 切換公開/私人
 $('#btn-toggle-public').on('click', function () {
     const $btn = $(this);
-    $.post('/api/club_action.php', { action: 'toggle_public', club_id: CLUB_ID }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'toggle_public', club_id: CLUB_ID }, function (res) {
         if (res.success) {
             if (res.is_public) {
                 $btn.removeClass('btn-glow-amber').addClass('btn-glow-green')
@@ -393,7 +393,7 @@ $('#btn-toggle-public').on('click', function () {
 // 批准 / 拒絕申請
 $(document).on('click', '.btn-approve-member', function () {
     const uid = $(this).data('uid');
-    $.post('/api/club_action.php', { action: 'approve', club_id: CLUB_ID, target_uid: uid }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'approve', club_id: CLUB_ID, target_uid: uid }, function (res) {
         if (res.success) location.reload();
         else alert(res.message);
     });
@@ -402,7 +402,7 @@ $(document).on('click', '.btn-reject-member', function () {
     const uid = $(this).data('uid');
     cuteConfirm({ msg: '確定拒絕此申請？', sub: '', icon: '🚫', okText: '拒絕' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'reject', club_id: CLUB_ID, target_uid: uid }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'reject', club_id: CLUB_ID, target_uid: uid }, function (res) {
             if (res.success) location.reload();
             else alert(res.message);
         });
@@ -416,7 +416,7 @@ $(document).on('input', '#invite-search-input', function () {
     const q = $(this).val().trim();
     if (!q) { $('#invite-search-results').empty(); return; }
     _inviteTimer = setTimeout(function () {
-        $.post('/api/club_action.php', { action: 'search_users', q: q, club_id: CLUB_ID }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'search_users', q: q, club_id: CLUB_ID }, function (res) {
             const $r = $('#invite-search-results').empty();
             if (!res.users || !res.users.length) {
                 $r.html('<p class="text-muted small text-center mt-2">找不到用戶</p>');
@@ -453,7 +453,7 @@ $(document).on('click', '.btn-do-invite', function () {
     const $btn = $(this);
     const uid  = $btn.data('uid');
     $btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i>');
-    $.post('/api/club_action.php', { action: 'invite', club_id: CLUB_ID, target_uid: uid }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'invite', club_id: CLUB_ID, target_uid: uid }, function (res) {
         if (res.success) {
             $btn.replaceWith(`<button class="btn btn-glow-amber btn-sm btn-cancel-invite" data-uid="${uid}"><i class="bi bi-x-lg"></i> 取消邀請</button>`);
         } else {
@@ -467,7 +467,7 @@ $(document).on('click', '.btn-cancel-invite', function () {
     const $btn = $(this);
     const uid  = $btn.data('uid');
     $btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i>');
-    $.post('/api/club_action.php', { action: 'cancel_invite', club_id: CLUB_ID, target_uid: uid }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'cancel_invite', club_id: CLUB_ID, target_uid: uid }, function (res) {
         if (res.success) {
             $btn.replaceWith(`<button class="btn btn-glow-cyan btn-sm btn-do-invite" data-uid="${uid}"><i class="bi bi-send"></i> 邀請</button>`);
         } else {
@@ -481,7 +481,7 @@ $(document).on('click', '.btn-reject-apply', function () {
     const $btn = $(this);
     const uid  = $btn.data('uid');
     $btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i>');
-    $.post('/api/club_action.php', { action: 'reject', club_id: CLUB_ID, target_uid: uid }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'reject', club_id: CLUB_ID, target_uid: uid }, function (res) {
         if (res.success) {
             $btn.replaceWith(`<button class="btn btn-glow-cyan btn-sm btn-do-invite" data-uid="${uid}"><i class="bi bi-send"></i> 邀請</button>`);
         } else {
@@ -498,7 +498,7 @@ const CUR_UID  = <?= $user_id ?>;
 function loadMemberList(q) {
     q = q || '';
     $('#member-list-results').html('<p class="text-muted small text-center mt-2">載入中...</p>');
-    $.post('/api/club_action.php', { action: 'list_members', club_id: CLUB_ID, q: q }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'list_members', club_id: CLUB_ID, q: q }, function (res) {
         const $r = $('#member-list-results').empty();
         if (!res.members || !res.members.length) {
             $r.html('<p class="text-muted small text-center mt-2">找不到成員</p>'); return;
@@ -540,7 +540,7 @@ $(document).on('click', '.btn-kick-member', function () {
     cuteConfirm({ msg: '確定踢除此成員？', sub: '', icon: '🚫', okText: '踢除' }, function (ok) {
         if (!ok) return;
         $btn.prop('disabled', true);
-        $.post('/api/club_action.php', { action: 'kick', club_id: CLUB_ID, target_uid: uid }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'kick', club_id: CLUB_ID, target_uid: uid }, function (res) {
             if (res.success) $('#member-row-' + uid).fadeOut(300, function () { $(this).remove(); });
             else { alert(res.message); $btn.prop('disabled', false); }
         }, 'json');
@@ -551,7 +551,7 @@ $(document).on('click', '.btn-kick-member', function () {
 $(document).on('click', '.btn-like', function () {
     const btn = $(this);
     const formId = btn.data('id');
-    $.post('/api/like.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/like.php', { form_id: formId }, function (res) {
         if (res.success) {
             btn.find('.like-count').text(res.count);
             if (res.liked) {
@@ -569,7 +569,7 @@ $(document).on('click', '.btn-like', function () {
 $(document).on('click', '.btn-bookmark', function () {
     const btn = $(this);
     const formId = btn.data('id');
-    $.post('/api/bookmark.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/bookmark.php', { form_id: formId }, function (res) {
         if (res.success) {
             btn.find('.bookmark-count').text(res.count);
             if (res.bookmarked) {
@@ -597,7 +597,7 @@ $(document).on('click', '.btn-toggle-feed-comments', function () {
     if ($panel.data('loaded')) { $panel.slideDown(200); return; }
     $panel.html('<div class="text-center py-3 border-top"><span class="spinner-border spinner-border-sm text-muted"></span></div>');
     $panel.slideDown(200);
-    $.get('/api/comments_panel.php', { form_id: formId }, function (html) {
+    $.get('<?= REL_BASE ?>api/comments_panel.php', { form_id: formId }, function (html) {
         $panel.html(html);
         $panel.data('loaded', true);
     });
@@ -609,7 +609,7 @@ $(document).on('click', '.btn-delete-feed-form', function () {
     const $card  = $(this).closest('.card.mb-4');
     window.cuteConfirm({ icon: '📋', msg: '確定要刪除這個表單嗎？', sub: '此操作無法復原。' }, function (ok) {
         if (!ok) return;
-        $.post('/api/delete_form.php', { form_id: formId }, function (res) {
+        $.post('<?= REL_BASE ?>api/delete_form.php', { form_id: formId }, function (res) {
             if (res.success) $card.fadeOut(300, function () { $(this).remove(); });
             else alert(res.message || '刪除失敗');
         }, 'json');
@@ -804,7 +804,7 @@ $(document).on('click', '.btn-owner-options', function () {
     $('#oom-selected-name').text('— 請選擇成員 —');
     $('#oom-selected-avatar').html('');
     $('#oom-member-list').html('<div class="p-2 text-muted small">載入中...</div>');
-    $.post('/api/club_action.php', { action: 'get_members', club_id: _oomClubId }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'get_members', club_id: _oomClubId }, function (res) {
         if (!res.success || res.members.length === 0) {
             $('#oom-member-list').html('<div class="p-2 text-muted small">無其他成員可選</div>'); return;
         }
@@ -836,7 +836,7 @@ $('#btn-transfer-owner').on('click', function () {
     const name = $('#oom-selected-name').text();
     cuteConfirm({ msg: `確定將管理員移交給「${name}」？`, sub: '移交後你將成為普通成員，此操作無法自動復原。', icon: '⚡', okText: '確認移交' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'transfer_owner', club_id: _oomClubId, new_owner_id: newOwner }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'transfer_owner', club_id: _oomClubId, new_owner_id: newOwner }, function (res) {
             if (res.success) location.reload();
             else cuteToast({ type: 'error', msg: res.message });
         }, 'json');
@@ -846,8 +846,8 @@ $('#btn-transfer-owner').on('click', function () {
 $('#btn-delete-club').on('click', function () {
     cuteConfirm({ msg: `確定刪除「<?= htmlspecialchars($club['name'], ENT_QUOTES) ?>」？`, sub: '此操作無法復原，社團及所有成員資料將永久刪除。', icon: '🗑️', okText: '永久刪除' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'delete_club', club_id: _oomClubId }, function (res) {
-            if (res.success) location.href = '/clubs.php';
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'delete_club', club_id: _oomClubId }, function (res) {
+            if (res.success) location.href = REL_BASE + 'clubs.php';
             else cuteToast({ type: 'error', msg: res.message });
         }, 'json');
     });
@@ -856,8 +856,8 @@ $('#btn-delete-club').on('click', function () {
 $('#btn-owner-leave').on('click', function () {
     cuteConfirm({ msg: '確定要離開這個社團？', sub: '你的管理員身份將自動移交給最早加入的成員。若無其他成員，社團將被刪除。', icon: '👋', okText: '離開' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'owner_leave', club_id: _oomClubId }, function (res) {
-            if (res.success) location.href = '/clubs.php';
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'owner_leave', club_id: _oomClubId }, function (res) {
+            if (res.success) location.href = REL_BASE + 'clubs.php';
             else cuteToast({ type: 'error', msg: res.message });
         }, 'json');
     });
@@ -913,11 +913,11 @@ $('#btn-owner-leave').on('click', function () {
             fd.append('image', blob, 'cover.jpg');
             fd.append('type', 'clubs');
             $.ajax({
-                url: '/api/upload.php', type: 'POST',
+                url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
                 data: fd, contentType: false, processData: false,
                 success: function (res) {
                     if (!res.success) { alert(res.message || '上傳失敗'); return; }
-                    $.post('/api/club_action.php', { action: 'update_cover', club_id: CLUB_ID, cover_url: res.path }, function (r) {
+                    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'update_cover', club_id: CLUB_ID, cover_url: res.path }, function (r) {
                         if (!r.success) { alert(r.message); return; }
                         if ($('#club-cover-img').length) {
                             $('#club-cover-img').attr('src', res.path);
@@ -934,7 +934,7 @@ $('#btn-owner-leave').on('click', function () {
 })();
 </script>
 <?php if ($club['my_role']): ?>
-<a href="/member/create_form.php?club_id=<?= $club_id ?>"
+<a href="<?= REL_BASE ?>member/create_form.php?club_id=<?= $club_id ?>"
    class="fab-btn"
    title="新增表單">
     <i class="bi bi-plus-lg"></i>

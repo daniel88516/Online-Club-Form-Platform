@@ -335,7 +335,7 @@
         if (!btn || !overlay.classList.contains('show')) return;
         var reason = btn.getAttribute('data-reason');
         hideReport();
-        $.post('/api/report.php', { type: _type, target_id: _id, reason: reason }, function (res) {
+        $.post('<?= REL_BASE ?>api/report.php', { type: _type, target_id: _id, reason: reason }, function (res) {
             window.cuteToast({ type: res.success ? 'success' : 'error', icon: res.success ? '🚩' : '❌', msg: res.message });
         }, 'json').fail(function () {
             window.cuteToast({ type: 'error', msg: '網路錯誤，請稍後再試' });

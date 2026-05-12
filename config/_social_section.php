@@ -228,7 +228,7 @@ $comment_count_total = count($all_comments);
         </div>
         <?php else: ?>
         <div class="text-center mb-3">
-            <a href="/login.php" class="btn btn-outline-primary btn-sm">登入後回覆</a>
+            <a href="<?= REL_BASE ?>login.php" class="btn btn-outline-primary btn-sm">登入後回覆</a>
         </div>
         <?php endif; ?>
 
@@ -267,7 +267,7 @@ function quillImageHandler(quill) {
         fd.append('image', file);
         fd.append('type', 'comments');
         $.ajax({
-            url: '/api/upload.php', type: 'POST',
+            url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
             data: fd, contentType: false, processData: false,
             success: res => {
                 if (res.success) {
@@ -320,7 +320,7 @@ $(document).ready(function () {
 // ── 表單按讚 ──
 $(document).on('click', '#btn-like', function () {
     const btn = $(this);
-    $.post('/api/like.php', { form_id: FORM_ID }, function (res) {
+    $.post('<?= REL_BASE ?>api/like.php', { form_id: FORM_ID }, function (res) {
         if (!res.success) return;
         $('#like-count').text(res.count);
         btn.toggleClass('text-muted', !res.liked).toggleClass('text-body-emphasis', res.liked);
@@ -331,7 +331,7 @@ $(document).on('click', '#btn-like', function () {
 // ── 表單收藏 ──
 $(document).on('click', '#btn-bookmark', function () {
     const btn = $(this);
-    $.post('/api/bookmark.php', { form_id: FORM_ID }, function (res) {
+    $.post('<?= REL_BASE ?>api/bookmark.php', { form_id: FORM_ID }, function (res) {
         if (!res.success) return;
         $('#bookmark-count').text(res.count);
         btn.toggleClass('text-muted', !res.bookmarked).toggleClass('text-warning', res.bookmarked);
@@ -365,7 +365,7 @@ $(document).on('submit', '#comment-form', function (e) {
     if (!quillMain || quillMain.getText().trim() === '') return;
     const content = quillMain.root.innerHTML;
 
-    $.post('/api/comment.php', { form_id: FORM_ID, content: content }, function (res) {
+    $.post('<?= REL_BASE ?>api/comment.php', { form_id: FORM_ID, content: content }, function (res) {
         if (!res.success) return;
         $('#no-comment-hint').remove();
         $('#comments-list').append(makeCommentHTML(res.comment));
@@ -420,7 +420,7 @@ $(document).on('click', '.btn-submit-reply', function () {
     if (!quill || quill.getText().trim() === '') return;
     const content  = quill.root.innerHTML;
 
-    $.post('/api/comment.php',
+    $.post('<?= REL_BASE ?>api/comment.php',
         { form_id: FORM_ID, content: content, parent_id: parentId },
         function (res) {
             if (!res.success) return;
@@ -453,7 +453,7 @@ $(document).on('click', '.btn-delete-comment', function () {
     const commentId = $(this).data('comment-id');
     window.cuteConfirm({ icon: '💬', msg: '確定要刪除這則留言嗎？', sub: '此操作無法復原。' }, function (ok) {
         if (!ok) return;
-        $.post('/api/comment_delete.php', { comment_id: commentId }, function (res) {
+        $.post('<?= REL_BASE ?>api/comment_delete.php', { comment_id: commentId }, function (res) {
             if (!res.success) { alert(res.message); return; }
             const node = $(`#comment-${commentId}`);
             const deletedCount = node.find('.comment-node').length + 1;
@@ -501,7 +501,7 @@ $(document).on('click', '.btn-submit-edit', function () {
     const quill = quillEditInstances[cid];
     if (!quill || quill.getText().trim() === '') return;
     const content = quill.root.innerHTML;
-    $.post('/api/comment_edit.php', { comment_id: cid, content: content }, function (res) {
+    $.post('<?= REL_BASE ?>api/comment_edit.php', { comment_id: cid, content: content }, function (res) {
         if (!res.success) { alert(res.message); return; }
         $(`#comment-${cid} .ql-content`).first().html(res.content);
         $(`#edit-box-${cid}`).hide();
@@ -514,7 +514,7 @@ $(document).on('click', '.btn-submit-edit', function () {
 $(document).on('click', '.btn-comment-like', function () {
     const btn       = $(this);
     const commentId = btn.data('comment-id');
-    $.post('/api/comment_like.php', { comment_id: commentId }, function (res) {
+    $.post('<?= REL_BASE ?>api/comment_like.php', { comment_id: commentId }, function (res) {
         if (!res.success) return;
         btn.find('.comment-like-count').text(res.count || '');
         btn.toggleClass('text-muted', !res.liked).toggleClass('text-body-emphasis', res.liked);
@@ -639,9 +639,9 @@ $(document).on('click', '#btn-report-form', function () {
 $(document).on('click', '#btn-delete-form', function () {
     window.cuteConfirm({ icon: '📋', msg: '確定要刪除這個表單嗎？', sub: '此操作無法復原。' }, function (ok) {
         if (!ok) return;
-        $.post('/api/delete_form.php', { form_id: FORM_ID }, function (res) {
+        $.post('<?= REL_BASE ?>api/delete_form.php', { form_id: FORM_ID }, function (res) {
             if (res.success) {
-                window.location.href = '/index.php';
+                window.location.href = REL_BASE + 'index.php';
             } else {
                 alert(res.message || '刪除失敗');
             }

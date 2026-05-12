@@ -101,7 +101,7 @@ require_once 'config/header.php';
             <i class="bi bi-chat me-1"></i> 聊天
         </button>
     <?php elseif ($cur_uid == $profile_uid): ?>
-        <a href="/member/settings.php" class="btn btn-glow-primary">
+        <a href="<?= REL_BASE ?>member/settings.php" class="btn btn-glow-primary">
             <i class="bi bi-pencil me-1"></i> 編輯個人資料
         </a>
     <?php endif; ?>
@@ -144,7 +144,7 @@ require_once 'config/header.php';
                 </div>
                 <div class="card-footer bg-transparent">
                     <?php if (!$form['end_date'] || $form['end_date'] >= $now): ?>
-                        <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
+                        <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
                             <i class="bi bi-pencil"></i> 填寫表單
                         </a>
                     <?php else: ?>

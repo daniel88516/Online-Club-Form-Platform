@@ -378,7 +378,7 @@ $(document).on('click', '#btn-club-cover-crop-confirm', function () {
         fd.append('image', blob, 'cover.jpg');
         fd.append('type', 'clubs');
         $.ajax({
-            url: '/api/upload.php', type: 'POST',
+            url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
             data: fd, contentType: false, processData: false,
             success: function (res) {
                 if (res.success) {
@@ -408,7 +408,7 @@ window.addEventListener('load', function () {
 $('#btn-create-club').on('click', function () {
     const name = $('#club-name').val().trim();
     if (!name) { alert('請輸入社團名稱'); return; }
-    $.post('/api/club_action.php', {
+    $.post('<?= REL_BASE ?>api/club_action.php', {
         action: 'create',
         name: name,
         description: $('#club-desc').val().trim(),
@@ -438,7 +438,7 @@ $(document).on('click', '.btn-owner-options', function () {
     $('#oom-selected-avatar').html('');
     $('#oom-member-panel').addClass('d-none');
     $('#oom-member-list').html('<div class="p-2 text-muted small">載入中...</div>');
-    $.post('/api/club_action.php', { action: 'get_members', club_id: _oomClubId }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'get_members', club_id: _oomClubId }, function (res) {
         if (!res.success || res.members.length === 0) {
             $('#oom-member-list').html('<div class="p-2 text-muted small">無其他成員可選</div>');
             return;
@@ -475,7 +475,7 @@ $('#btn-transfer-owner').on('click', function () {
     const name = $('#oom-new-owner option:selected').text();
     cuteConfirm({ msg: `確定將管理員移交給「${name}」？`, sub: '移交後你將成為普通成員，此操作無法自動復原。', icon: '⚡', okText: '確認移交' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'transfer_owner', club_id: _oomClubId, new_owner_id: newOwner }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'transfer_owner', club_id: _oomClubId, new_owner_id: newOwner }, function (res) {
             if (res.success) { bootstrap.Modal.getInstance('#ownerOptionsModal').hide(); location.reload(); }
             else cuteToast({ type: 'error', msg: res.message });
         }, 'json');
@@ -486,7 +486,7 @@ $('#btn-delete-club').on('click', function () {
     const clubName = $('#oom-club-name').text();
     cuteConfirm({ msg: `確定刪除「${clubName}」？`, sub: '此操作無法復原，社團及所有成員資料將永久刪除。', icon: '🗑️', okText: '永久刪除' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'delete_club', club_id: _oomClubId }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'delete_club', club_id: _oomClubId }, function (res) {
             if (res.success) location.reload();
             else cuteToast({ type: 'error', msg: res.message });
         }, 'json');
@@ -496,7 +496,7 @@ $('#btn-delete-club').on('click', function () {
 $('#btn-owner-leave').on('click', function () {
     cuteConfirm({ msg: '確定要離開這個社團？', sub: '你的管理員身份將自動移交給最早加入的成員。若無其他成員，社團將被刪除。', icon: '👋', okText: '離開' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'owner_leave', club_id: _oomClubId }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'owner_leave', club_id: _oomClubId }, function (res) {
             if (res.success) { bootstrap.Modal.getInstance('#ownerOptionsModal').hide(); location.reload(); }
             else cuteToast({ type: 'error', msg: res.message });
         }, 'json');
@@ -505,7 +505,7 @@ $('#btn-owner-leave').on('click', function () {
 
 $(document).on('click', '.btn-join-club', function () {
     const id = $(this).data('id');
-    $.post('/api/club_action.php', { action: 'join', club_id: id }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'join', club_id: id }, function (res) {
         if (res.success) location.reload();
         else alert(res.message);
     });
@@ -514,7 +514,7 @@ $(document).on('click', '.btn-join-club', function () {
 $(document).on('click', '.btn-apply-club', function () {
     const $btn = $(this);
     const id = $btn.data('id');
-    $.post('/api/club_action.php', { action: 'join', club_id: id }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'join', club_id: id }, function (res) {
         if (res.success && res.pending) {
             $btn.removeClass('btn-glow-primary btn-apply-club').addClass('btn-glow-red btn-cancel-apply-club')
                 .html('<i class="bi bi-x-lg"></i> 取消申請');
@@ -529,7 +529,7 @@ $(document).on('click', '.btn-apply-club', function () {
 $(document).on('click', '.btn-cancel-apply-club', function () {
     const $btn = $(this);
     const id = $btn.data('id');
-    $.post('/api/club_action.php', { action: 'leave', club_id: id }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'leave', club_id: id }, function (res) {
         if (res.success) {
             $btn.removeClass('btn-glow-red btn-cancel-apply-club').addClass('btn-glow-primary btn-apply-club')
                 .html('<i class="bi bi-send"></i> 申請');
@@ -541,7 +541,7 @@ $(document).on('click', '.btn-cancel-apply-club', function () {
 
 $(document).on('click', '.btn-accept-invite-club', function () {
     const id = $(this).data('id');
-    $.post('/api/club_action.php', { action: 'accept_invite', club_id: id }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'accept_invite', club_id: id }, function (res) {
         if (res.success) location.href = '/club.php?id=' + id;
         else alert(res.message);
     });
@@ -549,7 +549,7 @@ $(document).on('click', '.btn-accept-invite-club', function () {
 
 $(document).on('click', '.btn-decline-invite-club', function () {
     const id = $(this).data('id');
-    $.post('/api/club_action.php', { action: 'decline_invite', club_id: id }, function (res) {
+    $.post('<?= REL_BASE ?>api/club_action.php', { action: 'decline_invite', club_id: id }, function (res) {
         if (res.success) location.reload();
         else alert(res.message);
     });
@@ -559,7 +559,7 @@ $(document).on('click', '.btn-leave-club', function () {
     const id = $(this).data('id');
     cuteConfirm({ msg: '確定要離開此社團？', sub: '離開後可重新申請加入。', icon: '👋', okText: '離開' }, function (ok) {
         if (!ok) return;
-        $.post('/api/club_action.php', { action: 'leave', club_id: id }, function (res) {
+        $.post('<?= REL_BASE ?>api/club_action.php', { action: 'leave', club_id: id }, function (res) {
             if (res.success) location.reload();
             else alert(res.message);
         });

@@ -71,7 +71,7 @@ require_once 'config/header.php';
                 <?php if ($success): ?>
                     <div class="alert alert-success">
                         <i class="bi bi-check-circle"></i> <?= htmlspecialchars($success) ?>
-                        <a href="/login.php" class="alert-link">點此登入</a>
+                        <a href="<?= REL_BASE ?>login.php" class="alert-link">點此登入</a>
                     </div>
                 <?php endif; ?>
 
@@ -107,7 +107,7 @@ require_once 'config/header.php';
                 </form>
             </div>
             <div class="card-footer text-center py-3">
-                已有帳號？<a href="/login.php">立即登入</a>
+                已有帳號？<a href="<?= REL_BASE ?>login.php">立即登入</a>
             </div>
         </div>
     </div>
@@ -141,7 +141,7 @@ $(document).ready(function () {
             return;
         }
         $.ajax({
-            url: '/api/check_username.php',
+            url: '<?= REL_BASE ?>api/check_username.php',
             type: 'POST',
             data: { username: val },
             success: function (res) {
@@ -168,7 +168,7 @@ $(document).ready(function () {
             return;
         }
         $.ajax({
-            url: '/api/check_email.php',
+            url: '<?= REL_BASE ?>api/check_email.php',
             type: 'POST',
             data: { email: val },
             success: function (res) {

@@ -49,7 +49,7 @@ require_once '../config/header.php';
                 <ul class="list-group list-group-flush">
                     <?php while ($conv = mysqli_fetch_assoc($conversations)): ?>
                     <li class="list-group-item list-group-item-action p-0">
-                        <a href="/member/conversation.php?with=<?= $conv['other_id'] ?>"
+                        <a href="<?= REL_BASE ?>member/conversation.php?with=<?= $conv['other_id'] ?>"
                            class="d-flex align-items-center gap-3 px-3 py-3 text-decoration-none text-reset">
                             <!-- 頭像 -->
                             <?= renderAvatar($conv['other_name'], $conv['other_avatar'], 44) ?>

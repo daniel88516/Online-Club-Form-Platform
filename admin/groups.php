@@ -51,7 +51,7 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-diagram-3"></i> 群組管理</h4>
     </div>
     <div class="col-auto">
-        <a href="/admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>

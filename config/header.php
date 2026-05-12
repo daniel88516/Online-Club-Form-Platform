@@ -39,10 +39,11 @@ require_once __DIR__ . '/session.php';
     <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' - ' : '' ?>線上表單系統</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/style.css?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . '/css/style.css') ?>">
+    <link rel="stylesheet" href="<?= REL_BASE ?>css/style.css?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/css/style.css') ?>">
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="/js/theme-color.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'].'/js/theme-color.js') ?>"></script>
+    <script>window.REL_BASE = '<?= REL_BASE ?>';</script>
+    <script src="<?= REL_BASE ?>js/theme-color.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/js/theme-color.js') ?>"></script>
     <script>(function(){ var c = localStorage.getItem('themeColor') || '#6610f2'; applyThemeColor(c); })();</script>
     <style>
         /* ── 導覽列主題切換三段式元件 ── */
@@ -89,7 +90,7 @@ require_once __DIR__ . '/session.php';
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top" style="position:relative;">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="/index.php">
+        <a class="navbar-brand fw-bold" href="<?= REL_BASE ?>index.php">
             <i class="bi bi-file-earmark-text"></i> 線上表單系統
         </a>
         <?php if (!empty($showNavSearch)): ?>
@@ -150,15 +151,15 @@ require_once __DIR__ . '/session.php';
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <?php if (isMember()): ?>
-                        <li><a class="dropdown-item" href="/profile.php?id=<?= $_SESSION['user_id'] ?>"><i class="bi bi-person me-2"></i> 個人頁面</a></li>
+                        <li><a class="dropdown-item" href="<?= REL_BASE ?>profile.php?id=<?= $_SESSION['user_id'] ?>"><i class="bi bi-person me-2"></i> 個人頁面</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/member/my_forms.php"><i class="bi bi-journal-text me-2"></i> 我的表單</a></li>
+                        <li><a class="dropdown-item" href="<?= REL_BASE ?>member/my_forms.php"><i class="bi bi-journal-text me-2"></i> 我的表單</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/clubs.php"><i class="bi bi-people me-2"></i> 社團</a></li>
+                        <li><a class="dropdown-item" href="<?= REL_BASE ?>clubs.php"><i class="bi bi-people me-2"></i> 社團</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <?php endif; ?>
                         <?php if (isAdmin()): ?>
-                        <li><a class="dropdown-item" href="/admin/dashboard.php"><i class="bi bi-speedometer2 me-2"></i> 管理後台</a></li>
+                        <li><a class="dropdown-item" href="<?= REL_BASE ?>admin/dashboard.php"><i class="bi bi-speedometer2 me-2"></i> 管理後台</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <?php endif; ?>
                         <!-- 主題切換 -->
@@ -172,17 +173,17 @@ require_once __DIR__ . '/session.php';
                             </div>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/member/settings.php"><i class="bi bi-gear me-2"></i> 設定</a></li>
+                        <li><a class="dropdown-item" href="<?= REL_BASE ?>member/settings.php"><i class="bi bi-gear me-2"></i> 設定</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/logout.php"><i class="bi bi-box-arrow-right me-2"></i> 登出</a></li>
+                        <li><a class="dropdown-item" href="<?= REL_BASE ?>logout.php"><i class="bi bi-box-arrow-right me-2"></i> 登出</a></li>
                     </ul>
                 </li>
                 <?php else: ?>
                 <li class="nav-item">
-                    <a class="nav-link" href="/login.php"><i class="bi bi-box-arrow-in-right"></i> 登入</a>
+                    <a class="nav-link" href="<?= REL_BASE ?>login.php"><i class="bi bi-box-arrow-in-right"></i> 登入</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/register.php"><i class="bi bi-person-plus"></i> 註冊</a>
+                    <a class="nav-link" href="<?= REL_BASE ?>register.php"><i class="bi bi-person-plus"></i> 註冊</a>
                 </li>
                 <?php endif; ?>
             </ul>

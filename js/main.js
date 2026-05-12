@@ -97,7 +97,7 @@ function attachPasteImageHandler(quill, uploadType) {
                 fd.append('type', uploadType);
                 var _quill = quill;
                 $.ajax({
-                    url: '/api/upload.php', type: 'POST',
+                    url: (window.REL_BASE||'') + 'api/upload.php', type: 'POST',
                     data: fd, contentType: false, processData: false,
                     success: function (res) {
                         if (res.success) {

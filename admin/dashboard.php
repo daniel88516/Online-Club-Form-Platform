@@ -77,7 +77,7 @@ require_once '../config/header.php';
             <div class="card-body py-4 px-4">
                 <h5 class="fw-bold"><i class="bi bi-people text-primary"></i> 會員管理</h5>
                 <p class="text-muted small">查看、修改、刪除會員帳號</p>
-                <a href="/admin/members.php" class="btn btn-glow-primary btn-sm">進入管理</a>
+                <a href="<?= REL_BASE ?>admin/members.php" class="btn btn-glow-primary btn-sm">進入管理</a>
             </div>
         </div>
     </div>
@@ -86,7 +86,7 @@ require_once '../config/header.php';
             <div class="card-body py-4 px-4">
                 <h5 class="fw-bold"><i class="bi bi-file-earmark-text text-success"></i> 表單管理</h5>
                 <p class="text-muted small">查看、刪除所有表單</p>
-                <a href="/admin/forms.php" class="btn btn-glow-green btn-sm">進入管理</a>
+                <a href="<?= REL_BASE ?>admin/forms.php" class="btn btn-glow-green btn-sm">進入管理</a>
             </div>
         </div>
     </div>
@@ -95,7 +95,7 @@ require_once '../config/header.php';
             <div class="card-body py-4 px-4">
                 <h5 class="fw-bold"><i class="bi bi-diagram-3 text-warning"></i> 群組管理</h5>
                 <p class="text-muted small">新增、修改、刪除群組</p>
-                <a href="/admin/groups.php" class="btn btn-glow-primary btn-sm" style="--glow-rgb:255,180,0;">進入管理</a>
+                <a href="<?= REL_BASE ?>admin/groups.php" class="btn btn-glow-primary btn-sm" style="--glow-rgb:255,180,0;">進入管理</a>
             </div>
         </div>
     </div>
@@ -104,7 +104,7 @@ require_once '../config/header.php';
             <div class="card-body py-4 px-4">
                 <h5 class="fw-bold"><i class="bi bi-people-fill text-info"></i> 社團管理</h5>
                 <p class="text-muted small">查看、刪除所有社團</p>
-                <a href="/admin/clubs.php" class="btn btn-glow-primary btn-sm" style="--glow-rgb:13,202,240;">進入管理</a>
+                <a href="<?= REL_BASE ?>admin/clubs.php" class="btn btn-glow-primary btn-sm" style="--glow-rgb:13,202,240;">進入管理</a>
             </div>
         </div>
     </div>
@@ -118,7 +118,7 @@ require_once '../config/header.php';
                     <?php endif; ?>
                 </h5>
                 <p class="text-muted small">查看並處理會員的檢舉記錄</p>
-                <a href="/admin/reports.php" class="btn btn-glow-primary btn-sm" style="--glow-rgb:220,53,69;">進入管理</a>
+                <a href="<?= REL_BASE ?>admin/reports.php" class="btn btn-glow-primary btn-sm" style="--glow-rgb:220,53,69;">進入管理</a>
             </div>
         </div>
     </div>

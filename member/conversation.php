@@ -44,7 +44,7 @@ require_once '../config/header.php';
 
         <!-- 頂部標題列 -->
         <div class="d-flex align-items-center gap-2 mb-3">
-            <a href="/member/messages.php" class="btn btn-sm btn-outline-secondary">
+            <a href="<?= REL_BASE ?>member/messages.php" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <?= renderAvatar($other['username'], $other['avatar'], 36) ?>
@@ -129,7 +129,7 @@ function sendMessage() {
     $('#msg-input').val('').focus();
     $('#empty-hint').remove();
 
-    $.post('/api/send_message.php', { receiver_id: WITH_ID, content: content }, function (res) {
+    $.post('<?= REL_BASE ?>api/send_message.php', { receiver_id: WITH_ID, content: content }, function (res) {
         if (res.success) {
             const bubble = buildBubble({ id: res.message_id, sender_id: me, content: content, created_at: res.created_at });
             $container.append(bubble);
@@ -149,7 +149,7 @@ $('#msg-input').on('keydown', function (e) {
 
 // 輪詢新訊息（每 3 秒）
 setInterval(function () {
-    $.get('/api/get_messages.php', { with: WITH_ID, last_id: lastId }, function (res) {
+    $.get('<?= REL_BASE ?>api/get_messages.php', { with: WITH_ID, last_id: lastId }, function (res) {
         if (!res.success || res.messages.length === 0) return;
         $('#empty-hint').remove();
         res.messages.forEach(function (msg) {

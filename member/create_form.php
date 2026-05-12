@@ -100,7 +100,7 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-plus-circle"></i> 新增表單</h4>
     </div>
     <div class="col-auto">
-        <a href="/member/my_forms.php" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -402,7 +402,7 @@ $('#cover-image-input').on('change', function () {
     fd.append('image', file);
     fd.append('type', 'forms');
     $.ajax({
-        url: '/api/upload.php', type: 'POST',
+        url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
         data: fd, contentType: false, processData: false,
         success: res => {
             if (res.success) {
@@ -446,7 +446,7 @@ $(document).ready(function () {
                             fd.append('image', file);
                             fd.append('type', 'forms');
                             $.ajax({
-                                url: '/api/upload.php', type: 'POST',
+                                url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
                                 data: fd, contentType: false, processData: false,
                                 success: res => {
                                     if (res.success) {

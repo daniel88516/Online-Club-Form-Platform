@@ -184,9 +184,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="<?= REL_BASE ?>css/style.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="/js/theme-color.js"></script>
+    <script>window.REL_BASE = '<?= REL_BASE ?>';</script>
+    <script src="<?= REL_BASE ?>js/theme-color.js"></script>
     <script>(function(){ var c = localStorage.getItem('themeColor'); if (c) applyThemeColor(c); })();</script>
 </head>
 <body class="bg-light">
@@ -210,15 +211,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h4 class="mt-3 fw-bold">填答完成！</h4>
                     <p class="text-muted">感謝您的填答</p>
                     <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-                        <a href="/form_view.php?id=<?= $id ?>&edit_response=<?= $response_id ?>" class="btn btn-glow-red">
+                        <a href="<?= REL_BASE ?>form_view.php?id=<?= $id ?>&edit_response=<?= $response_id ?>" class="btn btn-glow-red">
                             <i class="bi bi-pencil-square me-1"></i> 修改填答
                         </a>
                         <?php if (!empty($form['show_stats']) || $form['user_id'] == $user_id): ?>
-                        <a href="/member/form_responses.php?id=<?= $id ?>" class="btn btn-glow-cyan">
+                        <a href="<?= REL_BASE ?>member/form_responses.php?id=<?= $id ?>" class="btn btn-glow-cyan">
                             <i class="bi bi-bar-chart me-1"></i> 查看統計
                         </a>
                         <?php endif; ?>
-                        <a href="/index.php" class="btn btn-glow-green">
+                        <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-green">
                             <i class="bi bi-house me-1"></i> 回到首頁
                         </a>
                     </div>

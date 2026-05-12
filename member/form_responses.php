@@ -121,7 +121,7 @@ var _chartGrid = getComputedStyle(document.documentElement)
         <small class="text-muted">建立者：<?= htmlspecialchars($form['author']) ?></small>
     </div>
     <div class="col-auto">
-        <a href="/member/my_forms.php" class="btn btn-glow-primary">
+        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-glow-primary">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -471,7 +471,7 @@ $(document).on('click', '.btn-view-response', function () {
     $('#rd-body').html('<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>');
     bootstrap.Modal.getOrCreateInstance(document.getElementById('responseDetailModal')).show();
 
-    $.get('/api/response_detail.php', { id: id }, function (res) {
+    $.get('<?= REL_BASE ?>api/response_detail.php', { id: id }, function (res) {
         if (!res.success) { $('#rd-body').html('<div class="alert alert-danger">' + res.message + '</div>'); return; }
 
         $('#rd-respondent').text(res.respondent);

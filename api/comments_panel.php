@@ -189,7 +189,7 @@ if ($cur_user) {
 </div>
 <?php else: ?>
 <div class="text-center mb-3 pt-2">
-    <a href="/login.php" class="btn btn-outline-primary btn-sm">登入後回覆</a>
+    <a href="<?= APP_BASE ?>/login.php" class="btn btn-outline-primary btn-sm">登入後回覆</a>
 </div>
 <?php endif; ?>
 
@@ -224,7 +224,7 @@ if ($cur_user) {
             fd.append('image', file);
             fd.append('type', 'comments');
             $.ajax({
-                url: '/api/upload.php', type: 'POST',
+                url: (window.REL_BASE||'') + 'api/upload.php', type: 'POST',
                 data: fd, contentType: false, processData: false,
                 success: res => {
                     if (res.success) {
@@ -289,7 +289,7 @@ if ($cur_user) {
         if (!quillMain || quillMain.getText().trim() === '') return;
         const content = quillMain.root.innerHTML;
 
-        $.post('/api/comment.php', { form_id: FORM_ID, content: content }, function (res) {
+        $.post((window.REL_BASE||'') + 'api/comment.php', { form_id: FORM_ID, content: content }, function (res) {
             if (!res.success) return;
             $('#no-comment-hint-f' + FORM_ID).remove();
             $('#comments-list-f' + FORM_ID).append(makeCommentHTML(res.comment));
@@ -342,7 +342,7 @@ if ($cur_user) {
         if (!quill || quill.getText().trim() === '') return;
         const content  = quill.root.innerHTML;
 
-        $.post('/api/comment.php',
+        $.post((window.REL_BASE||'') + 'api/comment.php',
             { form_id: FORM_ID, content: content, parent_id: parentId },
             function (res) {
                 if (!res.success) return;
@@ -374,7 +374,7 @@ if ($cur_user) {
         const commentId = $(this).data('comment-id');
         window.cuteConfirm({ icon: '💬', msg: '確定要刪除這則留言嗎？', sub: '此操作無法復原。' }, function (ok) {
             if (!ok) return;
-            $.post('/api/comment_delete.php', { comment_id: commentId }, function (res) {
+            $.post((window.REL_BASE||'') + 'api/comment_delete.php', { comment_id: commentId }, function (res) {
                 if (!res.success) { alert(res.message); return; }
                 const $node   = $(`#comment-${commentId}`);
                 const deleted = $node.find('.comment-node').length + 1;
@@ -419,7 +419,7 @@ if ($cur_user) {
         const quill = quillEditInstances[cid];
         if (!quill || quill.getText().trim() === '') return;
         const content = quill.root.innerHTML;
-        $.post('/api/comment_edit.php', { comment_id: cid, content: content }, function (res) {
+        $.post((window.REL_BASE||'') + 'api/comment_edit.php', { comment_id: cid, content: content }, function (res) {
             if (!res.success) { alert(res.message); return; }
             $(`#comment-${cid} .ql-content`).first().html(res.content);
             $(`#edit-box-${cid}`).hide();
@@ -432,7 +432,7 @@ if ($cur_user) {
     $root.on('click', '.btn-comment-like', function () {
         const btn       = $(this);
         const commentId = btn.data('comment-id');
-        $.post('/api/comment_like.php', { comment_id: commentId }, function (res) {
+        $.post((window.REL_BASE||'') + 'api/comment_like.php', { comment_id: commentId }, function (res) {
             if (!res.success) return;
             btn.find('.comment-like-count').text(res.count || '');
             btn.toggleClass('text-muted', !res.liked).toggleClass('text-body-emphasis', res.liked);

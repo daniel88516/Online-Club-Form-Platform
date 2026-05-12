@@ -331,7 +331,7 @@ $(document).on('click', '.btn-ratio', function () {
     $(this).removeClass('btn-outline-secondary').addClass('btn-glow-primary');
     // 即時更新預覽
     document.getElementById('bg-preview-card').style.aspectRatio = window._bgRatio + '/3';
-    $.post('/api/save_bg_ratio.php', { ratio: window._bgRatio }, null, 'json');
+    $.post('<?= REL_BASE ?>api/save_bg_ratio.php', { ratio: window._bgRatio }, null, 'json');
 });
 
 /* ── 背景圖片上傳（含裁切）── */
@@ -383,7 +383,7 @@ $(document).on('click', '.btn-ratio', function () {
             var fd = new FormData();
             fd.append('profile_bg', blob, 'bg.jpg');
             $.ajax({
-                url: '/api/upload_profile_bg.php', type: 'POST',
+                url: '<?= REL_BASE ?>api/upload_profile_bg.php', type: 'POST',
                 data: fd, contentType: false, processData: false,
                 success: function (res) {
                     if (res.success) {
@@ -411,7 +411,7 @@ $(document).on('click', '.btn-ratio', function () {
     var $status = $('#bio-status');
     $input.on('input', function () { $len.text($(this).val().length); });
     $('#btn-save-bio').on('click', function () {
-        $.post('/api/update_bio.php', { bio: $input.val() }, function (res) {
+        $.post('<?= REL_BASE ?>api/update_bio.php', { bio: $input.val() }, function (res) {
             if (res.success) {
                 $status.html('<span class="text-success small"><i class="bi bi-check-circle me-1"></i>已儲存</span>');
                 setTimeout(function () { $status.html(''); }, 2500);
@@ -598,7 +598,7 @@ $(document).on('click', '.btn-ratio', function () {
             var fd = new FormData();
             fd.append('avatar', blob, 'avatar.jpg');
             $.ajax({
-                url: '/api/upload_avatar.php', type: 'POST',
+                url: '<?= REL_BASE ?>api/upload_avatar.php', type: 'POST',
                 data: fd, contentType: false, processData: false,
                 success: function (res) {
                     if (res.success) {

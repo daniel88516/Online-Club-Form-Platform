@@ -45,7 +45,7 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-file-earmark-text"></i> 表單管理</h4>
     </div>
     <div class="col-auto">
-        <a href="/admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -62,7 +62,7 @@ require_once '../config/header.php';
                value="<?= htmlspecialchars($search) ?>">
         <button class="btn btn-glow-primary btn-sm px-3 flex-shrink-0" type="submit">搜尋</button>
         <?php if ($search): ?>
-            <a href="/admin/forms.php" class="btn btn-sm btn-outline-secondary flex-shrink-0"><i class="bi bi-x"></i></a>
+            <a href="<?= REL_BASE ?>admin/forms.php" class="btn btn-sm btn-outline-secondary flex-shrink-0"><i class="bi bi-x"></i></a>
         <?php endif; ?>
     </div>
 </form>
@@ -116,13 +116,13 @@ require_once '../config/header.php';
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <?php if ($form['user_id'] == $_SESSION['user_id']): ?>
                                     <li>
-                                        <a class="dropdown-item" href="/member/edit_form.php?id=<?= $form['id'] ?>">
+                                        <a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>">
                                             <i class="bi bi-pencil text-primary me-2"></i> 編輯表單
                                         </a>
                                     </li>
                                     <?php endif; ?>
                                     <li>
-                                        <a class="dropdown-item" href="/member/form_responses.php?id=<?= $form['id'] ?>">
+                                        <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>">
                                             <i class="bi bi-bar-chart text-info me-2"></i> 查看統計
                                         </a>
                                     </li>
@@ -224,7 +224,7 @@ $(document).on('click', '.btn-preview-form', function () {
     $('#preview-form-title').text(formTitle);
     $('#preview-body').html('<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>');
     bootstrap.Modal.getOrCreateInstance(_previewModalEl).show();
-    $.get('/api/form_preview_content.php', { id: formId }, function (html) {
+    $.get('<?= REL_BASE ?>api/form_preview_content.php', { id: formId }, function (html) {
         $('#preview-body').html(html);
     }).fail(function () {
         $('#preview-body').html('<div class="alert alert-danger">載入失敗，請稍後再試</div>');

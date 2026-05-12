@@ -460,7 +460,7 @@
 
     // 顯示對話列表
     function showConvList() {
-        $.get('/api/get_conversations.php', function (res) {
+        $.get(REL_BASE + 'api/get_conversations.php', function (res) {
             if (!res.success) return;
             const $list = $('#chat-conv-list');
             $list.find('.chat-conv-item').remove();
@@ -538,13 +538,13 @@
             const exploreMatch = msg.content.match(/\[CLUBS_EXPLORE\]/);
             const cleanText = $('<span>').text(msg.content.replace(/\[REPORT:\d+\]|\[CLUB:\d+\]|\[CLUBS_PENDING\]|\[CLUBS_EXPLORE\]/g, '').trim()).html().replace(/\n/g, '<br>');
             const btnHtml   = reportMatch
-                ? `<a href="/admin/reports.php?highlight=${reportMatch[1]}" class="btn btn-sm w-100 mt-2 fw-semibold d-flex align-items-center justify-content-center gap-1" style="background:#f59e0b;border-color:#f59e0b;color:#fff;font-size:0.8rem;"><i class="bi bi-arrow-right-circle"></i> 前往處理此檢舉</a>`
+                ? `<a href="${REL_BASE}admin/reports.php?highlight=${reportMatch[1]}" class="btn btn-sm w-100 mt-2 fw-semibold d-flex align-items-center justify-content-center gap-1" style="background:#f59e0b;border-color:#f59e0b;color:#fff;font-size:0.8rem;"><i class="bi bi-arrow-right-circle"></i> 前往處理此檢舉</a>`
                 : clubMatch
-                ? `<a href="/club.php?id=${clubMatch[1]}" class="btn btn-glow-primary btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-arrow-right-circle"></i> 前往社團</a>`
+                ? `<a href="${REL_BASE}club.php?id=${clubMatch[1]}" class="btn btn-glow-primary btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-arrow-right-circle"></i> 前往社團</a>`
                 : pendingMatch
-                ? `<a href="/clubs.php?tab=pending" class="btn btn-glow-amber btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-hourglass-split"></i> 前往待處理社團</a>`
+                ? `<a href="${REL_BASE}clubs.php?tab=pending" class="btn btn-glow-amber btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-hourglass-split"></i> 前往待處理社團</a>`
                 : exploreMatch
-                ? `<a href="/clubs.php" class="btn btn-glow-dark btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-compass"></i> 探索社團</a>`
+                ? `<a href="${REL_BASE}clubs.php" class="btn btn-glow-dark btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-compass"></i> 探索社團</a>`
                 : '';
             return `<div class="chat-bubble-wrap">
                 <div class="chat-bubble system">
@@ -624,7 +624,7 @@
     // 載入訊息
     function loadMessages(scroll) {
         if (!currentWith) return;
-        $.get('/api/get_messages.php', { with: currentWith, last_id: lastMsgId }, function (res) {
+        $.get(REL_BASE + 'api/get_messages.php', { with: currentWith, last_id: lastMsgId }, function (res) {
             if (!res.success) return;
             if (res.messages && res.messages.length > 0) {
                 res.messages.forEach(function (m) {
@@ -647,7 +647,7 @@
         const content = $('#chat-input').val().trim();
         if (!content || !currentWith) return;
         $('#chat-input').val('');
-        $.post('/api/send_message.php', { receiver_id: currentWith, content: content }, function (res) {
+        $.post(REL_BASE + 'api/send_message.php', { receiver_id: currentWith, content: content }, function (res) {
             if (res.success) {
                 $msgBody.append(buildBubble({
                     id: res.message_id, sender_id: ME,
@@ -745,7 +745,7 @@
         const sticker = $(this).text().trim();
         if (!currentWith) return;
         const content = `[sticker:${sticker}]`;
-        $.post('/api/send_message.php', { receiver_id: currentWith, content: content }, function (res) {
+        $.post(REL_BASE + 'api/send_message.php', { receiver_id: currentWith, content: content }, function (res) {
             if (res.success) {
                 $msgBody.append(buildBubble({ id: res.message_id, sender_id: ME, content: content, created_at: res.created_at }));
                 lastMsgId = res.message_id;
@@ -785,7 +785,7 @@
 
     // 更新未讀徽章（可重複呼叫）
     function refreshBadge() {
-        $.get('/api/get_conversations.php', function (res) {
+        $.get(REL_BASE + 'api/get_conversations.php', function (res) {
             if (!res.success) return;
             let total = 0;
             res.conversations.forEach(function (c) { total += parseInt(c.unread_count) || 0; });

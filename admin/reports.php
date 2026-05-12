@@ -85,7 +85,7 @@ require_once '../config/header.php';
         </h4>
     </div>
     <div class="col-auto">
-        <a href="/admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -297,7 +297,7 @@ $(document).on('click', '.btn-preview-report-form', function () {
     $('#preview-report-form-title').text(formTitle);
     $('#preview-report-form-body').html('<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>');
     bootstrap.Modal.getOrCreateInstance(_previewReportModalEl).show();
-    $.get('/api/form_preview_content.php', { id: formId }, function (html) {
+    $.get('<?= REL_BASE ?>api/form_preview_content.php', { id: formId }, function (html) {
         $('#preview-report-form-body').html(html);
     }).fail(function () {
         $('#preview-report-form-body').html('<div class="alert alert-danger">載入失敗，請稍後再試</div>');
@@ -312,7 +312,7 @@ $(document).on('click', '.btn-preview-comment', function () {
     const content  = $(this).data('content');
     const formId   = $(this).data('form-id');
     $('#preview-comment-body').html(content || '<span class="text-muted">（無內容）</span>');
-    $('#preview-comment-form-link').attr('href', formId ? '/form_view.php?id=' + formId : '#');
+    $('#preview-comment-form-link').attr('href', formId ? REL_BASE + 'form_view.php?id=' + formId : '#');
     bootstrap.Modal.getOrCreateInstance(document.getElementById('commentPreviewModal')).show();
 });
 </script>

@@ -3,6 +3,20 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if (!defined('APP_BASE')) {
+    // 自動偵測部署子目錄（根目錄部署＝''，子目錄部署＝'/group_13' 等）
+    $docRoot  = rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'])), '/');
+    $projRoot = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/..')), '/');
+    define('APP_BASE', str_replace($docRoot, '', $projRoot));
+}
+
+if (!defined('REL_BASE')) {
+    // HTML 資源相對前綴，根目錄頁面=''，member/admin 頁面='../'
+    $scriptRel = str_replace(APP_BASE, '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME']));
+    $depth     = substr_count(trim($scriptRel, '/'), '/');
+    define('REL_BASE', str_repeat('../', $depth));
+}
+
 function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
@@ -17,18 +31,18 @@ function isMember() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: /login.php');
+        header('Location: ' . APP_BASE . '/login.php');
         exit();
     }
 }
 
 function requireAdmin() {
     if (!isLoggedIn()) {
-        header('Location: /login.php');
+        header('Location: ' . APP_BASE . '/login.php');
         exit();
     }
     if (!isAdmin()) {
-        header('Location: /login.php');
+        header('Location: ' . APP_BASE . '/login.php');
         exit();
     }
 }

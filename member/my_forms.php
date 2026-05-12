@@ -182,7 +182,7 @@ function timeAgo($dt) {
     <div class="text-center py-5 text-muted">
         <i class="bi bi-journal-plus" style="font-size:3rem;"></i>
         <p class="mt-3">還沒有建立任何表單</p>
-        <a href="/member/create_form.php" class="btn btn-glow-primary btn-sm">建立第一個表單</a>
+        <a href="<?= REL_BASE ?>member/create_form.php" class="btn btn-glow-primary btn-sm">建立第一個表單</a>
     </div>
 <?php else: ?>
 <div class="row justify-content-center"><div class="col-lg-7">
@@ -218,8 +218,8 @@ function timeAgo($dt) {
                     <i class="bi bi-three-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
-                    <li><a class="dropdown-item" href="/member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計<?php if (!($form['show_stats'] ?? 1)): ?><i class="bi bi-lock-fill text-secondary ms-1 small"></i><?php endif; ?></a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計<?php if (!($form['show_stats'] ?? 1)): ?><i class="bi bi-lock-fill text-secondary ms-1 small"></i><?php endif; ?></a></li>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
@@ -253,7 +253,7 @@ function timeAgo($dt) {
         <?php elseif ($expired): ?>
             <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
         <?php else: ?>
-            <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
+            <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
         <?php endif; ?>
     </div>
     <div class="card-footer bg-transparent border-top d-flex justify-content-around py-2">
@@ -285,7 +285,7 @@ function timeAgo($dt) {
     <div class="text-center py-5 text-muted">
         <i class="bi bi-bookmark" style="font-size:3rem;"></i>
         <p class="mt-3">尚未收藏任何表單</p>
-        <a href="/index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
+        <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
     </div>
 <?php else: ?>
 <div class="row justify-content-center"><div class="col-lg-7">
@@ -304,7 +304,7 @@ function timeAgo($dt) {
     <div class="card-header d-flex align-items-center gap-2 py-2">
         <?= renderAvatarDropdown($form['author'], $form['author_avatar'] ?? null, $form['user_id'], 40, $uid) ?>
         <div>
-            <a href="/profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis"><?= htmlspecialchars($form['author']) ?></a>
+            <a href="<?= REL_BASE ?>profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis"><?= htmlspecialchars($form['author']) ?></a>
             <div class="text-muted small"><?= timeAgo($form['created_at']) ?></div>
         </div>
         <div class="ms-auto d-flex align-items-center gap-2">
@@ -320,11 +320,11 @@ function timeAgo($dt) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <?php if ($form['user_id'] == $uid): ?>
-                    <li><a class="dropdown-item" href="/member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
-                    <li><a class="dropdown-item" href="/member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                     <?php endif; ?>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -349,7 +349,7 @@ function timeAgo($dt) {
         <?php elseif ($expired): ?>
             <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
         <?php else: ?>
-            <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
+            <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
         <?php endif; ?>
     </div>
     <div class="card-footer bg-transparent border-top d-flex justify-content-around py-2">
@@ -382,7 +382,7 @@ function timeAgo($dt) {
     <div class="text-center py-5 text-muted">
         <i class="bi bi-heart" style="font-size:3rem;"></i>
         <p class="mt-3">尚未對任何表單按讚</p>
-        <a href="/index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
+        <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
     </div>
 <?php else: ?>
 <div class="row justify-content-center"><div class="col-lg-7">
@@ -401,7 +401,7 @@ function timeAgo($dt) {
     <div class="card-header d-flex align-items-center gap-2 py-2">
         <?= renderAvatarDropdown($form['author'], $form['author_avatar'] ?? null, $form['user_id'], 40, $uid) ?>
         <div>
-            <a href="/profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis"><?= htmlspecialchars($form['author']) ?></a>
+            <a href="<?= REL_BASE ?>profile.php?id=<?= $form['user_id'] ?>" class="fw-bold text-decoration-none link-body-emphasis"><?= htmlspecialchars($form['author']) ?></a>
             <div class="text-muted small"><?= timeAgo($form['created_at']) ?></div>
         </div>
         <div class="ms-auto d-flex align-items-center gap-2">
@@ -417,11 +417,11 @@ function timeAgo($dt) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <?php if ($form['user_id'] == $uid): ?>
-                    <li><a class="dropdown-item" href="/member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
-                    <li><a class="dropdown-item" href="/member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                     <?php endif; ?>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -446,7 +446,7 @@ function timeAgo($dt) {
         <?php elseif ($expired): ?>
             <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
         <?php else: ?>
-            <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
+            <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
         <?php endif; ?>
     </div>
     <div class="card-footer bg-transparent border-top d-flex justify-content-around py-2">
@@ -555,7 +555,7 @@ $(document).on('click', '.sort-opt', function () {
 // ── 按讚 ──
 $(document).on('click', '.btn-like', function () {
     const btn = $(this), formId = btn.data('id');
-    $.post('/api/like.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/like.php', { form_id: formId }, function (res) {
         if (res.success) {
             btn.find('.like-count').text(res.count);
             if (res.liked) { btn.removeClass('text-muted').addClass('liked'); btn.find('i').removeClass('bi-heart').addClass('bi-heart-fill'); }
@@ -567,7 +567,7 @@ $(document).on('click', '.btn-like', function () {
 // ── 收藏 ──
 $(document).on('click', '.btn-bookmark', function () {
     const btn = $(this), formId = btn.data('id');
-    $.post('/api/bookmark.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/bookmark.php', { form_id: formId }, function (res) {
         if (res.success) {
             btn.find('.bookmark-count').text(res.count);
             if (res.bookmarked) { btn.removeClass('text-muted').addClass('bookmarked'); btn.find('i').removeClass('bi-bookmark').addClass('bi-bookmark-fill'); }
@@ -589,7 +589,7 @@ $(document).on('click', '.btn-toggle-feed-comments', function () {
     $btn.find('i').removeClass('bi-chat').addClass('bi-chat-fill');
     if ($panel.data('loaded')) { $panel.slideDown(200); return; }
     $panel.html('<div class="text-center py-3 border-top"><span class="spinner-border spinner-border-sm text-muted"></span></div>').slideDown(200);
-    $.get('/api/comments_panel.php', { form_id: formId }, function (html) {
+    $.get('<?= REL_BASE ?>api/comments_panel.php', { form_id: formId }, function (html) {
         $panel.html(html).data('loaded', true);
     });
 });
@@ -605,7 +605,7 @@ $(document).on('click', '.btn-preview-form', function () {
     $('#preview-form-title').text($(this).data('form-title'));
     $('#preview-body').html('<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>');
     bootstrap.Modal.getOrCreateInstance(_previewModalEl).show();
-    $.get('/api/form_preview_content.php', { id: $(this).data('form-id') }, function (html) {
+    $.get('<?= REL_BASE ?>api/form_preview_content.php', { id: $(this).data('form-id') }, function (html) {
         $('#preview-body').html(html);
     }).fail(function () { $('#preview-body').html('<div class="alert alert-danger">載入失敗</div>'); });
 });
@@ -616,7 +616,7 @@ $(document).on('click', '.btn-delete-my-form', function () {
     const formId = $(this).data('form-id');
     window.cuteConfirm({ icon: '📋', msg: '確定要刪除這個表單嗎？', sub: '此操作無法復原。' }, function (ok) {
         if (!ok) return;
-        $.post('/api/delete_form.php', { form_id: formId }, function (res) {
+        $.post('<?= REL_BASE ?>api/delete_form.php', { form_id: formId }, function (res) {
             if (res.success) $('#cr-col-' + formId).fadeOut(300, function () { $(this).remove(); });
             else alert(res.message || '刪除失敗');
         }, 'json');
@@ -626,7 +626,7 @@ $(document).on('click', '.btn-delete-my-form', function () {
 // ── 取消收藏 ──
 $(document).on('click', '.btn-remove-bookmark', function () {
     const formId = $(this).data('id');
-    $.post('/api/bookmark.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/bookmark.php', { form_id: formId }, function (res) {
         if (res.success && !res.bookmarked) $('#bk-col-' + formId).fadeOut(300, function () { $(this).remove(); });
     }, 'json');
 });
@@ -634,7 +634,7 @@ $(document).on('click', '.btn-remove-bookmark', function () {
 // ── 取消按讚 ──
 $(document).on('click', '.btn-unlike', function () {
     const formId = $(this).data('id');
-    $.post('/api/like.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/like.php', { form_id: formId }, function (res) {
         if (res.success && !res.liked) $('#lk-col-' + formId).fadeOut(300, function () { $(this).remove(); });
     }, 'json');
 });
@@ -645,7 +645,7 @@ $(document).on('click', '.btn-report-my-form', function () {
 });
 </script>
 
-<a href="/member/create_form.php" class="fab-btn" title="新增表單">
+<a href="<?= REL_BASE ?>member/create_form.php" class="fab-btn" title="新增表單">
     <i class="bi bi-plus-lg"></i>
 </a>
 

@@ -30,7 +30,7 @@ require_once '../config/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i class="bi bi-bookmark-fill text-warning"></i> 我的收藏</h4>
-    <a href="/index.php" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= REL_BASE ?>index.php" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i> 返回首頁
     </a>
 </div>
@@ -39,7 +39,7 @@ require_once '../config/header.php';
     <div class="text-center py-5 text-muted">
         <i class="bi bi-bookmark" style="font-size:3rem;"></i>
         <p class="mt-3">尚未收藏任何表單</p>
-        <a href="/index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
+        <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-primary btn-sm">去探索表單</a>
     </div>
 <?php else: ?>
     <div class="row g-3">
@@ -66,7 +66,7 @@ require_once '../config/header.php';
                 </div>
                 <div class="card-footer bg-transparent d-flex gap-2">
                     <?php if ($form['is_published'] && (!$form['end_date'] || $form['end_date'] >= $now)): ?>
-                    <a href="/form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm flex-grow-1">
+                    <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm flex-grow-1">
                         <i class="bi bi-pencil"></i> 填寫
                     </a>
                     <?php endif; ?>
@@ -84,7 +84,7 @@ require_once '../config/header.php';
 $('.btn-remove-bookmark').on('click', function () {
     const btn = $(this);
     const formId = btn.data('id');
-    $.post('/api/bookmark.php', { form_id: formId }, function (res) {
+    $.post('<?= REL_BASE ?>api/bookmark.php', { form_id: formId }, function (res) {
         if (res.success && !res.bookmarked) {
             btn.closest('.col-md-6').fadeOut(300, function () { $(this).remove(); });
         }
