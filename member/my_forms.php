@@ -490,6 +490,8 @@ function timeAgo($dt) {
 </div>
 
 <script>
+$(document).ready(function () {
+
 // ── Navbar 搜尋 ──
 $('#nav-search-toggle').on('click', function () {
     $('#nav-search-box').removeClass('d-none');
@@ -512,7 +514,7 @@ $('#nav-search-input').on('input', function () {
     const q = $(this).val().toLowerCase().trim();
     let visible = 0;
     $('.form-card-item').each(function () {
-        const match = !q || ($(this).data('title')||'').includes(q) || ($(this).data('desc')||'').includes(q);
+        const match = !q || String($(this).data('title')||'').includes(q) || String($(this).data('desc')||'').includes(q);
         $(this).toggle(match);
         if (match) {
             mfHighlight($(this).find('.myf-title'), q);
@@ -643,6 +645,8 @@ $(document).on('click', '.btn-unlike', function () {
 $(document).on('click', '.btn-report-my-form', function () {
     window.cuteReport('form', $(this).data('form-id'), '檢舉表單');
 });
+
+}); // end $(document).ready
 </script>
 
 <a href="<?= REL_BASE ?>member/create_form.php" class="fab-btn" title="新增表單">

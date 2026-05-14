@@ -224,6 +224,8 @@ require_once 'config/header.php';
 
 
 <script>
+$(document).ready(function () {
+
 // ── Navbar 搜尋框 顯示/隱藏 ──
 $('#nav-search-toggle').on('click', function () {
     $('#nav-search-box').removeClass('d-none');
@@ -250,8 +252,8 @@ $('#nav-search-input').on('input', function () {
     const q = $(this).val().toLowerCase().trim();
     let visible = 0;
     $('.feed-card-item').each(function () {
-        const title = $(this).data('title') || '';
-        const desc  = $(this).data('desc')  || '';
+        const title = String($(this).data('title') || '');
+        const desc  = String($(this).data('desc')  || '');
         const match = !q || title.includes(q) || desc.includes(q);
         $(this).toggle(match);
         if (match) {
@@ -384,6 +386,7 @@ $(document).on('click', '.btn-report-comment', function () {
     window.cuteReport('comment', $(this).data('comment-id'), '檢舉留言');
 });
 
+}); // end $(document).ready
 </script>
 
 <?php if (isMember()): ?>

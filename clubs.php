@@ -568,24 +568,25 @@ $(document).on('click', '.btn-leave-club', function () {
 
 
 // ── Navbar 搜尋 ──
-$('#nav-search-toggle').on('click', function () {
-    $('#nav-search-box').removeClass('d-none');
-    $('#nav-search-input').focus();
-});
-$('#nav-search-close').on('click', function () {
-    $('#nav-search-input').val('').trigger('input');
-    $('#nav-search-box').addClass('d-none');
-});
-
-$('#nav-search-input').on('input', function () {
-    const q = $(this).val().toLowerCase().trim();
-    let visible = 0;
-    $('.club-card-item').each(function () {
-        const match = !q || $(this).data('name').includes(q) || $(this).data('desc').includes(q);
-        $(this).toggle(match);
-        if (match) visible++;
+$(document).ready(function () {
+    $('#nav-search-toggle').on('click', function () {
+        $('#nav-search-box').removeClass('d-none');
+        $('#nav-search-input').focus();
     });
-    $('#clubs-no-results').toggleClass('d-none', visible > 0 || !q);
+    $('#nav-search-close').on('click', function () {
+        $('#nav-search-input').val('').trigger('input');
+        $('#nav-search-box').addClass('d-none');
+    });
+    $('#nav-search-input').on('input', function () {
+        const q = $(this).val().toLowerCase().trim();
+        let visible = 0;
+        $('.club-card-item').each(function () {
+            const match = !q || String($(this).data('name')||'').includes(q) || String($(this).data('desc')||'').includes(q);
+            $(this).toggle(match);
+            if (match) visible++;
+        });
+        $('#clubs-no-results').toggleClass('d-none', visible > 0 || !q);
+    });
 });
 
 // ── 排序 ──
