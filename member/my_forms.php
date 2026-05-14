@@ -649,8 +649,4 @@ $(document).on('click', '.btn-report-my-form', function () {
 }); // end $(document).ready
 </script>
 
-<a href="<?= REL_BASE ?>member/create_form.php" class="fab-btn" title="新增表單">
-    <i class="bi bi-plus-lg"></i>
-</a>
-
 <?php require_once '../config/footer.php'; ?>

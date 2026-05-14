@@ -818,6 +818,18 @@ window.addEventListener('load', function () {
     makePreviewDraggable(prevFab,  'fab',  '.fab-btn');
     makePreviewDraggable(prevChat, 'chat', '#chat-widget');
 
+    // 當實際按鈕被拖曳時，同步更新預覽區（放開時）
+    window.addEventListener('fabPositionChanged', syncPreview);
+
+    // 拖曳過程中即時同步預覽區
+    window.addEventListener('fabPositionMoving', function (e) {
+        var d = e.detail;
+        var el = d.key === 'fab' ? prevFab : prevChat;
+        var p = posToPreview({ x: d.x, y: d.y });
+        el.style.left = p.left + 'px';
+        el.style.top  = p.top  + 'px';
+    });
+
     document.getElementById('btn-reset-pos').addEventListener('click', function () {
         window.FAB_DRAG.reset();
     });

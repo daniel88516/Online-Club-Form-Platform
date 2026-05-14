@@ -7,8 +7,8 @@
 
     // 預設位置（視窗比例 0~1）
     var DEFAULTS = {
-        fab:  { x: 0.03, y: 0.86 },   // 左下
-        chat: { x: 0.92, y: 0.86 }    // 右下
+        fab:  { x: 0.10, y: 0.86 },   // 左下
+        chat: { x: 0.85, y: 0.86 }    // 右下
     };
 
     function load() {
@@ -72,6 +72,10 @@
                 (startElTop  + dy) / window.innerHeight,
                 size
             );
+            var r = el.getBoundingClientRect();
+            window.dispatchEvent(new CustomEvent('fabPositionMoving', {
+                detail: { key: key, x: r.left / window.innerWidth, y: r.top / window.innerHeight }
+            }));
         }
 
         function end() {
@@ -89,6 +93,7 @@
             var pos = load();
             pos[key] = { x: r.left / window.innerWidth, y: r.top / window.innerHeight };
             save(pos);
+            window.dispatchEvent(new CustomEvent('fabPositionChanged', { detail: { key: key, positions: pos } }));
         }
 
         // 有拖曳時阻止 <a> 跳頁 / button 觸發

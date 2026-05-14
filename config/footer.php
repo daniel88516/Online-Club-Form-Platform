@@ -1,4 +1,9 @@
 <?php require_once __DIR__ . '/_chat_widget.php'; ?>
+<?php if (function_exists('isMember') && isMember() && !defined('FAB_CUSTOM')): ?>
+<a href="<?= REL_BASE ?>member/create_form.php" class="fab-btn" title="新增表單">
+    <i class="bi bi-plus-lg"></i>
+</a>
+<?php endif; ?>
 <?php require_once __DIR__ . '/_card_anim.php'; ?>
 <?php require_once __DIR__ . '/_confirm_modal.php'; ?>
 </div><!-- end container -->

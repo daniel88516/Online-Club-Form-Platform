@@ -1,4 +1,5 @@
 <?php
+define('FAB_CUSTOM', true);
 require_once 'config/session.php';
 require_once 'config/db.php';
 

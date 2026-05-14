@@ -389,14 +389,4 @@ $(document).on('click', '.btn-report-comment', function () {
 }); // end $(document).ready
 </script>
 
-<?php if (isMember()): ?>
-<!-- 新增表單 FAB -->
-<a href="<?= REL_BASE ?>member/create_form.php"
-   class="fab-btn"
-   title="新增表單">
-    <i class="bi bi-plus-lg"></i>
-</a>
-
-<?php endif; ?>
-
 <?php require_once 'config/footer.php'; ?>
