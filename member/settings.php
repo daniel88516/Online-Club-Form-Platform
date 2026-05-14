@@ -430,7 +430,6 @@ $(document).on('click', '.btn-ratio', function () {
         { name: '紫色',    color: '#6f42c1' },
         { name: '粉紅',    color: '#d63384' },
         { name: '紅色',    color: '#dc3545' },
-        { name: '橙色',    color: '#fd7e14' },
         { name: '綠色',    color: '#198754' },
         { name: '青綠',    color: '#0d9488' },
         { name: '深灰',    color: '#343a40' },
