@@ -1,5 +1,6 @@
 <?php
 $pageTitle = '新增表單';
+define('FAB_CUSTOM', true);
 require_once '../config/session.php';
 require_once '../config/db.php';
 requireLogin();
