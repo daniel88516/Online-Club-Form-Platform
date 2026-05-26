@@ -23,7 +23,7 @@ function normalizeFieldOptions($options) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title        = trim($_POST['title'] ?? '');
     $description  = trim($_POST['description'] ?? '');
-    $target_group = !empty($_POST['target_group']) ? intval($_POST['target_group']) : null;
+    $target_group = null;
     $start_date   = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date     = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $club_id             = !empty($_POST['club_id']) ? intval($_POST['club_id']) : null;
@@ -97,8 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$groups = mysqli_query($conn, "SELECT id, name FROM `groups` ORDER BY id");
-
 // 取得使用者所屬社團（供表單關聯選擇）
 $my_clubs_stmt = mysqli_prepare($conn, "
     SELECT c.id, c.name FROM clubs c
@@ -107,7 +105,14 @@ $my_clubs_stmt = mysqli_prepare($conn, "
 ");
 mysqli_stmt_bind_param($my_clubs_stmt, 'i', $_SESSION['user_id']);
 mysqli_stmt_execute($my_clubs_stmt);
-$my_clubs = mysqli_stmt_get_result($my_clubs_stmt);
+$my_clubs_result = mysqli_stmt_get_result($my_clubs_stmt);
+$my_clubs = [];
+while ($club = mysqli_fetch_assoc($my_clubs_result)) {
+    $my_clubs[] = $club;
+}
+$selected_club_id = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? intval($_POST['club_id'] ?? 0)
+    : intval($_GET['club_id'] ?? 0);
 
 require_once '../config/header.php';
 ?>
@@ -117,7 +122,7 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-plus-circle"></i> 新增表單</h4>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-glow-primary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -154,24 +159,37 @@ require_once '../config/header.php';
                             <img id="cover-image-thumb" src="" class="img-fluid rounded" style="max-height:200px;object-fit:cover;">
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">填答對象</label>
-                        <select name="target_group" class="form-select">
-                            <option value="">所有人（公開）</option>
-                            <?php while ($g = mysqli_fetch_assoc($groups)): ?>
-                                <option value="<?= $g['id'] ?>"><?= htmlspecialchars($g['name']) ?> 群組</option>
-                            <?php endwhile; ?>
-                        </select>
-                    </div>
-                    <?php if (mysqli_num_rows($my_clubs) > 0): ?>
+                    <?php if (count($my_clubs) > 0): ?>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">所屬社團</label>
-                        <select name="club_id" class="form-select">
-                            <option value="">不屬於任何社團</option>
-                            <?php while ($c = mysqli_fetch_assoc($my_clubs)): ?>
-                                <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
-                            <?php endwhile; ?>
-                        </select>
+                        <input type="hidden" name="club_id" id="club-id-input" value="<?= $selected_club_id ?: '' ?>">
+                        <div class="dropdown">
+                            <button class="btn btn-glow-primary dropdown-toggle w-100 d-flex align-items-center justify-content-between text-start"
+                                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span id="club-select-label">
+                                    <?php
+                                    $selected_club_name = '不屬於任何社團';
+                                    foreach ($my_clubs as $c) {
+                                        if ((int)$c['id'] === $selected_club_id) {
+                                            $selected_club_name = $c['name'];
+                                            break;
+                                        }
+                                    }
+                                    echo htmlspecialchars($selected_club_name);
+                                    ?>
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu w-100" style="<?= count($my_clubs) > 5 ? 'max-height: 240px; overflow-y: auto;' : '' ?>">
+                                <li><button type="button" class="dropdown-item club-select-option" data-id="" data-name="不屬於任何社團">不屬於任何社團</button></li>
+                                <?php foreach ($my_clubs as $c): ?>
+                                    <li>
+                                        <button type="button" class="dropdown-item club-select-option" data-id="<?= $c['id'] ?>" data-name="<?= htmlspecialchars($c['name']) ?>">
+                                            <?= htmlspecialchars($c['name']) ?>
+                                        </button>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
                     </div>
                     <?php endif; ?>
                     <div class="mb-3">
@@ -242,22 +260,22 @@ require_once '../config/header.php';
                 <div class="card-body">
                     <!-- 新增欄位按鈕 -->
                     <div class="mb-3 d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm add-field" data-type="short_text">
+                        <button type="button" class="btn btn-glow-primary btn-sm add-field" data-type="short_text">
                             <i class="bi bi-input-cursor-text"></i> 簡答
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm add-field" data-type="long_text">
+                        <button type="button" class="btn btn-glow-primary btn-sm add-field" data-type="long_text">
                             <i class="bi bi-text-paragraph"></i> 詳答
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm add-field" data-type="radio">
+                        <button type="button" class="btn btn-glow-primary btn-sm add-field" data-type="radio">
                             <i class="bi bi-ui-radios"></i> 單選題
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm add-field" data-type="checkbox">
+                        <button type="button" class="btn btn-glow-primary btn-sm add-field" data-type="checkbox">
                             <i class="bi bi-ui-checks"></i> 核取方塊
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm add-field" data-type="dropdown">
+                        <button type="button" class="btn btn-glow-primary btn-sm add-field" data-type="dropdown">
                             <i class="bi bi-menu-button-wide"></i> 下拉選單
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm add-field" data-type="date">
+                        <button type="button" class="btn btn-glow-primary btn-sm add-field" data-type="date">
                             <i class="bi bi-calendar"></i> 日期
                         </button>
                     </div>
@@ -323,7 +341,7 @@ function optionRowHTML(type, value = '') {
             </button>
             <span class="option-kind">${optionIcon(type)}</span>
             <textarea name="" class="form-control form-control-sm option-input" rows="1" placeholder="選項文字">${safeValue}</textarea>
-            <button type="button" class="btn btn-outline-danger btn-sm remove-option" title="刪除選項">
+            <button type="button" class="btn btn-glow-red btn-sm remove-option" title="刪除選項">
                 <i class="bi bi-trash"></i>
             </button>
         </div>`;
@@ -368,7 +386,7 @@ function addField(type) {
         <div class="mt-2 option-builder" data-option-type="${type}">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <label class="form-label small mb-0">選項</label>
-                <button type="button" class="btn btn-outline-primary btn-sm add-option">
+                <button type="button" class="btn btn-glow-primary btn-sm add-option">
                     <i class="bi bi-plus-lg"></i> 新增選項
                 </button>
             </div>
@@ -400,7 +418,7 @@ function addField(type) {
                     </div>
                 </div>
             </div>
-            <button type="button" class="btn btn-outline-danger btn-sm remove-field" data-id="${idx}">
+            <button type="button" class="btn btn-glow-red btn-sm remove-field" data-id="${idx}">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
@@ -416,6 +434,11 @@ $(document).ready(function () {
     // 新增欄位
     $('.add-field').on('click', function () {
         addField($(this).data('type'));
+    });
+
+    $(document).on('click', '.club-select-option', function () {
+        $('#club-id-input').val($(this).data('id'));
+        $('#club-select-label').text($(this).data('name'));
     });
 
     // 刪除欄位

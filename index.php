@@ -31,9 +31,20 @@ $forms = mysqli_query($conn, $sql);
 $showNavSearch = true;
 require_once 'config/header.php';
 ?>
+<style>
+@media (min-width: 992px) {
+    .index-sort-panel {
+        position: absolute;
+        right: calc(100% + 16px);
+        top: 0;
+        white-space: nowrap;
+    }
+}
+</style>
 
 <div class="row justify-content-center">
-    <div class="col-lg-7">
+    <div class="col-lg-7" style="position:relative;">
+        <div class="index-sort-panel">
 
         <!-- 標題 = 排序下拉選單 -->
         <div class="mb-3">
@@ -52,6 +63,7 @@ require_once 'config/header.php';
                     <li><button class="dropdown-item sort-opt" data-mode="title_asc"><i class="bi bi-sort-alpha-down me-2 text-success"></i>標題 A→Z</button></li>
                 </ul>
             </div>
+        </div>
         </div>
 
         <?php if (mysqli_num_rows($forms) === 0): ?>

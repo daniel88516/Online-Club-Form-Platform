@@ -106,7 +106,7 @@ function timeAgo($dt) {
 }
 ?>
 
-<div class="mb-3">
+<div class="d-flex align-items-center justify-content-between gap-2 mb-3">
     <div class="dropdown">
         <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -144,6 +144,9 @@ function timeAgo($dt) {
             <?php endif; ?>
         </ul>
     </div>
+    <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-primary btn-sm flex-shrink-0">
+        <i class="bi bi-arrow-left"></i> 返回首頁
+    </a>
 </div>
 
 <?php if ($msg === 'created'): ?>

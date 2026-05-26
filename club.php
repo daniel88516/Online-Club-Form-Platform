@@ -80,9 +80,12 @@ require_once 'config/header.php';
 ?>
 
 <div class="row justify-content-center">
-    <div class="col-lg-7">
+    <div class="col-lg-11">
 
-        <div class="card mb-4">
+        <div class="card mb-4" style="position:relative;">
+            <a href="<?= REL_BASE ?>clubs.php" class="btn btn-glow-primary btn-sm" style="position:absolute;top:10px;left:calc(100% + 12px);z-index:2;white-space:nowrap;">
+                <i class="bi bi-arrow-left"></i> 返回社團
+            </a>
             <?php if ($club['my_role'] === 'owner'): ?>
             <div style="position:relative;cursor:pointer;" id="cover-upload-area" title="點擊更換封面">
                 <?php if ($club['cover_image']): ?>
@@ -169,6 +172,11 @@ require_once 'config/header.php';
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
 
         <!-- 待審請求（owner 才看得到）-->
         <?php if ($club['my_role'] === 'owner' && $pending_requests && mysqli_num_rows($pending_requests) > 0): ?>
