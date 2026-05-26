@@ -624,12 +624,16 @@ function clubsSort(mode) {
     });
     $container.append($items);
 }
+function syncClubsSortLabel($option) {
+    if (!$option || !$option.length) return;
+    $('#sort-label-text').text($option.text().trim());
+}
+syncClubsSortLabel($('.sort-opt.active').first());
 $(document).on('click', '.sort-opt', function () {
     const mode  = $(this).data('mode');
-    const label = $(this).text().trim();
     $('.sort-opt').removeClass('active');
     $(this).addClass('active');
-    $('#sort-label-text').text(label);
+    syncClubsSortLabel($(this));
     clubsSort(mode);
 });
 
