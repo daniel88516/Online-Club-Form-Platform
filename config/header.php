@@ -42,7 +42,16 @@ require_once __DIR__ . '/session.php';
     <link rel="stylesheet" href="<?= REL_BASE ?>css/style.css?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/css/style.css') ?>">
     <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script>window.REL_BASE = '<?= REL_BASE ?>';</script>
+    <script>
+        window.REL_BASE = '<?= REL_BASE ?>';
+        window.APP_BASE = '<?= APP_BASE ?>';
+        window.assetUrl = function (path) {
+            if (!path) return '';
+            if (/^(https?:)?\/\//i.test(path) || /^data:/i.test(path)) return path;
+            if (path.indexOf('/uploads/') === 0) return window.APP_BASE + path;
+            return path;
+        };
+    </script>
     <script src="<?= REL_BASE ?>js/theme-color.js?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/js/theme-color.js') ?>"></script>
     <script>(function(){ var c = localStorage.getItem('themeColor') || '#6610f2'; applyThemeColor(c); })();</script>
     <style>
@@ -81,7 +90,8 @@ require_once __DIR__ . '/session.php';
         .ql-content a   { color:var(--bs-primary, #0d6efd); }
         .ql-content ul, .ql-content ol { padding-left:1.2rem; margin-bottom:0.2rem; }
         /* 留言框編輯器最小高度 */
-        .quill-comment-editor .ql-editor { min-height:70px; font-size:0.875rem; }
+        .quill-comment-editor .ql-editor { min-height:38px; font-size:0.875rem; }
+        .quill-comment-editor .ql-editor p { margin-bottom:0; }
         /* 說明框編輯器最小高度 */
         .quill-desc-editor .ql-editor { min-height:120px; }
     </style>
@@ -138,7 +148,7 @@ require_once __DIR__ . '/session.php';
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-2" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                         <?php if (!empty($nav_avatar)): ?>
-                            <img src="<?= htmlspecialchars($nav_avatar) ?>" class="site-avatar"
+                            <img src="<?= htmlspecialchars(assetUrl($nav_avatar)) ?>" class="site-avatar"
                                  style="width:34px;height:34px;border-radius:50%;object-fit:cover;" alt="">
                         <?php else: ?>
                             <span class="site-avatar" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.25);

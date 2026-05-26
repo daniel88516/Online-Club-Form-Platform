@@ -5,7 +5,7 @@ require_once 'config/db.php';
 
 $profile_uid = intval($_GET['id'] ?? 0);
 if (!$profile_uid) {
-    header('Location: /index.php');
+    header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
 
@@ -18,7 +18,7 @@ mysqli_stmt_execute($stmt);
 $pu = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$pu) {
-    header('Location: /index.php');
+    header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
 
@@ -57,7 +57,7 @@ require_once 'config/header.php';
     <!-- 背景圖（填滿整張卡片） -->
     <div style="position:absolute;inset:0;">
         <?php if ($has_bg): ?>
-            <img src="<?= htmlspecialchars($pu['profile_bg']) ?>"
+            <img src="<?= htmlspecialchars(assetUrl($pu['profile_bg'])) ?>"
                  style="width:100%;height:100%;object-fit:cover;" alt="背景">
             <!-- 底部漸層遮罩，提升文字可讀性 -->
             <div style="position:absolute;inset:0;
@@ -97,7 +97,7 @@ require_once 'config/header.php';
 <div class="mb-4 d-flex justify-content-center gap-2">
     <?php if ($cur_uid && $cur_uid != $profile_uid): ?>
         <button class="btn btn-glow-primary btn-sm"
-                onclick="openChatWith(<?= $profile_uid ?>, '<?= addslashes(htmlspecialchars($pu['username'])) ?>', '<?= addslashes($pu['avatar'] ?? '') ?>')">
+                onclick="openChatWith(<?= $profile_uid ?>, '<?= addslashes(htmlspecialchars($pu['username'])) ?>', '<?= addslashes(assetUrl($pu['avatar'] ?? '')) ?>')">
             <i class="bi bi-chat me-1"></i> 聊天
         </button>
     <?php elseif ($cur_uid == $profile_uid): ?>

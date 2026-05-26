@@ -113,6 +113,53 @@ body {
     color: #adb5bd;
 }
 
+.option-builder {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 10px;
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.03);
+}
+
+.option-row {
+    min-height: 34px;
+    align-items: flex-start !important;
+}
+
+.option-drag-handle {
+    cursor: grab;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+
+.option-kind {
+    width: 18px;
+    display: inline-flex;
+    justify-content: center;
+    color: var(--bs-primary, #0d6efd);
+    flex-shrink: 0;
+    margin-top: 7px;
+}
+
+.option-kind-icon {
+    font-size: 0.92rem;
+}
+
+.option-row .remove-option {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.option-input {
+    min-height: 34px;
+    resize: vertical;
+    overflow: hidden;
+}
+
+.option-label {
+    white-space: pre-line;
+}
+
 /* 統計圖表 */
 .stat-bar {
     height: 24px;
@@ -175,6 +222,25 @@ html[data-bs-theme="dark"] body {
 [data-bs-theme="dark"] .dropdown-divider {
     border-color: #2a2a2a;
 }
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.dropdown-item > .bi:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25em;
+    flex: 0 0 1.25em;
+}
+.dropdown-item > .bi:first-child.me-2 {
+    margin-right: 0 !important;
+}
+.dropdown-item > .bi:first-child::before {
+    width: 100%;
+    text-align: center;
+}
 [data-bs-theme="dark"] .table th {
     background-color: #1e1e1e;
     color: #dee2e6;
@@ -212,6 +278,9 @@ html[data-bs-theme="dark"] body {
 /* 留言串垂直線 */
 [data-bs-theme="dark"] .thread-line {
     background: #444 !important;
+}
+.thread-line {
+    display: none !important;
 }
 /* Quill 編輯器 */
 [data-bs-theme="dark"] .ql-toolbar {

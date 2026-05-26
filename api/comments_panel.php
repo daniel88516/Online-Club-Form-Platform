@@ -58,7 +58,7 @@ function panelRender($comments, $isLoggedIn, $cur_user, $fid) {
                 <div class="flex-grow-1">
                     <span class="fw-semibold small"><?= htmlspecialchars($c['username']) ?></span>
                     <span class="text-muted small ms-2"><?= $timeStr ?></span>
-                    <div class="small mt-1 ql-content"><?= autolink($c['content']) ?></div>
+                    <div class="small mt-1 ql-content"><?= assetHtml(autolink($c['content'])) ?></div>
                 </div>
                 <div class="dropdown" style="flex-shrink:0;">
                     <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed" aria-expanded="false">
@@ -451,7 +451,7 @@ if ($cur_user) {
         const s32 = 'width:32px;height:32px;border-radius:50%;flex-shrink:0;';
         let avatarHtml;
         if (c.avatar) {
-            avatarHtml = `<img src="${c.avatar}" class="site-avatar" style="${s32}object-fit:cover;" alt="">`;
+            avatarHtml = `<img src="${assetUrl(c.avatar)}" class="site-avatar" style="${s32}object-fit:cover;" alt="">`;
         } else {
             const initial = (c.username.charAt(0) || '?').toUpperCase();
             avatarHtml = `<span class="site-avatar" style="${s32}background:var(--bs-primary,#0d6efd);color:var(--bs-primary-text,#fff);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">${initial}</span>`;

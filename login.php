@@ -4,7 +4,7 @@ require_once 'config/session.php';
 require_once 'config/db.php';
 
 if (isLoggedIn()) {
-    header('Location: /index.php');
+    header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
 
@@ -30,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['avatar'] = $user['avatar'];
 
             if ($user['role'] === 'admin') {
-                header('Location: /admin/dashboard.php');
+                header('Location: ' . APP_BASE . '/admin/dashboard.php');
             } else {
-                header('Location: /member/my_forms.php');
+                header('Location: ' . APP_BASE . '/member/my_forms.php');
             }
             exit();
         } else {

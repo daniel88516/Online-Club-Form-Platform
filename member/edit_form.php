@@ -13,7 +13,7 @@ mysqli_stmt_execute($stmt);
 $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$form) {
-    header('Location: /member/my_forms.php');
+    header('Location: ' . APP_BASE . '/member/my_forms.php');
     exit();
 }
 
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        header('Location: /member/my_forms.php?msg=updated');
+        header('Location: ' . APP_BASE . '/member/my_forms.php?msg=updated');
         exit();
     }
 }
@@ -155,7 +155,7 @@ require_once '../config/header.php';
                         <input type="file" id="cover-image-input" class="form-control" accept="image/*">
                         <div id="cover-image-preview" class="mt-2"<?= $form['cover_image'] ? '' : ' style="display:none;"' ?>>
                             <img id="cover-image-thumb"
-                                 src="<?= htmlspecialchars($form['cover_image'] ?? '') ?>"
+                                 src="<?= htmlspecialchars(assetUrl($form['cover_image'] ?? '')) ?>"
                                  class="img-fluid rounded" style="max-height:150px;object-fit:cover;">
                             <small class="text-muted d-block mt-1">上傳新圖片將取代現有封面</small>
                         </div>
@@ -396,7 +396,7 @@ $('#cover-image-input').on('change', function () {
         success: res => {
             if (res.success) {
                 $('#cover-image-url').val(res.path);
-                $('#cover-image-thumb').attr('src', res.path);
+                $('#cover-image-thumb').attr('src', assetUrl(res.path));
                 $('#cover-image-preview').show();
             } else {
                 window.cuteToast({ type: 'error', msg: res.message || '封面圖上傳失敗' });

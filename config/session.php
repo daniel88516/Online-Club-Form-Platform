@@ -29,6 +29,36 @@ function isMember() {
     return isset($_SESSION['role']) && ($_SESSION['role'] === 'member' || $_SESSION['role'] === 'admin');
 }
 
+function assetUrl($path) {
+    if (empty($path)) {
+        return '';
+    }
+
+    if (preg_match('#^(https?:)?//#i', $path) || preg_match('#^data:#i', $path)) {
+        return $path;
+    }
+
+    if (strpos($path, '/uploads/') === 0) {
+        return APP_BASE . $path;
+    }
+
+    return $path;
+}
+
+function assetHtml($html) {
+    if ($html === null || $html === '') {
+        return $html;
+    }
+
+    return preg_replace_callback(
+        '#(<img\b[^>]*\bsrc=["\'])(/uploads/[^"\']+)(["\'])#i',
+        function ($matches) {
+            return $matches[1] . assetUrl($matches[2]) . $matches[3];
+        },
+        $html
+    );
+}
+
 function requireLogin() {
     if (!isLoggedIn()) {
         header('Location: ' . APP_BASE . '/login.php');
@@ -65,7 +95,7 @@ function getSystemUserId($conn) {
 function renderAvatar($username, $avatar = null, $size = 36) {
     $s = "width:{$size}px;height:{$size}px;border-radius:50%;flex-shrink:0;";
     if (!empty($avatar)) {
-        return '<img src="' . htmlspecialchars($avatar) . '" class="site-avatar" style="' . $s . 'object-fit:cover;" alt="">';
+        return '<img src="' . htmlspecialchars(assetUrl($avatar)) . '" class="site-avatar" style="' . $s . 'object-fit:cover;" alt="">';
     }
     $fs = round($size * 0.44);
     $initial = htmlspecialchars(mb_strtoupper(mb_substr($username, 0, 1)));
@@ -83,7 +113,7 @@ function renderAvatarDropdown($username, $avatar, $uid, $size = 36, $cur_uid = 0
     $show_chat   = ($cur_uid && intval($cur_uid) !== $uid_int) ? 1 : 0;
     $uattr       = htmlspecialchars($username, ENT_QUOTES);
 
-    $aattr = htmlspecialchars($avatar ?? '', ENT_QUOTES);
+    $aattr = htmlspecialchars(assetUrl($avatar ?? ''), ENT_QUOTES);
     return '<span class="avd-wrap" data-uid="' . $uid_int . '" data-uname="' . $uattr . '" data-avatar="' . $aattr . '" data-chat="' . $show_chat . '">'
          . $avatar_html
          . '</span>';

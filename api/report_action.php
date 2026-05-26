@@ -62,7 +62,7 @@ mysqli_stmt_execute($u);
         <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
         <h3 class="mt-3 fw-bold">刪除成功</h3>
         <p class="text-muted">該<?= $type_label ?>已被成功刪除。</p>
-        <a href="/" class="btn btn-primary mt-2">返回首頁</a>
+        <a href="<?= REL_BASE ?>index.php" class="btn btn-primary mt-2">返回首頁</a>
     </div>
 </div>
 </body>

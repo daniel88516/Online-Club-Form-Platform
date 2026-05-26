@@ -36,4 +36,4 @@ $stmt = mysqli_prepare($conn, "UPDATE form_comments SET content = ? WHERE id = ?
 mysqli_stmt_bind_param($stmt, 'si', $content, $comment_id);
 mysqli_stmt_execute($stmt);
 
-echo json_encode(['success' => true, 'content' => $content]);
+echo json_encode(['success' => true, 'content' => assetHtml($content)]);

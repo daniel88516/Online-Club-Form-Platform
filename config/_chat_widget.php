@@ -451,7 +451,7 @@
     function buildAvatarHtml(name, avatar, size) {
         const ring = 'box-shadow:0 0 0 2px var(--bs-body-bg,#f8f9fa),0 0 0 4px var(--bs-primary,#0d6efd);';
         if (avatar) {
-            const src = $('<span>').text(avatar).html();
+            const src = $('<span>').text(assetUrl(avatar)).html();
             return `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;${ring}" alt="">`;
         }
         const initial = (name || '?').charAt(0).toUpperCase();
@@ -512,7 +512,7 @@
         if (isSystem) {
             $hdrAvatar.css('background', '#f59e0b').html('<i class="bi bi-bell-fill"></i>');
         } else if (avatar) {
-            const src = $('<span>').text(avatar).html();
+            const src = $('<span>').text(assetUrl(avatar)).html();
             $hdrAvatar.css('background', 'transparent')
                       .html(`<img src="${src}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">`);
         } else {

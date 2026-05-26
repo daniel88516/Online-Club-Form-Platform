@@ -36,6 +36,7 @@ $result = mysqli_query($conn, "
 
 $convs = [];
 while ($row = mysqli_fetch_assoc($result)) {
+    $row['other_avatar'] = assetUrl($row['other_avatar'] ?? '');
     $convs[] = $row;
 }
 

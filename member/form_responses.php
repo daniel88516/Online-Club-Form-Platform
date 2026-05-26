@@ -14,13 +14,13 @@ mysqli_stmt_execute($stmt);
 $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$form) {
-    header('Location: /index.php');
+    header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
 
 // 存取控制：show_stats=0 時只有擁有者與 admin 可查看；show_stats=1 則所有登入會員皆可
 if (!isAdmin() && $form['user_id'] != $_SESSION['user_id'] && empty($form['show_stats'])) {
-    header('Location: /index.php');
+    header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
 
@@ -263,7 +263,7 @@ var _chartGrid = getComputedStyle(document.documentElement)
                     <li class="list-group-item py-2 text-answer-row" style="cursor:pointer;"
                         data-answer="<?= htmlspecialchars($s['answer'], ENT_QUOTES) ?>"
                         data-username="<?= $isAnon ? '' : htmlspecialchars($s['username'], ENT_QUOTES) ?>"
-                        data-avatar="<?= $isAnon ? '' : htmlspecialchars($s['avatar'] ?? '', ENT_QUOTES) ?>"
+                        data-avatar="<?= $isAnon ? '' : htmlspecialchars(assetUrl($s['avatar'] ?? ''), ENT_QUOTES) ?>"
                         data-uid="<?= $isAnon ? 0 : intval($s['user_id']) ?>">
                         <div class="d-flex align-items-center gap-2">
                             <?php if ($isAnon): ?>
@@ -323,7 +323,7 @@ $(document).on('click', '.text-answer-row', function (e) {
 
     if (username) {
         const img = avatar
-            ? '<img src="' + $('<span>').text(avatar).html() + '" class="rounded-circle" width="32" height="32" style="object-fit:cover;">'
+            ? '<img src="' + $('<span>').text(assetUrl(avatar)).html() + '" class="rounded-circle" width="32" height="32" style="object-fit:cover;">'
             : '<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:32px;height:32px;font-size:.85rem;">' + $('<span>').text(username.charAt(0).toUpperCase()).html() + '</div>';
         $('#tam-user').html('<div class="d-flex align-items-center gap-2">' + img + '<span class="fw-semibold">' + $('<span>').text(username).html() + '</span></div>');
     } else {

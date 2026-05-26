@@ -33,7 +33,7 @@ require_once '../config/header.php';
                 <!-- 背景圖（填滿整個 card-body） -->
                 <div style="position:absolute;inset:0;background:var(--bs-secondary-bg);">
                     <?php if (!empty($user['profile_bg'])): ?>
-                        <img id="profile-bg-img" src="<?= htmlspecialchars($user['profile_bg']) ?>"
+                        <img id="profile-bg-img" src="<?= htmlspecialchars(assetUrl($user['profile_bg'])) ?>"
                              style="width:100%;height:100%;object-fit:cover;" alt="背景">
                     <?php else: ?>
                         <img id="profile-bg-img" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="背景">
@@ -61,7 +61,7 @@ require_once '../config/header.php';
                              border:3px solid rgba(255,255,255,0.7);transition:opacity .2s;"
                              onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
                             <?php if (!empty($user['avatar'])): ?>
-                                <img src="<?= htmlspecialchars($user['avatar']) ?>" id="avatar-img"
+                                <img src="<?= htmlspecialchars(assetUrl($user['avatar'])) ?>" id="avatar-img"
                                      style="width:100%;height:100%;object-fit:cover;" alt="頭像">
                             <?php else: ?>
                                 <span><?= mb_strtoupper(mb_substr($user['username'], 0, 1)) ?></span>
@@ -388,7 +388,7 @@ $(document).on('click', '.btn-ratio', function () {
                 success: function (res) {
                     if (res.success) {
                         var img = document.getElementById('profile-bg-img');
-                        img.src = res.path;
+                        img.src = assetUrl(res.path);
                         img.style.display = 'block';
                         $status.html('<span class="text-success small"><i class="bi bi-check-circle me-1"></i>背景已更新</span>');
                         setTimeout(function () { $status.html(''); }, 3000);
@@ -591,7 +591,7 @@ $(document).on('click', '.btn-ratio', function () {
             // 預覽
             var url = URL.createObjectURL(blob);
             document.getElementById('avatar-preview').innerHTML =
-                '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;" alt="頭像">';
+                '<img src="' + assetUrl(url) + '" style="width:100%;height:100%;object-fit:cover;" alt="頭像">';
             // 上傳
             $status.html('<span class="text-muted small"><i class="bi bi-arrow-repeat me-1"></i>上傳中…</span>');
             var fd = new FormData();
@@ -607,11 +607,11 @@ $(document).on('click', '.btn-ratio', function () {
                         $('.site-avatar').each(function () {
                             var el = this;
                             if (el.tagName === 'IMG') {
-                                el.src = res.path;
+                                el.src = assetUrl(res.path);
                             } else {
                                 // 字母頭像 → 換成圖片
                                 var img = document.createElement('img');
-                                img.src = res.path;
+                                img.src = assetUrl(res.path);
                                 img.className = 'site-avatar';
                                 img.style.cssText = el.style.cssText + 'object-fit:cover;';
                                 img.alt = '';

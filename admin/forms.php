@@ -2,9 +2,11 @@
 $pageTitle = '表單管理';
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/_admin_search.php';
 requireAdmin();
 
 $success = '';
+$search = trim($_GET['search'] ?? '');
 
 // 刪除表單
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
@@ -17,13 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
     $toggle_id = intval($_POST['toggle_id']);
     mysqli_query($conn, "UPDATE forms SET is_published = !is_published WHERE id = $toggle_id");
-    header('Location: /admin/forms.php' . ($search ? '?search=' . urlencode($search) : ''));
+    header('Location: ' . APP_BASE . '/admin/forms.php' . ($search ? '?search=' . urlencode($search) : ''));
     exit();
 }
 
 // 搜尋
-$search = trim($_GET['search'] ?? '');
-$where  = $search ? "WHERE f.title LIKE '%$search%'" : '';
+$where  = $search ? "WHERE f.title LIKE '%$search%' OR u.username LIKE '%$search%'" : '';
 
 $forms = mysqli_query($conn, "
     SELECT f.id, f.title, f.is_published, f.created_at, f.user_id,
@@ -55,17 +56,7 @@ require_once '../config/header.php';
     <div class="alert alert-success alert-dismissible"><i class="bi bi-check-circle"></i> <?= htmlspecialchars($success) ?></div>
 <?php endif; ?>
 
-<form method="GET" class="mb-3">
-    <div class="glow-sort-bar">
-        <i class="bi bi-search text-muted flex-shrink-0" style="font-size:.9rem;"></i>
-        <input type="text" name="search" class="form-control ps-1" placeholder="搜尋表單標題..."
-               value="<?= htmlspecialchars($search) ?>">
-        <button class="btn btn-glow-primary btn-sm px-3 flex-shrink-0" type="submit">搜尋</button>
-        <?php if ($search): ?>
-            <a href="<?= REL_BASE ?>admin/forms.php" class="btn btn-sm btn-outline-secondary flex-shrink-0"><i class="bi bi-x"></i></a>
-        <?php endif; ?>
-    </div>
-</form>
+<?php renderAdminSearchBar('search', $search, '搜尋表單標題或建立者...', REL_BASE . 'admin/forms.php'); ?>
 
 <div class="card">
     <div class="table-responsive">
@@ -87,16 +78,17 @@ require_once '../config/header.php';
                 <?php else: ?>
                     <?php while ($form = mysqli_fetch_assoc($forms)): ?>
                     <tr data-id="<?= $form['id'] ?>"
+                        data-admin-search="<?= htmlspecialchars(mb_strtolower($form['title'] . ' ' . $form['author'])) ?>"
                         data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
                         data-status="<?= $form['is_published'] ?>"
                         data-resp="<?= $form['response_count'] ?>"
                         data-date="<?= strtotime($form['created_at']) ?>">
                         <td><?= $form['id'] ?></td>
-                        <td class="fw-semibold"><?= htmlspecialchars($form['title']) ?></td>
+                        <td class="fw-semibold admin-search-target"><?= adminSearchHighlight($form['title'], $search) ?></td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <?= renderAvatar($form['author'], $form['author_avatar'], 28) ?>
-                                <?= htmlspecialchars($form['author']) ?>
+                                <span class="admin-search-target"><?= adminSearchHighlight($form['author'], $search) ?></span>
                             </div>
                         </td>
                         <td>
@@ -121,11 +113,15 @@ require_once '../config/header.php';
                                         </a>
                                     </li>
                                     <?php endif; ?>
+                                    <?php if ($form['user_id'] == $_SESSION['user_id']): ?>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <?php endif; ?>
                                     <li>
                                         <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>">
                                             <i class="bi bi-bar-chart text-info me-2"></i> 查看統計
                                         </a>
                                     </li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <button class="dropdown-item btn-preview-form"
                                                 data-form-id="<?= $form['id'] ?>"
@@ -235,4 +231,5 @@ _previewModalEl.addEventListener('hidden.bs.modal', function () {
 });
 </script>
 
+<?php renderAdminSearchScript(); ?>
 <?php require_once '../config/footer.php'; ?>

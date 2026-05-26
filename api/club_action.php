@@ -205,7 +205,7 @@ if ($action === 'search_users') {
     $res   = mysqli_stmt_get_result($stmt);
     $users = [];
     while ($row = mysqli_fetch_assoc($res)) {
-        $users[] = ['id' => $row['id'], 'username' => $row['username'], 'avatar' => $row['avatar'], 'member_status' => $row['member_status']];
+        $users[] = ['id' => $row['id'], 'username' => $row['username'], 'avatar' => assetUrl($row['avatar']), 'member_status' => $row['member_status']];
     }
     echo json_encode(['success' => true, 'users' => $users]);
     exit();
@@ -296,7 +296,10 @@ if ($action === 'get_members') {
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     $members = [];
-    while ($r = mysqli_fetch_assoc($res)) $members[] = $r;
+    while ($r = mysqli_fetch_assoc($res)) {
+        $r['avatar'] = assetUrl($r['avatar'] ?? '');
+        $members[] = $r;
+    }
     echo json_encode(['success' => true, 'members' => $members]);
     exit();
 }
@@ -318,7 +321,10 @@ if ($action === 'list_members') {
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     $members = [];
-    while ($r = mysqli_fetch_assoc($res)) $members[] = $r;
+    while ($r = mysqli_fetch_assoc($res)) {
+        $r['avatar'] = assetUrl($r['avatar'] ?? '');
+        $members[] = $r;
+    }
     echo json_encode(['success' => true, 'members' => $members]);
     exit();
 }

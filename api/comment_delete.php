@@ -69,7 +69,7 @@ foreach ($allContents as $content) {
     foreach ($matches[1] as $imgUrl) {
         // 只刪本站 /uploads/ 下的檔案，避免誤刪外部圖片連結
         if (strpos($imgUrl, '/uploads/') === 0) {
-            $filePath = $_SERVER['DOCUMENT_ROOT'] . $imgUrl;
+            $filePath = $_SERVER['DOCUMENT_ROOT'] . APP_BASE . $imgUrl;
             if (file_exists($filePath)) {
                 unlink($filePath);
             }

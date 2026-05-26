@@ -2,6 +2,7 @@
 $pageTitle = '社團管理';
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/_admin_search.php';
 requireAdmin();
 
 // 刪除社團
@@ -43,12 +44,7 @@ require_once '../config/header.php';
     </div>
 </div>
 
-<form class="mb-3" method="get">
-    <div class="input-group">
-        <input type="text" name="q" class="form-control" placeholder="搜尋社團名稱或管理員..." value="<?= htmlspecialchars($q) ?>">
-        <button class="btn btn-glow-primary" type="submit"><i class="bi bi-search"></i></button>
-    </div>
-</form>
+<?php renderAdminSearchBar('q', $q, '搜尋社團名稱或管理員...', REL_BASE . 'admin/clubs.php'); ?>
 
 <div class="card">
     <div class="table-responsive">
@@ -66,10 +62,10 @@ require_once '../config/header.php';
             </thead>
             <tbody>
             <?php while ($club = mysqli_fetch_assoc($clubs)): ?>
-                <tr>
+                <tr data-admin-search="<?= htmlspecialchars(mb_strtolower($club['name'] . ' ' . $club['owner_name'])) ?>">
                     <td>
-                        <a href="/club.php?id=<?= $club['id'] ?>" target="_blank" class="fw-semibold text-decoration-none link-body-emphasis">
-                            <?= htmlspecialchars($club['name']) ?>
+                        <a href="<?= REL_BASE ?>club.php?id=<?= $club['id'] ?>" target="_blank" class="fw-semibold text-decoration-none link-body-emphasis admin-search-target">
+                            <?= adminSearchHighlight($club['name'], $q) ?>
                         </a>
                         <?php if ($club['description']): ?>
                         <div class="text-muted small"><?= htmlspecialchars(mb_substr($club['description'], 0, 40)) ?><?= mb_strlen($club['description']) > 40 ? '...' : '' ?></div>
@@ -78,7 +74,7 @@ require_once '../config/header.php';
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <?= renderAvatarDropdown($club['owner_name'], $club['owner_avatar'] ?? null, $club['owner_id'], 28, $_SESSION['user_id']) ?>
-                            <span><?= htmlspecialchars($club['owner_name']) ?></span>
+                            <span class="admin-search-target"><?= adminSearchHighlight($club['owner_name'], $q) ?></span>
                         </div>
                     </td>
                     <td class="text-center">
@@ -148,7 +144,7 @@ function loadAdminMembers(q) {
         }
         res.members.forEach(function (m) {
             const av = m.avatar
-                ? `<img src="${m.avatar}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                ? `<img src="${assetUrl(m.avatar)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
                 : `<span style="width:36px;height:36px;border-radius:50%;background:var(--bs-secondary-bg);display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${m.username.charAt(0).toUpperCase()}</span>`;
             const badge = m.role === 'owner' ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">管理員</span>' : '';
             $r.append(`
@@ -175,4 +171,5 @@ $(document).on('input', '#admin-member-search', function () {
 });
 </script>
 
+<?php renderAdminSearchScript(); ?>
 <?php require_once '../config/footer.php'; ?>

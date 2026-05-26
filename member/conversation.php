@@ -8,7 +8,7 @@ $me      = $_SESSION['user_id'];
 $with_id = intval($_GET['with'] ?? 0);
 
 if (!$with_id || $with_id === $me) {
-    header('Location: /member/messages.php');
+    header('Location: ' . APP_BASE . '/member/messages.php');
     exit();
 }
 
@@ -18,7 +18,7 @@ mysqli_stmt_bind_param($stmt, 'i', $with_id);
 mysqli_stmt_execute($stmt);
 $other = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 if (!$other) {
-    header('Location: /member/messages.php');
+    header('Location: ' . APP_BASE . '/member/messages.php');
     exit();
 }
 

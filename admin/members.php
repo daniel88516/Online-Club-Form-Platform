@@ -2,6 +2,7 @@
 $pageTitle = '會員管理';
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/_admin_search.php';
 requireAdmin();
 
 $error = '';
@@ -71,16 +72,7 @@ require_once '../config/header.php';
     <div class="alert alert-success alert-dismissible"><i class="bi bi-check-circle"></i> <?= htmlspecialchars($success) ?></div>
 <?php endif; ?>
 
-<form method="GET" class="mb-3">
-    <div class="input-group">
-        <input type="text" name="search" class="form-control" placeholder="搜尋帳號或 Email..."
-               value="<?= htmlspecialchars($search) ?>">
-        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-        <?php if ($search): ?>
-            <a href="<?= REL_BASE ?>admin/members.php" class="btn btn-outline-danger"><i class="bi bi-x"></i></a>
-        <?php endif; ?>
-    </div>
-</form>
+<?php renderAdminSearchBar('search', $search, '搜尋帳號或 Email...', REL_BASE . 'admin/members.php'); ?>
 
 <div class="card">
     <div class="table-responsive">
@@ -98,15 +90,15 @@ require_once '../config/header.php';
             </thead>
             <tbody>
                 <?php while ($user = mysqli_fetch_assoc($users)): ?>
-                <tr>
+                <tr data-admin-search="<?= htmlspecialchars(mb_strtolower($user['username'] . ' ' . $user['email'])) ?>">
                     <td><?= $user['id'] ?></td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <?= renderAvatar($user['username'], $user['avatar'] ?? null, 28) ?>
-                            <span class="fw-semibold"><?= htmlspecialchars($user['username']) ?></span>
+                            <span class="fw-semibold admin-search-target"><?= adminSearchHighlight($user['username'], $search) ?></span>
                         </div>
                     </td>
-                    <td class="small text-muted"><?= htmlspecialchars($user['email']) ?></td>
+                    <td class="small text-muted admin-search-target"><?= adminSearchHighlight($user['email'], $search) ?></td>
                     <td>
                         <form method="POST" class="d-flex gap-1 align-items-center">
                             <input type="hidden" name="change_group_id" value="<?= $user['id'] ?>">
@@ -153,4 +145,5 @@ require_once '../config/header.php';
     </div>
 </div>
 
+<?php renderAdminSearchScript(); ?>
 <?php require_once '../config/footer.php'; ?>

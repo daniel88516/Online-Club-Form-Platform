@@ -129,7 +129,7 @@ $q       = trim($_GET['q'] ?? '');
              data-date="<?= strtotime($club['created_at']) ?>">
             <div class="card h-100">
                 <?php if ($club['cover_image']): ?>
-                    <img src="<?= htmlspecialchars($club['cover_image']) ?>" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">
+                    <img src="<?= htmlspecialchars(assetUrl($club['cover_image'])) ?>" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">
                 <?php else: ?>
                     <div class="d-flex align-items-center justify-content-center" style="aspect-ratio:8/3;background:rgba(var(--bs-primary-rgb),.15);">
                         <i class="bi bi-people" style="font-size:3rem;opacity:.4;"></i>
@@ -137,12 +137,12 @@ $q       = trim($_GET['q'] ?? '');
                 <?php endif; ?>
                 <div class="card-body">
                     <h6 class="fw-bold mb-1">
-                        <?= htmlspecialchars($club['name']) ?>
+                        <span class="club-title"><?= htmlspecialchars($club['name']) ?></span>
                         <?php if (!$club['is_public']): ?>
                             <span class="badge bg-secondary ms-1" style="font-size:.65rem;"><i class="bi bi-lock-fill"></i> 私人</span>
                         <?php endif; ?>
                     </h6>
-                    <p class="small text-muted mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    <p class="small text-muted mb-2 club-desc" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
                         <?= htmlspecialchars($club['description'] ?: '尚無介紹') ?>
                     </p>
                     <div class="d-flex align-items-center justify-content-between">
@@ -154,7 +154,7 @@ $q       = trim($_GET['q'] ?? '');
                     </div>
                 </div>
                 <div class="card-footer d-flex gap-2">
-                    <a href="/club.php?id=<?= $club['id'] ?>" class="btn btn-glow-primary btn-sm flex-grow-1">
+                    <a href="<?= REL_BASE ?>club.php?id=<?= $club['id'] ?>" class="btn btn-glow-primary btn-sm flex-grow-1">
                         <i class="bi bi-door-open"></i> 進入
                         <?php if ($tab === 'pending' && ($club['pending_count'] ?? 0) > 0 && $club['my_role'] === 'owner'): ?>
                         <span class="badge bg-warning text-dark ms-1"><?= $club['pending_count'] ?> 待審</span>
@@ -383,7 +383,7 @@ $(document).on('click', '#btn-club-cover-crop-confirm', function () {
             success: function (res) {
                 if (res.success) {
                     _clubCoverUrl = res.path;
-                    $('#club-cover-thumb').attr('src', res.path);
+                    $('#club-cover-thumb').attr('src', assetUrl(res.path));
                     $('#club-cover-preview').removeClass('d-none');
                 } else { alert(res.message || '封面圖上傳失敗'); }
             }
@@ -415,7 +415,7 @@ $('#btn-create-club').on('click', function () {
         is_public: $('#club-public').is(':checked') ? 1 : 0,
         cover_image: _clubCoverUrl
     }, function (res) {
-        if (res.success) location.href = '/club.php?id=' + res.club_id;
+        if (res.success) location.href = REL_BASE + 'club.php?id=' + res.club_id;
         else alert(res.message);
     });
 });
@@ -425,7 +425,7 @@ let _oomClubId = 0;
 
 function oomAvatarHtml(avatar, size) {
     size = size || 28;
-    if (avatar) return `<img src="${avatar}" class="rounded-circle" style="width:${size}px;height:${size}px;object-fit:cover;">`;
+    if (avatar) return `<img src="${assetUrl(avatar)}" class="rounded-circle" style="width:${size}px;height:${size}px;object-fit:cover;">`;
     return `<span class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px;"><i class="bi bi-person-fill text-white"></i></span>`;
 }
 
@@ -542,7 +542,7 @@ $(document).on('click', '.btn-cancel-apply-club', function () {
 $(document).on('click', '.btn-accept-invite-club', function () {
     const id = $(this).data('id');
     $.post('<?= REL_BASE ?>api/club_action.php', { action: 'accept_invite', club_id: id }, function (res) {
-        if (res.success) location.href = '/club.php?id=' + id;
+        if (res.success) location.href = REL_BASE + 'club.php?id=' + id;
         else alert(res.message);
     });
 });
@@ -577,14 +577,35 @@ $(document).ready(function () {
         $('#nav-search-input').val('').trigger('input');
         $('#nav-search-box').addClass('d-none');
     });
+    function escapeReg(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function escapeHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function highlightText($el, q) {
+        const orig = $el.data('orig-text') ?? $el.text();
+        $el.data('orig-text', orig);
+        if (!q) { $el.html(escapeHtml(orig)); return; }
+        const re = new RegExp('(' + escapeReg(q) + ')', 'gi');
+        $el.html(escapeHtml(orig).replace(re, '<mark class="search-hl">$1</mark>'));
+    }
     $('#nav-search-input').on('input', function () {
         const q = $(this).val().toLowerCase().trim();
         let visible = 0;
         $('.club-card-item').each(function () {
             const match = !q || String($(this).data('name')||'').includes(q) || String($(this).data('desc')||'').includes(q);
             $(this).toggle(match);
-            if (match) visible++;
+            if (match) {
+                highlightText($(this).find('.club-title'), q);
+                highlightText($(this).find('.club-desc'), q);
+                visible++;
+            }
         });
+        if (!q) {
+            $('.club-title, .club-desc').each(function () {
+                const orig = $(this).data('orig-text');
+                if (orig !== undefined) $(this).html(escapeHtml(orig));
+            });
+        }
         $('#clubs-no-results').toggleClass('d-none', visible > 0 || !q);
     });
 });

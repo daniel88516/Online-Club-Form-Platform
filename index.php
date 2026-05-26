@@ -116,6 +116,9 @@ require_once 'config/header.php';
                                 <?php endif; ?>
 
                                 <?php if (isAdmin() || $form['user_id'] == $user_id || !empty($form['show_stats'])): ?>
+                                <?php if ($form['user_id'] == $user_id): ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <?php endif; ?>
                                 <li>
                                     <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>">
                                         <i class="bi bi-bar-chart text-info me-2"></i> 查看統計
@@ -124,10 +127,10 @@ require_once 'config/header.php';
                                         <?php endif; ?>
                                     </a>
                                 </li>
+                                <li><hr class="dropdown-divider"></li>
                                 <?php endif; ?>
 
                                 <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
-                                <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <button class="dropdown-item text-danger btn-delete-feed-form" data-form-id="<?= $form['id'] ?>">
                                         <i class="bi bi-trash me-2"></i> 刪除表單
@@ -155,7 +158,7 @@ require_once 'config/header.php';
                     <p class="text-muted mb-2 feed-desc"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
                 <?php endif; ?>
                 <?php if ($form['cover_image']): ?>
-                    <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="rounded mb-3 w-100"
+                    <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="rounded mb-3 w-100"
                          style="max-height:250px;object-fit:cover;">
                 <?php endif; ?>
 

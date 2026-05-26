@@ -8,6 +8,18 @@ requireLogin();
 $error = '';
 $success = '';
 
+function normalizeFieldOptions($options) {
+    if (is_array($options)) {
+        return array_values(array_filter(array_map('trim', $options), function ($value) {
+            return $value !== '';
+        }));
+    }
+
+    return array_values(array_filter(array_map('trim', explode("\n", (string)$options)), function ($value) {
+        return $value !== '';
+    }));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title        = trim($_POST['title'] ?? '');
     $description  = trim($_POST['description'] ?? '');
@@ -26,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($fields as $field) {
         $type = $field['type'] ?? '';
         if (in_array($type, ['radio', 'checkbox', 'dropdown'])) {
-            $opts = array_filter(array_map('trim', explode("\n", $field['options'] ?? '')));
+            $opts = normalizeFieldOptions($field['options'] ?? []);
             if (empty($opts)) { $optionError = true; break; }
         }
     }
@@ -66,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $options  = null;
 
                 if (in_array($type, ['radio', 'checkbox', 'dropdown']) && !empty($field['options'])) {
-                    $opts = array_filter(array_map('trim', explode("\n", $field['options'])));
+                    $opts = normalizeFieldOptions($field['options']);
                     $options = json_encode(array_values($opts), JSON_UNESCAPED_UNICODE);
                 }
 
@@ -77,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            header('Location: /member/my_forms.php?msg=created');
+            header('Location: ' . APP_BASE . '/member/my_forms.php?msg=created');
             exit();
         } else {
             $error = '建立失敗，請稍後再試';
@@ -296,14 +308,74 @@ function hasOptions(type) {
     return ['radio', 'checkbox', 'dropdown'].includes(type);
 }
 
+function optionIcon(type) {
+    if (type === 'radio') return '<i class="bi bi-circle option-kind-icon"></i>';
+    if (type === 'checkbox') return '<i class="bi bi-square option-kind-icon"></i>';
+    return '<i class="bi bi-list option-kind-icon"></i>';
+}
+
+function optionRowHTML(type, value = '') {
+    const safeValue = $('<span>').text(value).html();
+    return `
+        <div class="option-row d-flex align-items-center gap-2 mb-2">
+            <button type="button" class="btn btn-sm btn-link text-muted p-0 option-drag-handle" title="拖曳排序">
+                <i class="bi bi-grip-vertical"></i>
+            </button>
+            <span class="option-kind">${optionIcon(type)}</span>
+            <textarea name="" class="form-control form-control-sm option-input" rows="1" placeholder="選項文字">${safeValue}</textarea>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-option" title="刪除選項">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>`;
+}
+
+function autoResizeOption($el) {
+    $el.css('height', 'auto');
+    $el.css('height', Math.max(34, $el[0].scrollHeight) + 'px');
+}
+
+function syncOptionNames($card) {
+    const fieldName = $card.find('input[name$="[type]"]').attr('name') || '';
+    const match = fieldName.match(/^fields\[\d+\]/);
+    if (!match) return;
+    $card.find('.option-input').each(function () {
+        $(this).attr('name', match[0] + '[options][]');
+        autoResizeOption($(this));
+    });
+}
+
+function initOptionSortable(el) {
+    if (!window.Sortable || !el || el.dataset.sortableReady) return;
+    Sortable.create(el, {
+        handle: '.option-drag-handle',
+        animation: 150,
+        ghostClass: 'opacity-50',
+        forceFallback: true,
+        fallbackOnBody: true,
+        fallbackTolerance: 3,
+        onEnd: function () {
+            syncOptionNames($(el).closest('.field-card'));
+        }
+    });
+    el.dataset.sortableReady = '1';
+}
+
 function addField(type) {
     $('#empty-hint').hide();
     const idx = fieldCount++;
     const defaultLabel = (type === 'short_text' || type === 'long_text') ? '說說你的看法吧!!!' : '';
     const optionsHTML = hasOptions(type) ? `
-        <div class="mt-2">
-            <label class="form-label small">選項（每行一個）</label>
-            <textarea name="fields[${idx}][options]" class="form-control form-control-sm" rows="3" placeholder="選項一\n選項二\n選項三"></textarea>
+        <div class="mt-2 option-builder" data-option-type="${type}">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <label class="form-label small mb-0">選項</label>
+                <button type="button" class="btn btn-outline-primary btn-sm add-option">
+                    <i class="bi bi-plus-lg"></i> 新增選項
+                </button>
+            </div>
+            <div class="option-list">
+                ${optionRowHTML(type, '選項 1')}
+                ${optionRowHTML(type, '選項 2')}
+            </div>
         </div>` : '';
 
     const html = `
@@ -335,6 +407,9 @@ function addField(type) {
     </div>`;
 
     $('#fields-container').append(html);
+    const $card = $(`#field-${idx}`);
+    syncOptionNames($card);
+    initOptionSortable($card.find('.option-list')[0]);
 }
 
 $(document).ready(function () {
@@ -350,6 +425,38 @@ $(document).ready(function () {
         if ($('.field-card').length === 0) {
             $('#empty-hint').show();
         }
+    });
+
+    $(document).on('click', '.add-option', function () {
+        const $builder = $(this).closest('.option-builder');
+        const type = $builder.data('option-type');
+        const next = $builder.find('.option-row').length + 1;
+        $builder.find('.option-list').append(optionRowHTML(type, '選項 ' + next));
+        initOptionSortable($builder.find('.option-list')[0]);
+        syncOptionNames($builder.closest('.field-card'));
+        $builder.find('.option-input').last().focus().select();
+    });
+
+    $(document).on('click', '.remove-option', function () {
+        const $builder = $(this).closest('.option-builder');
+        if ($builder.find('.option-row').length <= 1) {
+            $builder.find('.option-input').val('').focus();
+        } else {
+            $(this).closest('.option-row').remove();
+        }
+        syncOptionNames($builder.closest('.field-card'));
+    });
+
+    $(document).on('input', '.option-input', function () {
+        $(this).removeClass('is-invalid');
+        autoResizeOption($(this));
+        syncOptionNames($(this).closest('.field-card'));
+    });
+
+    $(document).on('keydown', '.option-input', function (e) {
+        if (e.key !== 'Enter' || !e.ctrlKey) return;
+        e.preventDefault();
+        $(this).closest('.option-builder').find('.add-option').trigger('click');
     });
 
     // 表單送出驗證
@@ -382,17 +489,23 @@ $(document).ready(function () {
         }
         $('#start_date, #end_date').removeClass('is-invalid');
 
+        $('.field-card').each(function () {
+            syncOptionNames($(this));
+        });
+
         // 檢查選擇類型欄位是否有填入選項
         let hasError = false;
         $('.field-card').each(function () {
             const type = $(this).find('input[name$="[type]"]').val();
             if (['radio', 'checkbox', 'dropdown'].includes(type)) {
-                const options = $(this).find('textarea[name$="[options]"]').val().trim();
-                if (!options) {
+                const options = $(this).find('.option-input').filter(function () {
+                    return $(this).val().trim() !== '';
+                });
+                if (options.length === 0) {
                     hasError = true;
-                    $(this).find('textarea[name$="[options]"]').addClass('is-invalid');
+                    $(this).find('.option-input').addClass('is-invalid');
                 } else {
-                    $(this).find('textarea[name$="[options]"]').removeClass('is-invalid');
+                    $(this).find('.option-input').removeClass('is-invalid');
                 }
             }
         });
@@ -410,6 +523,7 @@ $(document).ready(function () {
                     $(this).attr('name', n.replace(/^fields\[\d+\]/, 'fields[' + newIdx + ']'));
                 }
             });
+            syncOptionNames($(this));
             newIdx++;
         });
     });
@@ -430,7 +544,7 @@ $('#cover-image-input').on('change', function () {
         success: res => {
             if (res.success) {
                 $('#cover-image-url').val(res.path);
-                $('#cover-image-thumb').attr('src', res.path);
+                $('#cover-image-thumb').attr('src', assetUrl(res.path));
                 $('#cover-image-preview').show();
             } else {
                 window.cuteToast({ type: 'error', msg: res.message || '封面圖上傳失敗' });

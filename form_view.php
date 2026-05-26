@@ -228,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
             <div class="card mb-3">
                 <?php if ($form['cover_image']): ?>
-                    <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="card-img-top"
+                    <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="card-img-top"
                          style="max-height:300px;object-fit:cover;">
                 <?php endif; ?>
                 <div class="card-body">
@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
                     </div>
                     <?php if ($form['description']): ?>
-                        <div class="text-muted mb-2 ql-content"><?= autolink($form['description']) ?></div>
+                        <div class="text-muted mb-2 ql-content"><?= assetHtml(autolink($form['description'])) ?></div>
                     <?php endif; ?>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <div class="d-flex align-items-center gap-2">
@@ -309,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            value="<?= htmlspecialchars($opt) ?>"
                                            <?= ($prefill[$fid] ?? '') === $opt ? 'checked' : '' ?>
                                            <?= $field['is_required'] ? 'required' : '' ?>>
-                                    <label class="form-check-label"><?= htmlspecialchars($opt) ?></label>
+                                    <label class="form-check-label option-label"><?= htmlspecialchars($opt) ?></label>
                                 </div>
                             <?php endforeach; ?>
 
@@ -320,7 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            name="answers[<?= $fid ?>][]"
                                            value="<?= htmlspecialchars($opt) ?>"
                                            <?= in_array($opt, $preChecked) ? 'checked' : '' ?>>
-                                    <label class="form-check-label"><?= htmlspecialchars($opt) ?></label>
+                                    <label class="form-check-label option-label"><?= htmlspecialchars($opt) ?></label>
                                 </div>
                             <?php endforeach; ?>
 

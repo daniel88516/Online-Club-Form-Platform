@@ -66,7 +66,7 @@ function renderComments($comments, $depth = 0) {
                 <div class="flex-grow-1">
                     <span class="fw-semibold small"><?= htmlspecialchars($c['username']) ?></span>
                     <span class="text-muted small ms-2"><?= $timeStr ?></span>
-                    <div class="small mt-1 ql-content"><?= autolink($c['content']) ?></div>
+                    <div class="small mt-1 ql-content"><?= assetHtml(autolink($c['content'])) ?></div>
                 </div>
                 <div class="dropdown" style="flex-shrink:0;">
                     <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed" aria-expanded="false">
@@ -248,7 +248,7 @@ $comment_count_total = count($all_comments);
 const FORM_ID      = <?= intval($id ?? 0) ?>;
 const CUR_USER_ID  = <?= intval($cur_user) ?>;
 const CUR_USERNAME = <?= json_encode($_SESSION['username'] ?? '') ?>;
-const CUR_AVATAR   = <?= json_encode($_cur_avatar ?? '') ?>;
+const CUR_AVATAR   = <?= json_encode(assetUrl($_cur_avatar ?? '')) ?>;
 const IS_ADMIN     = <?= isAdmin() ? 'true' : 'false' ?>;
 let quillMain = null;
 const quillInstances = {};
@@ -528,7 +528,7 @@ function makeAvatarHTML(uid, username, avatarUrl, size, showInteract) {
     const s = `width:${size}px;height:${size}px;border-radius:50%;flex-shrink:0;`;
     let avatarInner;
     if (avatarUrl) {
-        avatarInner = `<img src="${avatarUrl}" class="site-avatar" style="${s}object-fit:cover;" alt="">`;
+        avatarInner = `<img src="${assetUrl(avatarUrl)}" class="site-avatar" style="${s}object-fit:cover;" alt="">`;
     } else {
         const fs = Math.round(size * 0.44);
         const initial = (username.charAt(0) || '?').toUpperCase();
@@ -537,7 +537,7 @@ function makeAvatarHTML(uid, username, avatarUrl, size, showInteract) {
     if (showInteract && uid && uid != CUR_USER_ID) {
         const showChat = uid != CUR_USER_ID ? 1 : 0;
         const uname = username.replace(/"/g, '&quot;');
-        const av    = (avatarUrl || '').replace(/"/g, '&quot;');
+        const av    = (assetUrl(avatarUrl || '')).replace(/"/g, '&quot;');
         return `<span class="avd-wrap" data-uid="${uid}" data-uname="${uname}" data-avatar="${av}" data-chat="${showChat}">${avatarInner}</span>`;
     }
     return avatarInner;

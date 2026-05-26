@@ -34,7 +34,7 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
 
 <div class="card mb-3">
     <?php if ($form['cover_image']): ?>
-        <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="card-img-top" style="max-height:250px;object-fit:cover;">
+        <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="card-img-top" style="max-height:250px;object-fit:cover;">
     <?php endif; ?>
     <div class="card-body">
         <h5 class="fw-bold mb-1"><?= htmlspecialchars($form['title']) ?></h5>
@@ -68,7 +68,7 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
                 <?php foreach ($field['options'] as $opt): ?>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" disabled>
-                        <label class="form-check-label"><?= htmlspecialchars($opt) ?></label>
+                        <label class="form-check-label option-label"><?= htmlspecialchars($opt) ?></label>
                     </div>
                 <?php endforeach; ?>
 
@@ -76,7 +76,7 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
                 <?php foreach ($field['options'] as $opt): ?>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" disabled>
-                        <label class="form-check-label"><?= htmlspecialchars($opt) ?></label>
+                        <label class="form-check-label option-label"><?= htmlspecialchars($opt) ?></label>
                     </div>
                 <?php endforeach; ?>
 

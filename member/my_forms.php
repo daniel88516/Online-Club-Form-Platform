@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
     $stmt = mysqli_prepare($conn, "UPDATE forms SET is_published = !is_published WHERE id = ? AND user_id = ?");
     mysqli_stmt_bind_param($stmt, 'ii', $toggle_id, $uid);
     mysqli_stmt_execute($stmt);
-    header('Location: /member/my_forms.php?tab=created');
+    header('Location: ' . APP_BASE . '/member/my_forms.php?tab=created');
     exit();
 }
 
@@ -219,7 +219,9 @@ function timeAgo($dt) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計<?php if (!($form['show_stats'] ?? 1)): ?><i class="bi bi-lock-fill text-secondary ms-1 small"></i><?php endif; ?></a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
@@ -245,7 +247,7 @@ function timeAgo($dt) {
             <p class="text-muted mb-2 myf-desc"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
         <?php endif; ?>
         <?php if ($form['cover_image']): ?>
-            <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
+            <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
         <?php endif; ?>
         <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
         <?php if (!$form['is_published']): ?>
@@ -325,6 +327,7 @@ function timeAgo($dt) {
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -341,7 +344,7 @@ function timeAgo($dt) {
             <p class="text-muted mb-2 myf-desc"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
         <?php endif; ?>
         <?php if ($form['cover_image']): ?>
-            <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
+            <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
         <?php endif; ?>
         <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
         <?php if (!$form['is_published']): ?>
@@ -422,6 +425,7 @@ function timeAgo($dt) {
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -438,7 +442,7 @@ function timeAgo($dt) {
             <p class="text-muted mb-2 myf-desc"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
         <?php endif; ?>
         <?php if ($form['cover_image']): ?>
-            <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
+            <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
         <?php endif; ?>
         <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
         <?php if (!$form['is_published']): ?>

@@ -19,7 +19,7 @@ mysqli_stmt_execute($stmt);
 $response = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$response || (!isAdmin() && $response['form_owner'] != $_SESSION['user_id'])) {
-    header('Location: /member/my_forms.php');
+    header('Location: ' . APP_BASE . '/member/my_forms.php');
     exit();
 }
 

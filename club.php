@@ -4,7 +4,7 @@ require_once 'config/session.php';
 require_once 'config/db.php';
 
 $club_id = intval($_GET['id'] ?? 0);
-if (!$club_id) { header('Location: /clubs.php'); exit(); }
+if (!$club_id) { header('Location: ' . APP_BASE . '/clubs.php'); exit(); }
 
 $user_id = isLoggedIn() ? $_SESSION['user_id'] : 0;
 
@@ -22,11 +22,11 @@ mysqli_stmt_bind_param($stmt, 'iii', $user_id, $user_id, $club_id);
 mysqli_stmt_execute($stmt);
 $club = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
-if (!$club) { header('Location: /clubs.php'); exit(); }
+if (!$club) { header('Location: ' . APP_BASE . '/clubs.php'); exit(); }
 
 // 私人社團：非成員無法進入
 if (!$club['is_public'] && ($club['my_role'] === null || $club['my_status'] === 'pending')) {
-    header('Location: /clubs.php?err=private'); exit();
+    header('Location: ' . APP_BASE . '/clubs.php?err=private'); exit();
 }
 
 $pageTitle = $club['name'];
@@ -86,7 +86,7 @@ require_once 'config/header.php';
             <?php if ($club['my_role'] === 'owner'): ?>
             <div style="position:relative;cursor:pointer;" id="cover-upload-area" title="點擊更換封面">
                 <?php if ($club['cover_image']): ?>
-                    <img id="club-cover-img" src="<?= htmlspecialchars($club['cover_image']) ?>" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">
+                    <img id="club-cover-img" src="<?= htmlspecialchars(assetUrl($club['cover_image'])) ?>" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">
                 <?php else: ?>
                     <div id="club-cover-placeholder" class="d-flex align-items-center justify-content-center" style="aspect-ratio:8/3;background:rgba(var(--bs-primary-rgb),.12);">
                         <i class="bi bi-people" style="font-size:3.5rem;opacity:.3;"></i>
@@ -99,7 +99,7 @@ require_once 'config/header.php';
             </div>
             <?php else: ?>
                 <?php if ($club['cover_image']): ?>
-                    <img src="<?= htmlspecialchars($club['cover_image']) ?>" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">
+                    <img src="<?= htmlspecialchars(assetUrl($club['cover_image'])) ?>" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">
                 <?php else: ?>
                     <div class="d-flex align-items-center justify-content-center" style="aspect-ratio:8/3;background:rgba(var(--bs-primary-rgb),.12);">
                         <i class="bi bi-people" style="font-size:3.5rem;opacity:.3;"></i>
@@ -261,10 +261,13 @@ require_once 'config/header.php';
                             <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
                             <?php endif; ?>
                             <?php if (isAdmin() || $form['user_id'] == $user_id || !empty($form['show_stats'])): ?>
+                            <?php if ($form['user_id'] == $user_id): ?>
+                            <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
                             <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
                             <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
-                            <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item text-danger btn-delete-feed-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-trash me-2"></i> 刪除表單</button></li>
                             <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
@@ -281,7 +284,7 @@ require_once 'config/header.php';
                     <p class="text-muted mb-2 feed-desc"><?= htmlspecialchars(mb_substr($plainDesc, 0, 120)) ?><?= mb_strlen($plainDesc) > 120 ? '...' : '' ?></p>
                 <?php endif; ?>
                 <?php if ($form['cover_image']): ?>
-                    <img src="<?= htmlspecialchars($form['cover_image']) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
+                    <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="rounded mb-3 w-100" style="max-height:250px;object-fit:cover;">
                 <?php endif; ?>
                 <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
                 <?php $expired = $form['end_date'] && $form['end_date'] < $now; ?>
@@ -425,7 +428,7 @@ $(document).on('input', '#invite-search-input', function () {
             }
             res.users.forEach(function (u) {
                 const av = u.avatar
-                    ? `<img src="${u.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`
+                    ? `<img src="${assetUrl(u.avatar)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">`
                     : `<span style="width:32px;height:32px;border-radius:50%;background:var(--bs-secondary-bg);display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${u.username.charAt(0).toUpperCase()}</span>`;
                 const safeName = $('<span>').text(u.username).html();
                 let action;
@@ -506,7 +509,7 @@ function loadMemberList(q) {
         }
         res.members.forEach(function (m) {
             const av = m.avatar
-                ? `<img src="${m.avatar}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                ? `<img src="${assetUrl(m.avatar)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
                 : `<span style="width:36px;height:36px;border-radius:50%;background:var(--bs-secondary-bg);display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${m.username.charAt(0).toUpperCase()}</span>`;
             const badge = m.role === 'owner' ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">管理員</span>' : '';
             const kickBtn = (IS_OWNER && m.role !== 'owner')
@@ -795,7 +798,7 @@ let _oomClubId = <?= $club['id'] ?>;
 
 function oomAvatarHtml(avatar, size) {
     size = size || 28;
-    if (avatar) return `<img src="${avatar}" class="rounded-circle" style="width:${size}px;height:${size}px;object-fit:cover;">`;
+    if (avatar) return `<img src="${assetUrl(avatar)}" class="rounded-circle" style="width:${size}px;height:${size}px;object-fit:cover;">`;
     return `<span class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px;"><i class="bi bi-person-fill text-white"></i></span>`;
 }
 
@@ -921,10 +924,10 @@ $('#btn-owner-leave').on('click', function () {
                     $.post('<?= REL_BASE ?>api/club_action.php', { action: 'update_cover', club_id: CLUB_ID, cover_url: res.path }, function (r) {
                         if (!r.success) { alert(r.message); return; }
                         if ($('#club-cover-img').length) {
-                            $('#club-cover-img').attr('src', res.path);
+                            $('#club-cover-img').attr('src', assetUrl(res.path));
                         } else {
                             $('#club-cover-placeholder').replaceWith(
-                                `<img id="club-cover-img" src="${res.path}" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">`
+                                `<img id="club-cover-img" src="${assetUrl(res.path)}" class="card-img-top" style="aspect-ratio:8/3;object-fit:cover;width:100%;">`
                             );
                         }
                     });

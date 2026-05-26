@@ -4,7 +4,7 @@ require_once 'config/session.php';
 require_once 'config/db.php';
 
 if (isLoggedIn()) {
-    header('Location: /index.php');
+    header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
 

@@ -43,7 +43,7 @@ $(document).on('mouseleave', '#avd-popup', function () {
 });
 $(document).on('click', '#avd-go-profile', function () {
     $('#avd-popup').hide();
-    location.href = '/profile.php?id=' + _avdUid;
+    location.href = (window.REL_BASE || '') + 'profile.php?id=' + _avdUid;
 });
 $(document).on('click', '#avd-go-chat', function () {
     $('#avd-popup').hide();
