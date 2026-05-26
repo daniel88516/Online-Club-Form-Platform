@@ -431,7 +431,7 @@ function timeAgo($dt) {
                     <li><hr class="dropdown-divider"></li>
                     <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag me-2"></i> 檢舉表單</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item text-danger btn-unlike" data-id="<?= $form['id'] ?>"><i class="bi bi-heart-break me-2"></i> 取消按讚</button></li>
+                    <li><button class="dropdown-item text-danger btn-unlike" data-id="<?= $form['id'] ?>"><i class="bi bi-heartbreak me-2"></i> 取消按讚</button></li>
                 </ul>
             </div>
         </div>
