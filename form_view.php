@@ -7,6 +7,25 @@ $id      = intval($_GET['id'] ?? 0);
 $preview = isset($_GET['preview']);
 $now     = date('Y-m-d H:i:s');
 
+$form_back_url = REL_BASE . 'index.php';
+$back_source = $_POST['return_to'] ?? $_GET['return_to'] ?? ($_SERVER['HTTP_REFERER'] ?? '');
+if ($back_source !== '') {
+    $parts = parse_url($back_source);
+    $current_host = $_SERVER['HTTP_HOST'] ?? '';
+    $is_explicit_return = isset($_POST['return_to']) || isset($_GET['return_to']);
+    $is_current_form = !$is_explicit_return && (($parts['path'] ?? '') === ($_SERVER['SCRIPT_NAME'] ?? ''));
+
+    if ($parts !== false && !$is_current_form) {
+        $host_ok = !isset($parts['host']) || strcasecmp($parts['host'], $current_host) === 0;
+        $scheme_ok = !isset($parts['scheme']) || in_array(strtolower($parts['scheme']), ['http', 'https'], true);
+        if ($host_ok && $scheme_ok) {
+            $form_back_url = $back_source;
+        }
+    }
+}
+$form_back_attr = htmlspecialchars($form_back_url, ENT_QUOTES);
+$form_back_param = urlencode($form_back_url);
+
 // 取得表單（預覽模式允許表單擁有者查看草稿）
 if ($preview && isLoggedIn()) {
     $stmt = mysqli_prepare($conn, "SELECT f.*, u.username AS author, u.avatar AS author_avatar FROM forms f JOIN users u ON f.user_id = u.id WHERE f.id = ? AND f.user_id = ?");
@@ -194,6 +213,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container py-3">
 <?php else: require_once 'config/header.php'; endif; ?>
 
+<style>
+.form-back-shell { position: relative; }
+.form-back-float {
+    position: absolute;
+    top: 10px;
+    left: calc(100% + 76px);
+    z-index: 2;
+    white-space: nowrap;
+}
+@media (max-width: 991.98px) {
+    .form-back-mobile-row {
+        display: flex;
+        justify-content: flex-end;
+    }
+    .form-back-float {
+        position: static;
+        margin-bottom: .75rem;
+    }
+}
+</style>
 
 <div class="row justify-content-center">
     <div class="col-lg-7">
@@ -205,13 +244,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <?php if ($success): ?>
+        <div class="form-back-shell">
+            <div class="form-back-mobile-row">
+                <a href="<?= $form_back_attr ?>" class="btn btn-glow-primary btn-sm form-back-float">
+                    <i class="bi bi-arrow-left"></i> &#36820;&#22238;
+                </a>
+            </div>
             <div class="card text-center py-5">
                 <div class="card-body">
                     <i class="bi bi-check-circle text-success" style="font-size:4rem;"></i>
                     <h4 class="mt-3 fw-bold">填答完成！</h4>
                     <p class="text-muted">感謝您的填答</p>
                     <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-                        <a href="<?= REL_BASE ?>form_view.php?id=<?= $id ?>&edit_response=<?= $response_id ?>" class="btn btn-glow-red">
+                        <a href="<?= REL_BASE ?>form_view.php?id=<?= $id ?>&edit_response=<?= $response_id ?>&return_to=<?= $form_back_param ?>" class="btn btn-glow-red">
                             <i class="bi bi-pencil-square me-1"></i> 修改填答
                         </a>
                         <?php if (!empty($form['show_stats']) || $form['user_id'] == $user_id): ?>
@@ -225,7 +270,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
             </div>
+        </div>
         <?php else: ?>
+        <div class="form-back-shell">
+            <div class="form-back-mobile-row">
+                <a href="<?= $form_back_attr ?>" class="btn btn-glow-primary btn-sm form-back-float">
+                    <i class="bi bi-arrow-left"></i> &#36820;&#22238;
+                </a>
+            </div>
             <div class="card mb-3">
                 <?php if ($form['cover_image']): ?>
                     <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="card-img-top"
@@ -271,12 +323,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
             </div>
+        </div>
 
             <?php if ($error): ?>
                 <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
             <form method="POST" action="" id="fillForm">
+                <input type="hidden" name="return_to" value="<?= $form_back_attr ?>">
                 <?php if ($edit_response_id): ?>
                 <input type="hidden" name="edit_response_id" value="<?= $edit_response_id ?>">
                 <?php endif; ?>

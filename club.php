@@ -34,6 +34,9 @@ $showNavSearch = true;
 
 // 取社團表單
 $now = date('Y-m-d H:i:s');
+$has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
+$form_clubs_join = $has_form_clubs ? "LEFT JOIN form_clubs fcl ON fcl.form_id = f.id" : "";
+$club_filter = $has_form_clubs ? "(fcl.club_id = $club_id OR f.club_id = $club_id)" : "f.club_id = $club_id";
 $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_date, f.end_date, f.allow_multiple, f.created_at, f.show_stats, f.anonymous_responses,
                u.username AS author, u.avatar AS author_avatar,
                COUNT(DISTINCT fr.id) AS response_count,
@@ -48,7 +51,9 @@ $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_d
         LEFT JOIN form_likes fl ON f.id = fl.form_id
         LEFT JOIN form_bookmarks fb ON f.id = fb.form_id
         LEFT JOIN form_comments fc ON f.id = fc.form_id
-        WHERE f.is_published = 1 AND f.club_id = $club_id
+        $form_clubs_join
+        WHERE f.is_published = 1
+          AND $club_filter
         GROUP BY f.id
         ORDER BY f.created_at DESC";
 $forms = mysqli_query($conn, $sql);

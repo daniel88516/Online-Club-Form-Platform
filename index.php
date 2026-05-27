@@ -5,6 +5,9 @@ require_once 'config/db.php';
 
 $now = date('Y-m-d H:i:s');
 $user_id = isLoggedIn() ? $_SESSION['user_id'] : 0;
+$has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
+$has_show_on_index = mysqli_num_rows(mysqli_query($conn, "SHOW COLUMNS FROM forms LIKE 'show_on_index'")) > 0;
+$index_filter = $has_show_on_index ? "AND f.show_on_index = 1" : "AND f.club_id IS NULL";
 
 $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_date, f.end_date, f.allow_multiple, f.created_at, f.show_stats, f.anonymous_responses,
                u.username AS author, u.avatar AS author_avatar,
@@ -24,6 +27,7 @@ $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_d
         LEFT JOIN form_comments fc ON f.id = fc.form_id
         WHERE f.is_published = 1
           AND (f.target_group IS NULL)
+          $index_filter
         GROUP BY f.id
         ORDER BY f.created_at DESC";
 
@@ -35,7 +39,7 @@ require_once 'config/header.php';
 @media (min-width: 992px) {
     .index-sort-panel {
         position: absolute;
-        right: calc(100% + 16px);
+        right: calc(100% + 64px);
         top: 0;
         white-space: nowrap;
     }

@@ -5,6 +5,7 @@ require_once '../config/db.php';
 requireLogin();
 
 $id = intval($_GET['id'] ?? 0);
+$has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
 
 // 確認表單屬於此會員
 $stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ? AND user_id = ?");
@@ -30,13 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title          = trim($_POST['title'] ?? '');
     $description    = trim($_POST['description'] ?? '');
     $target_group   = !empty($_POST['target_group']) ? intval($_POST['target_group']) : null;
-    $club_id        = !empty($_POST['club_id']) ? intval($_POST['club_id']) : null;
+    $posted_club_ids = $_POST['club_ids'] ?? [];
+    if (!is_array($posted_club_ids)) {
+        $posted_club_ids = [];
+    }
+    if (empty($posted_club_ids) && !empty($_POST['club_id'])) {
+        $posted_club_ids = [$_POST['club_id']];
+    }
+    $selected_club_ids = array_values(array_unique(array_filter(array_map('intval', $posted_club_ids), function ($club_id) {
+        return $club_id > 0;
+    })));
     $start_date     = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date       = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
     $allow_multiple      = isset($_POST['allow_multiple']) ? 1 : 0;
     $is_published        = isset($_POST['is_published']) ? 1 : 0;
     $show_stats          = isset($_POST['show_stats']) ? 1 : 0;
     $anonymous_responses = isset($_POST['anonymous_responses']) ? 1 : 0;
+    $show_on_index       = isset($_POST['show_on_index']) ? 1 : 0;
     $fields         = $_POST['fields'] ?? [];
 
     // 檢查選擇類型欄位是否有填入選項
@@ -66,38 +77,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        ? $raw_cover
                        : $form['cover_image'];
 
-        // 更新表單
-        $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, club_id=? WHERE id=? AND user_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssssssiiiiiii',
+        $allowed_club_ids = [];
+        $club_stmt = mysqli_prepare($conn, "
+            SELECT c.id FROM clubs c
+            JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ? AND cm.status = 'active'
+        ");
+        mysqli_stmt_bind_param($club_stmt, 'i', $_SESSION['user_id']);
+        mysqli_stmt_execute($club_stmt);
+        $club_result = mysqli_stmt_get_result($club_stmt);
+        while ($club = mysqli_fetch_assoc($club_result)) {
+            $allowed_club_ids[] = (int)$club['id'];
+        }
+        $selected_club_ids = array_values(array_intersect($selected_club_ids, $allowed_club_ids));
+
+        mysqli_begin_transaction($conn);
+
+        $fallback_club_id = (!$has_form_clubs && !empty($selected_club_ids)) ? $selected_club_ids[0] : null;
+
+        // 更新表單本體；正式多社團曝光位置由 form_clubs 管理。
+        $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, club_id=? WHERE id=? AND user_id=?");
+        mysqli_stmt_bind_param($stmt, 'ssssssiiiiiiii',
             $title, $description, $cover_image, $target_group, $start_date, $end_date,
-            $allow_multiple, $is_published, $show_stats, $anonymous_responses, $club_id, $id, $_SESSION['user_id']
+            $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $fallback_club_id, $id, $_SESSION['user_id']
         );
-        mysqli_stmt_execute($stmt);
+        $updated = mysqli_stmt_execute($stmt);
 
         // 刪除舊欄位
-        mysqli_query($conn, "DELETE FROM form_fields WHERE form_id = $id");
+        if ($updated) {
+            $updated = mysqli_query($conn, "DELETE FROM form_fields WHERE form_id = $id");
+        }
 
         // 插入新欄位
-        foreach ($fields as $order => $field) {
-            $type     = $field['type'] ?? 'short_text';
-            $label    = trim($field['label'] ?? '');
-            $required = isset($field['required']) ? 1 : 0;
-            $options  = null;
+        if ($updated) {
+            foreach ($fields as $order => $field) {
+                $type     = $field['type'] ?? 'short_text';
+                $label    = trim($field['label'] ?? '');
+                $required = isset($field['required']) ? 1 : 0;
+                $options  = null;
 
-            if (in_array($type, ['radio', 'checkbox', 'dropdown']) && !empty($field['options'])) {
-                $opts = array_filter(array_map('trim', explode("\n", $field['options'])));
-                $options = json_encode(array_values($opts), JSON_UNESCAPED_UNICODE);
-            }
+                if (in_array($type, ['radio', 'checkbox', 'dropdown']) && !empty($field['options'])) {
+                    $opts = array_filter(array_map('trim', explode("\n", $field['options'])));
+                    $options = json_encode(array_values($opts), JSON_UNESCAPED_UNICODE);
+                }
 
-            if (!empty($label)) {
-                $stmt2 = mysqli_prepare($conn, "INSERT INTO form_fields (form_id, field_type, label, is_required, options, order_num) VALUES (?, ?, ?, ?, ?, ?)");
-                mysqli_stmt_bind_param($stmt2, 'issisi', $id, $type, $label, $required, $options, $order);
-                mysqli_stmt_execute($stmt2);
+                if (!empty($label)) {
+                    $stmt2 = mysqli_prepare($conn, "INSERT INTO form_fields (form_id, field_type, label, is_required, options, order_num) VALUES (?, ?, ?, ?, ?, ?)");
+                    mysqli_stmt_bind_param($stmt2, 'issisi', $id, $type, $label, $required, $options, $order);
+                    if (!mysqli_stmt_execute($stmt2)) {
+                        $updated = false;
+                        break;
+                    }
+                }
             }
         }
 
-        header('Location: ' . APP_BASE . '/member/my_forms.php?msg=updated');
-        exit();
+        if ($updated && $has_form_clubs) {
+            $updated = mysqli_query($conn, "DELETE FROM form_clubs WHERE form_id = $id");
+        }
+
+        if ($updated && $has_form_clubs && !empty($selected_club_ids)) {
+            $stmt_club = mysqli_prepare($conn, "INSERT INTO form_clubs (form_id, club_id) VALUES (?, ?)");
+            foreach ($selected_club_ids as $club_id) {
+                mysqli_stmt_bind_param($stmt_club, 'ii', $id, $club_id);
+                if (!mysqli_stmt_execute($stmt_club)) {
+                    $updated = false;
+                    break;
+                }
+            }
+        }
+
+        if ($updated) {
+            mysqli_commit($conn);
+            header('Location: ' . APP_BASE . '/member/my_forms.php?msg=updated');
+            exit();
+        }
+
+        mysqli_rollback($conn);
+        $error = '更新失敗，請稍後再試';
     }
 }
 
@@ -105,12 +161,32 @@ $groups = mysqli_query($conn, "SELECT id, name FROM `groups` ORDER BY id");
 
 $my_clubs_stmt = mysqli_prepare($conn, "
     SELECT c.id, c.name FROM clubs c
-    JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ?
+    JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ? AND cm.status = 'active'
     ORDER BY cm.joined_at DESC
 ");
 mysqli_stmt_bind_param($my_clubs_stmt, 'i', $_SESSION['user_id']);
 mysqli_stmt_execute($my_clubs_stmt);
-$my_clubs = mysqli_stmt_get_result($my_clubs_stmt);
+$my_clubs_result = mysqli_stmt_get_result($my_clubs_stmt);
+$my_clubs = [];
+while ($club = mysqli_fetch_assoc($my_clubs_result)) {
+    $my_clubs[] = $club;
+}
+
+$selected_club_ids = [];
+if ($has_form_clubs) {
+    $form_club_result = mysqli_query($conn, "SELECT club_id FROM form_clubs WHERE form_id = $id");
+    while ($club = mysqli_fetch_assoc($form_club_result)) {
+        $selected_club_ids[] = (int)$club['club_id'];
+    }
+}
+if (empty($selected_club_ids) && !empty($form['club_id'])) {
+    $selected_club_ids[] = (int)$form['club_id'];
+}
+$my_club_ids = array_map(function ($club) {
+    return (int)$club['id'];
+}, $my_clubs);
+$selected_club_ids = array_values(array_intersect($selected_club_ids, $my_club_ids));
+$selected_show_on_index = (int)($form['show_on_index'] ?? 0) === 1;
 
 require_once '../config/header.php';
 ?>
@@ -171,17 +247,28 @@ require_once '../config/header.php';
                             <?php endwhile; ?>
                         </select>
                     </div>
-                    <?php if (mysqli_num_rows($my_clubs) > 0): ?>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">所屬社團</label>
-                        <select name="club_id" class="form-select">
-                            <option value="">不屬於任何社團</option>
-                            <?php while ($c = mysqli_fetch_assoc($my_clubs)): ?>
-                                <option value="<?= $c['id'] ?>" <?= $form['club_id'] == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
-                            <?php endwhile; ?>
-                        </select>
+                        <div class="border rounded p-2 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="club_scope" id="club_scope_none" value="none">
+                                <label class="form-check-label" for="club_scope_none">不屬於任何社團</label>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="radio" name="club_scope" id="club_scope_specific" value="specific">
+                                <label class="form-check-label" for="club_scope_specific">屬於特定社團</label>
+                            </div>
+                        </div>
+                        <div id="club-hidden-inputs"></div>
+                        <input type="hidden" name="show_on_index" id="show-on-index-input" value="1">
+                        <button type="button" class="btn btn-glow-primary w-100 d-flex align-items-center justify-content-between text-start" data-bs-toggle="modal" data-bs-target="#clubPickerModal">
+                            <span id="club-picker-label">不屬於任何社團</span>
+                            <i class="bi bi-chevron-right ms-2"></i>
+                        </button>
+                        <div id="club-picker-preview" class="small text-muted mt-2">
+                            不屬於任何社團
+                        </div>
                     </div>
-                    <?php endif; ?>
                     <?php
                         $hasStartTime = $form['start_date'] && date('H:i', strtotime($form['start_date'])) !== '00:00';
                         $hasEndTime   = $form['end_date']   && date('H:i', strtotime($form['end_date']))   !== '00:00';
@@ -282,8 +369,65 @@ require_once '../config/header.php';
     </div>
 </form>
 
+<style>
+.club-picker-list {
+    max-height: 260px;
+    overflow-y: auto;
+}
+.club-picker-selected {
+    max-height: 220px;
+    overflow-y: auto;
+}
+.club-picker-item {
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.club-picker-item:hover {
+    background: rgba(var(--bs-primary-rgb), .12);
+}
+.club-picker-item.is-selected {
+    background: rgba(var(--bs-success-rgb), .12);
+}
+</style>
+
+<div class="modal fade" id="clubPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-people-fill"></i> 選擇社團</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="club-picker-search" class="form-control mb-3" placeholder="搜尋社團名稱...">
+                <div class="fw-semibold mb-2">曝光位置</div>
+                <div id="club-picker-public" class="club-picker-item d-flex align-items-center gap-2 px-2 py-2 rounded mb-2" data-kind="public">
+                    <i class="bi bi-square text-muted"></i>
+                    <span class="flex-grow-1">公開（顯示在首頁）</span>
+                </div>
+                <div class="fw-semibold mb-2">我的社團</div>
+                <div id="club-picker-list" class="club-picker-list border rounded p-2 mb-3"></div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="fw-semibold">已選中的社團</div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="club-picker-clear">
+                        <i class="bi bi-x-lg"></i> 清空
+                    </button>
+                </div>
+                <div id="club-picker-selected-list" class="club-picker-selected border rounded p-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-glow-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg"></i> 完成
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let fieldCount = 0;
+const myClubs = <?= json_encode($my_clubs, JSON_UNESCAPED_UNICODE) ?>;
+let selectedClubIds = <?= json_encode($selected_club_ids) ?>.map(Number);
+let selectedPublic = <?= $selected_show_on_index ? 'true' : 'false' ?>;
 const fieldLabels = { short_text:'簡答題', long_text:'詳答題', radio:'單選題', checkbox:'核取方塊', dropdown:'下拉選單', date:'日期', time:'時間' };
 const fieldIcons  = { short_text:'bi-input-cursor-text', long_text:'bi-text-paragraph', radio:'bi-ui-radios', checkbox:'bi-ui-checks', dropdown:'bi-menu-button-wide', date:'bi-calendar', time:'bi-clock' };
 
@@ -328,7 +472,95 @@ function addField(type, label='', required=false, options='') {
     $('#fields-container').append(html);
 }
 
+function clubNameById(id) {
+    const club = myClubs.find(c => Number(c.id) === Number(id));
+    return club ? club.name : '';
+}
+
+function syncClubPicker() {
+    selectedClubIds = selectedClubIds
+        .map(Number)
+        .filter((id, index, arr) => id > 0 && arr.indexOf(id) === index && myClubs.some(c => Number(c.id) === id));
+
+    const hasSelection = selectedClubIds.length > 0;
+    $('#club_scope_none').prop('checked', !hasSelection && selectedPublic);
+    $('#club_scope_specific').prop('checked', hasSelection || !selectedPublic);
+    $('#club-hidden-inputs').html(selectedClubIds.map(id => `<input type="hidden" name="club_ids[]" value="${id}">`).join(''));
+    $('#show-on-index-input').val(selectedPublic ? '1' : '').prop('disabled', !selectedPublic);
+    $('#club-picker-public')
+        .toggleClass('is-selected', selectedPublic)
+        .find('i')
+        .attr('class', `bi ${selectedPublic ? 'bi-check-square-fill text-success' : 'bi-square text-muted'}`);
+
+    if (!hasSelection && !selectedPublic) {
+        $('#club-picker-label').text('未選擇曝光位置');
+        $('#club-picker-preview').text('此表單目前不會出現在首頁或社團頁');
+        $('#club-picker-selected-list').html('<div class="text-muted small py-2 text-center">尚未選擇曝光位置</div>');
+    } else if (!hasSelection && selectedPublic) {
+        $('#club-picker-label').text('不屬於任何社團');
+        $('#club-picker-preview').text('公開（顯示在首頁）');
+        $('#club-picker-selected-list').html(`
+            <div class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom">
+                <span class="text-truncate">公開（顯示在首頁）</span>
+                <button type="button" class="btn btn-outline-danger btn-sm club-public-remove">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `);
+    } else {
+        const names = selectedClubIds.map(clubNameById).filter(Boolean);
+        const labelPrefix = selectedPublic ? '公開 + ' : '';
+        const selectedRows = [];
+        if (selectedPublic) {
+            selectedRows.push(`
+                <div class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom">
+                    <span class="text-truncate">公開（顯示在首頁）</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm club-public-remove">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            `);
+        }
+        $('#club-picker-label').text(`${labelPrefix}已選 ${names.length} 個社團`);
+        $('#club-picker-preview').text([...(selectedPublic ? ['公開'] : []), ...names].join('、'));
+        selectedRows.push(...names.map((name, index) => `
+            <div class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom">
+                <span class="text-truncate">${$('<span>').text(name).html()}</span>
+                <button type="button" class="btn btn-outline-danger btn-sm club-picker-remove" data-id="${selectedClubIds[index]}">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `));
+        $('#club-picker-selected-list').html(selectedRows.join(''));
+    }
+
+    renderClubPickerList($('#club-picker-search').val() || '');
+}
+
+function renderClubPickerList(query) {
+    const q = (query || '').trim().toLowerCase();
+    const clubs = myClubs.filter(c => !q || String(c.name).toLowerCase().includes(q));
+
+    if (!clubs.length) {
+        $('#club-picker-list').html('<div class="text-muted small py-2 text-center">找不到符合的社團</div>');
+        return;
+    }
+
+    $('#club-picker-list').html(clubs.map(c => {
+        const id = Number(c.id);
+        const checked = selectedClubIds.includes(id);
+        return `
+            <div class="club-picker-item d-flex align-items-center gap-2 px-2 py-2 rounded ${checked ? 'is-selected' : ''}" data-id="${id}">
+                <i class="bi ${checked ? 'bi-check-square-fill text-success' : 'bi-square text-muted'}"></i>
+                <span class="flex-grow-1 text-truncate">${$('<span>').text(c.name).html()}</span>
+            </div>
+        `;
+    }).join(''));
+}
+
 $(document).ready(function () {
+    syncClubPicker();
+
     // 載入現有欄位
     <?php foreach ($existing_fields as $f): ?>
     addField(
@@ -340,6 +572,48 @@ $(document).ready(function () {
     <?php endforeach; ?>
 
     $('.add-field').on('click', function () { addField($(this).data('type')); });
+    $('#club_scope_none').on('change', function () {
+        if (this.checked) {
+            selectedClubIds = [];
+            selectedPublic = true;
+            syncClubPicker();
+        }
+    });
+    $('#club_scope_specific').on('change', function () {
+        if (this.checked && selectedClubIds.length === 0) {
+            new bootstrap.Modal('#clubPickerModal').show();
+        }
+    });
+    $('#club-picker-search').on('input', function () {
+        renderClubPickerList(this.value);
+    });
+    $('#club-picker-public').on('click', function () {
+        selectedPublic = !selectedPublic;
+        syncClubPicker();
+    });
+    $(document).on('click', '.club-picker-item', function () {
+        if ($(this).data('kind') === 'public') return;
+        const clubId = Number($(this).data('id'));
+        if (selectedClubIds.includes(clubId)) {
+            selectedClubIds = selectedClubIds.filter(id => id !== clubId);
+        } else {
+            selectedClubIds.push(clubId);
+        }
+        syncClubPicker();
+    });
+    $(document).on('click', '.club-picker-remove', function () {
+        selectedClubIds = selectedClubIds.filter(id => id !== Number($(this).data('id')));
+        syncClubPicker();
+    });
+    $(document).on('click', '.club-public-remove', function () {
+        selectedPublic = false;
+        syncClubPicker();
+    });
+    $('#club-picker-clear').on('click', function () {
+        selectedClubIds = [];
+        selectedPublic = false;
+        syncClubPicker();
+    });
     $(document).on('click', '.remove-field', function () {
         $(`#field-${$(this).data('id')}`).remove();
         if ($('.field-card').length === 0) $('#empty-hint').show();

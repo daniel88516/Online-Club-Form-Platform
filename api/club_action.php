@@ -382,6 +382,7 @@ if ($action === 'delete_club') {
     $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
     if (!$owner) { echo json_encode(['success' => false, 'message' => '無權限']); exit(); }
 
+    mysqli_query($conn, "DELETE FROM form_clubs WHERE club_id = $club_id");
     mysqli_query($conn, "DELETE FROM club_members WHERE club_id = $club_id");
     mysqli_query($conn, "DELETE FROM clubs WHERE id = $club_id");
     echo json_encode(['success' => true]);
@@ -412,6 +413,7 @@ if ($action === 'owner_leave') {
         mysqli_stmt_execute($n);
     } else {
         // 無其他成員 → 刪除社團
+        mysqli_query($conn, "DELETE FROM form_clubs WHERE club_id = $club_id");
         mysqli_query($conn, "DELETE FROM club_members WHERE club_id = $club_id");
         mysqli_query($conn, "DELETE FROM clubs WHERE id = $club_id");
     }

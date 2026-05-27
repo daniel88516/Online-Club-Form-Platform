@@ -8,6 +8,7 @@ requireAdmin();
 // 刪除社團
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_club_id'])) {
     $del_id = intval($_POST['delete_club_id']);
+    mysqli_query($conn, "DELETE FROM form_clubs WHERE club_id = $del_id");
     mysqli_query($conn, "DELETE FROM club_members WHERE club_id = $del_id");
     mysqli_query($conn, "DELETE FROM clubs WHERE id = $del_id");
 }
