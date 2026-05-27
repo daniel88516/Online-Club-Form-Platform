@@ -15,6 +15,9 @@ define('ALLOWED_EXTS',  ['jpg', 'jpeg', 'png', 'gif', 'webp']);
 $type = $_POST['type'] ?? 'comments'; // 'comments' 或 'forms'
 $dir  = in_array($type, ['comments', 'forms']) ? $type : 'comments';
 $uploadDir = __DIR__ . "/../uploads/$dir/";
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
+}
 
 if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(['success' => false, 'message' => '請選擇圖片']);
