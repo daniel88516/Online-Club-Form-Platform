@@ -205,7 +205,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= REL_BASE ?>css/style.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script>window.REL_BASE = '<?= REL_BASE ?>';</script>
+    <script>
+        window.REL_BASE = '<?= REL_BASE ?>';
+        window.APP_BASE = '<?= APP_BASE ?>';
+        window.assetUrl = function (path) {
+            if (!path) return '';
+            if (/^(https?:)?\/\//i.test(path) || /^data:/i.test(path)) return path;
+            if (path.indexOf('/uploads/') === 0) return window.APP_BASE + path;
+            return path;
+        };
+    </script>
     <script src="<?= REL_BASE ?>js/theme-color.js"></script>
     <script>(function(){ var c = localStorage.getItem('themeColor'); if (c) applyThemeColor(c); })();</script>
 </head>
