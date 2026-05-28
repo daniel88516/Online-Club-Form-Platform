@@ -183,7 +183,9 @@ $comment_count_total = count($all_comments);
             <span id="like-count"><?= $like_count ?? 0 ?></span> 個讚
         </button>
         <?php else: ?>
-        <span class="text-muted small"><i class="bi bi-heart"></i> <?= $like_count ?? 0 ?> 個讚</span>
+        <button type="button" class="btn btn-sm text-muted" disabled title="登入後才能按讚">
+            <i class="bi bi-heart"></i> <?= $like_count ?? 0 ?> 個讚
+        </button>
         <?php endif; ?>
         <button id="btn-toggle-comments" class="btn btn-sm text-muted">
             <i class="bi bi-chat"></i>
@@ -195,7 +197,9 @@ $comment_count_total = count($all_comments);
             <span id="bookmark-count"><?= $bookmark_count ?? 0 ?></span> 收藏
         </button>
         <?php else: ?>
-        <span class="text-muted small"><i class="bi bi-bookmark"></i> <?= $bookmark_count ?? 0 ?> 收藏</span>
+        <button type="button" class="btn btn-sm text-muted" disabled title="登入後才能收藏">
+            <i class="bi bi-bookmark"></i> <?= $bookmark_count ?? 0 ?> 收藏
+        </button>
         <?php endif; ?>
     </div>
 </div>

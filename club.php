@@ -264,7 +264,7 @@ require_once 'config/header.php';
                             <?= $expired ? '已截止' : ('截止 ' . date('m/d', strtotime($form['end_date']))) ?>
                         </span>
                     <?php endif; ?>
-                    <?php if (isLoggedIn()): ?>
+                    <?php if (isLoggedIn() || !empty($form['show_stats'])): ?>
                     <div class="dropdown">
                         <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed">
                             <i class="bi bi-three-dots-vertical"></i>
@@ -275,16 +275,18 @@ require_once 'config/header.php';
                             <?php endif; ?>
                             <?php if (isAdmin() || $form['user_id'] == $user_id || !empty($form['show_stats'])): ?>
                             <?php if ($form['user_id'] == $user_id): ?>
-                            <li><hr class="dropdown-divider"></li>
+                            <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
                             <?php endif; ?>
-                            <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                            <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
                             <?php endif; ?>
                             <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
                             <li><button class="dropdown-item text-danger btn-delete-feed-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-trash me-2"></i> 刪除表單</button></li>
                             <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
+                            <?php if (isLoggedIn()): ?>
                             <li><button class="dropdown-item btn-report-feed-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag me-2"></i> 檢舉表單</button></li>
+                            <?php endif; ?>
                         </ul>
                     </div>
                     <?php endif; ?>

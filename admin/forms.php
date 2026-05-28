@@ -117,7 +117,7 @@ require_once '../config/header.php';
                                     <li><hr class="dropdown-divider"></li>
                                     <?php endif; ?>
                                     <li>
-                                        <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>">
+                                        <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
                                             <i class="bi bi-bar-chart text-info me-2"></i> 查看統計
                                         </a>
                                     </li>

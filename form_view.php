@@ -124,6 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = isLoggedIn() ? $_SESSION['user_id'] : null;
     $answers = $_POST['answers'] ?? [];
 
+    if (!isLoggedIn()) {
+        $error = '請先登入才能提交';
+    } else {
     // 檢查必填
     $missing = false;
     foreach ($fields as $field) {
@@ -175,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_execute($stmt2);
         }
         $success = true;
+    }
     }
 }
 ?>
@@ -269,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <i class="bi bi-pencil-square me-1"></i> 修改填答
                         </a>
                         <?php if (!empty($form['show_stats']) || $form['user_id'] == $user_id): ?>
-                        <a href="<?= REL_BASE ?>member/form_responses.php?id=<?= $id ?>" class="btn btn-glow-cyan">
+                        <a href="<?= REL_BASE ?>member/form_responses.php?id=<?= $id ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-glow-cyan">
                             <i class="bi bi-bar-chart me-1"></i> 查看統計
                         </a>
                         <?php endif; ?>
@@ -295,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h3 class="fw-bold mb-0"><?= htmlspecialchars($form['title']) ?></h3>
-                        <?php if (isLoggedIn()): ?>
+                        <?php if (isLoggedIn() || !empty($form['show_stats'])): ?>
                         <div class="dropdown ms-2">
                             <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed" aria-expanded="false">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -309,11 +313,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <?php endif; ?>
+                                <?php if (!empty($form['show_stats']) || isAdmin() || $form['user_id'] == $user_id): ?>
+                                <li>
+                                    <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $id ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
+                                        <i class="bi bi-bar-chart text-info"></i> 查看統計
+                                    </a>
+                                </li>
+                                <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
+                                <?php endif; ?>
+                                <?php if (isLoggedIn()): ?>
                                 <li>
                                     <button class="dropdown-item" id="btn-report-form">
                                         <i class="bi bi-flag"></i> 檢舉表單
                                     </button>
                                 </li>
+                                <?php endif; ?>
                             </ul>
                         </div>
                         <?php endif; ?>
@@ -411,9 +425,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
 
                 <div class="d-grid mb-4">
+                    <?php if (!isLoggedIn()): ?>
+                    <button type="button" class="btn btn-glow-red w-100" disabled>
+                        <i class="bi bi-lock"></i> 請先登入才能提交
+                    </button>
+                    <?php else: ?>
                     <button type="submit" class="btn btn-glow-primary w-100" <?= $preview ? 'disabled title="預覽模式，無法提交"' : '' ?>>
                         <i class="bi bi-send"></i> 提交
                     </button>
+                    <?php endif; ?>
                 </div>
             </form>
         <?php endif; ?>

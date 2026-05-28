@@ -3,9 +3,25 @@ $pageTitle = '填答統計';
 require_once '../config/session.php';
 require_once '../config/db.php';
 
-requireLogin();
-
 $id = intval($_GET['id'] ?? 0);
+$viewer_id = isLoggedIn() ? $_SESSION['user_id'] : 0;
+$stats_back_url = REL_BASE . 'member/my_forms.php';
+$back_source = $_GET['return_to'] ?? ($_SERVER['HTTP_REFERER'] ?? '');
+if ($back_source !== '') {
+    $parts = parse_url($back_source);
+    $current_host = $_SERVER['HTTP_HOST'] ?? '';
+    $is_explicit_return = isset($_GET['return_to']);
+    $is_current_page = !$is_explicit_return && (($parts['path'] ?? '') === ($_SERVER['SCRIPT_NAME'] ?? ''));
+
+    if ($parts !== false && !$is_current_page) {
+        $host_ok = !isset($parts['host']) || strcasecmp($parts['host'], $current_host) === 0;
+        $scheme_ok = !isset($parts['scheme']) || in_array(strtolower($parts['scheme']), ['http', 'https'], true);
+        if ($host_ok && $scheme_ok) {
+            $stats_back_url = $back_source;
+        }
+    }
+}
+$stats_back_attr = htmlspecialchars($stats_back_url, ENT_QUOTES);
 
 // 統一以 id 查詢，不限制 user_id（存取控制交由 show_stats 決定）
 $stmt = mysqli_prepare($conn, "SELECT f.*, u.username AS author FROM forms f JOIN users u ON f.user_id = u.id WHERE f.id = ?");
@@ -18,8 +34,8 @@ if (!$form) {
     exit();
 }
 
-// 存取控制：show_stats=0 時只有擁有者與 admin 可查看；show_stats=1 則所有登入會員皆可
-if (!isAdmin() && $form['user_id'] != $_SESSION['user_id'] && empty($form['show_stats'])) {
+// 存取控制：show_stats=0 時只有擁有者與 admin 可查看；show_stats=1 則公開可讀
+if (!isAdmin() && $form['user_id'] != $viewer_id && empty($form['show_stats'])) {
     header('Location: ' . APP_BASE . '/index.php');
     exit();
 }
@@ -121,7 +137,7 @@ var _chartGrid = getComputedStyle(document.documentElement)
         <small class="text-muted">建立者：<?= htmlspecialchars($form['author']) ?></small>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-glow-primary">
+        <a href="<?= $stats_back_attr ?>" class="btn btn-glow-primary">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -404,7 +420,7 @@ $(function () {
             <div class="d-flex flex-wrap gap-2">
                 <?php while ($u = mysqli_fetch_assoc($likes_users)): ?>
                 <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
-                    <?= renderAvatarDropdown($u['username'], $u['avatar'] ?? null, $u['id'], 26, $_SESSION['user_id']) ?>
+                    <?= renderAvatarDropdown($u['username'], $u['avatar'] ?? null, $u['id'], 26, $_SESSION['user_id'] ?? 0) ?>
                     <div>
                         <div class="small fw-semibold"><?= htmlspecialchars($u['username']) ?></div>
                         <div class="text-muted" style="font-size:.72rem;"><?= date('Y/m/d H:i', strtotime($u['created_at'])) ?></div>
@@ -429,7 +445,7 @@ $(function () {
             <div class="d-flex flex-wrap gap-2">
                 <?php while ($u = mysqli_fetch_assoc($bookmarks_users)): ?>
                 <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
-                    <?= renderAvatarDropdown($u['username'], $u['avatar'] ?? null, $u['id'], 26, $_SESSION['user_id']) ?>
+                    <?= renderAvatarDropdown($u['username'], $u['avatar'] ?? null, $u['id'], 26, $_SESSION['user_id'] ?? 0) ?>
                     <div>
                         <div class="small fw-semibold"><?= htmlspecialchars($u['username']) ?></div>
                         <div class="text-muted" style="font-size:.72rem;"><?= date('Y/m/d H:i', strtotime($u['created_at'])) ?></div>

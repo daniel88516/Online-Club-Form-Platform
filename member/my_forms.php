@@ -223,7 +223,7 @@ function timeAgo($dt) {
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計<?php if (!($form['show_stats'] ?? 1)): ?><i class="bi bi-lock-fill text-secondary ms-1 small"></i><?php endif; ?></a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計<?php if (!($form['show_stats'] ?? 1)): ?><i class="bi bi-lock-fill text-secondary ms-1 small"></i><?php endif; ?></a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -329,7 +329,7 @@ function timeAgo($dt) {
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
-                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
@@ -427,7 +427,7 @@ function timeAgo($dt) {
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
-                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
