@@ -40,6 +40,10 @@ body {
     background-color: var(--bs-body-bg, #f8f9fa);
 }
 
+.text-purple {
+    color: #7c3aed !important;
+}
+
 .navbar-brand {
     font-size: 1.3rem;
 }
@@ -350,7 +354,10 @@ html[data-bs-theme="dark"] body {
     box-shadow: 0 2px var(--glow-near-px) rgba(var(--bs-primary-rgb, 13,110,253), 0.40),
                 0 1px var(--glow-far-px)  rgba(var(--bs-primary-rgb, 13,110,253), 0.18) !important;
 }
-
+.navbar.bg-primary .nav-link,
+.navbar.bg-primary .navbar-brand {
+    color: var(--bs-primary-nav-text, var(--bs-primary-text, #fff)) !important;
+}
 /* ── 表單元件跟隨主題色 ── */
 .form-control:focus,
 .form-select:focus {
@@ -647,8 +654,8 @@ html:not([data-bs-theme="dark"]) #chat-toggle-btn:hover {
 html:not([data-bs-theme="dark"]) .navbar.bg-primary .nav-link,
 html:not([data-bs-theme="dark"]) .navbar.bg-primary .navbar-brand,
 html:not([data-bs-theme="dark"]) .navbar.bg-primary .navbar-toggler-icon {
-    color: var(--bs-primary-text, #fff) !important;
-    --bs-navbar-color: var(--bs-primary-text, #fff);
+    color: var(--bs-primary-nav-text, var(--bs-primary-text, #fff)) !important;
+    --bs-navbar-color: var(--bs-primary-nav-text, var(--bs-primary-text, #fff));
 }
 /* Navbar 在淺色模式加深背景確保可見度 */
 [data-bs-theme="light"] .navbar.bg-primary,
@@ -931,6 +938,29 @@ mark.search-hl {
 }
 [data-bs-theme="dark"] mark.search-hl {
     background: rgba(var(--bs-warning-rgb), 0.5);
+}
+
+/* Disabled fill button */
+.form-fill-disabled {
+    --bs-btn-disabled-opacity: 1;
+    border-color: rgba(148, 163, 184, .28) !important;
+    color: #cbd5e1 !important;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+.form-fill-disabled i {
+    font-size: 1.05rem;
+    color: #94a3b8;
+}
+[data-bs-theme="light"] .form-fill-disabled {
+    border-color: rgba(100, 116, 139, .28) !important;
+    color: #475569 !important;
+}
+[data-bs-theme="light"] .form-fill-disabled i {
+    color: #64748b;
+}
+.text-report-orange {
+    color: #f97316 !important;
 }
 
 /* 隱藏原生日期選擇器內建圖示 */

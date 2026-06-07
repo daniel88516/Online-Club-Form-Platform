@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $pageTitle = '首頁';
 require_once 'config/session.php';
 require_once 'config/db.php';
@@ -9,7 +9,7 @@ $has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_cl
 $has_show_on_index = mysqli_num_rows(mysqli_query($conn, "SHOW COLUMNS FROM forms LIKE 'show_on_index'")) > 0;
 $index_filter = $has_show_on_index ? "AND f.show_on_index = 1" : "AND f.club_id IS NULL";
 
-$sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_date, f.end_date, f.allow_multiple, f.created_at, f.show_stats, f.anonymous_responses,
+$sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_date, f.end_date, f.allow_multiple, f.created_at, f.show_stats, f.anonymous_responses, f.response_scope, f.club_id,
                u.username AS author, u.avatar AS author_avatar,
                g.name AS group_name,
                COUNT(DISTINCT fr.id) AS response_count,
@@ -34,6 +34,33 @@ $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_d
 $forms = mysqli_query($conn, $sql);
 $showNavSearch = true;
 require_once 'config/header.php';
+
+function formFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs) {
+    if (!empty($form['start_date']) && $form['start_date'] > $now) {
+        return '尚未開始，無法填寫';
+    }
+    if (!empty($form['end_date']) && $form['end_date'] < $now) {
+        return '已截止，無法填寫';
+    }
+    if (!$user_id) {
+        return '請先登入才能填寫';
+    }
+    if (($form['response_scope'] ?? 'all_members') === 'club_members') {
+        $club_ids = [];
+        if ($has_form_clubs) {
+            $fid = (int)$form['id'];
+            $res = mysqli_query($conn, "SELECT club_id FROM form_clubs WHERE form_id = $fid");
+            while ($row = mysqli_fetch_assoc($res)) $club_ids[] = (int)$row['club_id'];
+        }
+        if (!empty($form['club_id'])) $club_ids[] = (int)$form['club_id'];
+        $club_ids = array_values(array_unique(array_filter($club_ids)));
+        if (empty($club_ids)) return '僅限所屬社團成員填答';
+        $list = implode(',', array_map('intval', $club_ids));
+        $chk = mysqli_query($conn, "SELECT id FROM club_members WHERE user_id = $user_id AND status = 'active' AND club_id IN ($list) LIMIT 1");
+        if (!mysqli_fetch_assoc($chk)) return '僅限所屬社團成員填答';
+    }
+    return '';
+}
 ?>
 <style>
 @media (min-width: 992px) {
@@ -117,7 +144,7 @@ require_once 'config/header.php';
                             <?= $expired ? '已截止' : ('截止 ' . date('m/d', strtotime($form['end_date']))) ?>
                         </span>
                     <?php endif; ?>
-                        <?php if (isLoggedIn() || !empty($form['show_stats'])): ?>
+                        <?php if (isLoggedIn() || !empty($form['show_stats']) || !empty($form['is_published'])): ?>
                         <div class="dropdown">
                             <button class="btn btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-strategy="fixed" aria-expanded="false">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -125,8 +152,8 @@ require_once 'config/header.php';
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <?php if ($form['user_id'] == $user_id): ?>
                                 <li>
-                                    <a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>">
-                                        <i class="bi bi-pencil me-2"></i> 編輯表單
+                                    <a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
+                                        <i class="bi bi-pencil text-purple me-2"></i> 編輯表單
                                     </a>
                                 </li>
                                 <?php endif; ?>
@@ -146,19 +173,27 @@ require_once 'config/header.php';
                                 <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
                                 <?php endif; ?>
 
-                                <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
                                 <li>
-                                    <button class="dropdown-item text-danger btn-delete-feed-form" data-form-id="<?= $form['id'] ?>">
-                                        <i class="bi bi-trash me-2"></i> 刪除表單
+                                    <button class="dropdown-item btn-preview-form"
+                                            data-form-id="<?= $form['id'] ?>"
+                                            data-form-title="<?= htmlspecialchars($form['title']) ?>">
+                                        <i class="bi bi-eye text-success me-2"></i> 預覽表單
                                     </button>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <?php endif; ?>
+                                <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
 
                                 <?php if (isLoggedIn()): ?>
                                 <li>
                                     <button class="dropdown-item btn-report-feed-form" data-form-id="<?= $form['id'] ?>">
-                                        <i class="bi bi-flag me-2"></i> 檢舉表單
+                                        <i class="bi bi-flag text-report-orange me-2"></i> 檢舉表單
+                                    </button>
+                                </li>
+                                <?php endif; ?>
+                                <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
+                                <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
+                                <li>
+                                    <button class="dropdown-item text-danger btn-delete-feed-form" data-form-id="<?= $form['id'] ?>">
+                                        <i class="bi bi-trash text-danger me-2"></i> 刪除表單
                                     </button>
                                 </li>
                                 <?php endif; ?>
@@ -185,17 +220,19 @@ require_once 'config/header.php';
                     <i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答
                 </div>
 
-                <!-- 填寫按鈕 -->
-                <?php $expired = $form['end_date'] && $form['end_date'] < $now; ?>
-                <?php if ($expired): ?>
-                <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled>
-                    <i class="bi bi-lock"></i> 已截止，無法填寫
-                </button>
-                <?php else: ?>
-                <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3">
-                    <i class="bi bi-pencil"></i> 填寫表單
-                </a>
-                <?php endif; ?>
+                <!-- 填寫 / 預覽按鈕 -->
+                <?php $fillBlockReason = formFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs); ?>
+                <div class="d-grid mb-3">
+                    <?php if ($fillBlockReason): ?>
+                    <button class="btn btn-outline-secondary btn-sm w-100 form-fill-disabled" disabled>
+                        <i class="bi bi-lock-fill me-1"></i> <?= htmlspecialchars($fillBlockReason) ?>
+                    </button>
+                    <?php else: ?>
+                    <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100">
+                        <i class="bi bi-pencil"></i> 填寫表單
+                    </a>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <!-- 按讚 / 留言 / 收藏 -->
@@ -243,6 +280,20 @@ require_once 'config/header.php';
     </div>
 </div>
 
+<!-- 預覽表單 Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-semibold"><i class="bi bi-eye text-success me-1"></i> <span id="preview-form-title"></span></h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="preview-body">
+                <div class="text-center py-4"><span class="spinner-border text-primary"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 $(document).ready(function () {
@@ -314,6 +365,22 @@ $(document).on('click', '.sort-opt', function () {
     $(this).addClass('active');
     $('#sort-label-text').text(label);
     feedSort(mode);
+});
+
+// 預覽表單
+const _previewModalEl = document.getElementById('previewModal');
+$(document).on('click', '.btn-preview-form', function () {
+    $('#preview-form-title').text($(this).data('form-title'));
+    $('#preview-body').html('<div class="text-center py-4"><span class="spinner-border text-primary"></span></div>');
+    bootstrap.Modal.getOrCreateInstance(_previewModalEl).show();
+    $.get('<?= REL_BASE ?>api/form_preview_content.php', { id: $(this).data('form-id') }, function (html) {
+        $('#preview-body').html(html);
+    }).fail(function () {
+        $('#preview-body').html('<div class="alert alert-danger">載入失敗，請稍後再試</div>');
+    });
+});
+_previewModalEl.addEventListener('hidden.bs.modal', function () {
+    $('#preview-body').html('');
 });
 
 // 按讚

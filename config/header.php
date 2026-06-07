@@ -26,11 +26,30 @@ require_once __DIR__ . '/session.php';
             if (c && /^#[0-9a-fA-F]{6}$/.test(c)) {
                 var n = parseInt(c.slice(1), 16);
                 var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+                function ch(v) {
+                    v = v / 255;
+                    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+                }
+                function lum(rr, gg, bb) {
+                    return 0.2126 * ch(rr) + 0.7152 * ch(gg) + 0.0722 * ch(bb);
+                }
+                function contrastText(rr, gg, bb) {
+                    var l = lum(rr, gg, bb);
+                    return (1.05 / (l + 0.05)) >= ((l + 0.05) / 0.05) ? '#ffffff' : '#000000';
+                }
+                function mix(v, base, alpha) {
+                    return Math.round(v * alpha + base * (1 - alpha));
+                }
+                var navAlpha = isDark ? 0.18 : 0.88;
+                var navBase = isDark ? 0 : 255;
                 document.documentElement.style.setProperty('--bs-primary', c);
                 document.documentElement.style.setProperty('--bs-primary-rgb', r + ',' + g + ',' + b);
                 /* 預先設定對比文字色，避免 navbar 文字閃白 */
-                var bri = (r * 299 + g * 587 + b * 114) / 1000;
-                document.documentElement.style.setProperty('--bs-primary-text', bri > 140 ? '#000000' : '#ffffff');
+                document.documentElement.style.setProperty('--bs-primary-text', contrastText(r, g, b));
+                document.documentElement.style.setProperty(
+                    '--bs-primary-nav-text',
+                    contrastText(mix(r, navBase, navAlpha), mix(g, navBase, navAlpha), mix(b, navBase, navAlpha))
+                );
             }
         })();
     </script>
@@ -98,7 +117,7 @@ require_once __DIR__ . '/session.php';
     <?php if (!empty($extraHead)) echo $extraHead; ?>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top" style="position:relative;">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
     <div class="container">
         <a class="navbar-brand fw-bold" href="<?= REL_BASE ?>index.php">
             <i class="bi bi-file-earmark-text"></i> 線上表單系統
@@ -223,6 +242,9 @@ require_once __DIR__ . '/session.php';
             root.style.colorScheme  = '';
         }
         /* 更新所有頁面上的三段選鈕（可能有多個頁面實例） */
+        if (window.applyThemeColor) {
+            applyThemeColor(localStorage.getItem('themeColor') || '#6610f2');
+        }
         syncButtons(t);
     }
 

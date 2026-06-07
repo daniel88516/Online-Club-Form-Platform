@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $pageTitle = '我的表單';
 require_once '../config/session.php';
 require_once '../config/db.php';
@@ -22,19 +22,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
 $stmtC = mysqli_prepare($conn, "
     SELECT f.id, f.title, f.description, f.cover_image, f.is_published, f.created_at, f.end_date,
            f.show_stats, f.anonymous_responses,
-           COUNT(DISTINCT fr.id)  AS response_count,
-           COUNT(DISTINCT fl.id)  AS like_count,
-           COUNT(DISTINCT fb.id)  AS bookmark_count,
-           COUNT(DISTINCT fc.id)  AS comment_count,
-           MAX(CASE WHEN fl.user_id = ? THEN 1 ELSE 0 END) AS user_liked,
-           MAX(CASE WHEN fb.user_id = ? THEN 1 ELSE 0 END) AS user_bookmarked
+           COALESCE(fr.response_count, 0) AS response_count,
+           COALESCE(fl.like_count, 0) AS like_count,
+           COALESCE(fb.bookmark_count, 0) AS bookmark_count,
+           COALESCE(fc.comment_count, 0) AS comment_count,
+           CASE WHEN fl_me.id IS NULL THEN 0 ELSE 1 END AS user_liked,
+           CASE WHEN fb_me.id IS NULL THEN 0 ELSE 1 END AS user_bookmarked
     FROM forms f
-    LEFT JOIN form_responses fr ON f.id = fr.form_id
-    LEFT JOIN form_likes     fl ON f.id = fl.form_id
-    LEFT JOIN form_bookmarks fb ON f.id = fb.form_id
-    LEFT JOIN form_comments  fc ON f.id = fc.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS response_count FROM form_responses GROUP BY form_id) fr ON f.id = fr.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS like_count FROM form_likes GROUP BY form_id) fl ON f.id = fl.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS bookmark_count FROM form_bookmarks GROUP BY form_id) fb ON f.id = fb.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS comment_count FROM form_comments GROUP BY form_id) fc ON f.id = fc.form_id
+    LEFT JOIN form_likes fl_me ON f.id = fl_me.form_id AND fl_me.user_id = ?
+    LEFT JOIN form_bookmarks fb_me ON f.id = fb_me.form_id AND fb_me.user_id = ?
     WHERE f.user_id = ?
-    GROUP BY f.id
     ORDER BY f.created_at DESC");
 mysqli_stmt_bind_param($stmtC, 'iii', $uid, $uid, $uid);
 mysqli_stmt_execute($stmtC);
@@ -45,21 +46,22 @@ $stmtB = mysqli_prepare($conn, "
     SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.end_date, f.is_published, f.show_stats,
            f.created_at, fb_me.created_at AS bookmarked_at,
            u.username AS author, u.avatar AS author_avatar,
-           COUNT(DISTINCT fr.id)  AS response_count,
-           COUNT(DISTINCT fl.id)  AS like_count,
-           COUNT(DISTINCT fb.id)  AS bookmark_count,
-           COUNT(DISTINCT fc.id)  AS comment_count,
-           MAX(CASE WHEN fl.user_id = ? THEN 1 ELSE 0 END) AS user_liked,
-           MAX(CASE WHEN fb.user_id = ? THEN 1 ELSE 0 END) AS user_bookmarked
+           COALESCE(fr.response_count, 0) AS response_count,
+           COALESCE(fl.like_count, 0) AS like_count,
+           COALESCE(fb.bookmark_count, 0) AS bookmark_count,
+           COALESCE(fc.comment_count, 0) AS comment_count,
+           CASE WHEN fl_me.id IS NULL THEN 0 ELSE 1 END AS user_liked,
+           CASE WHEN fb_current.id IS NULL THEN 0 ELSE 1 END AS user_bookmarked
     FROM form_bookmarks fb_me
     JOIN forms f    ON fb_me.form_id = f.id
     JOIN users u    ON f.user_id     = u.id
-    LEFT JOIN form_responses fr ON f.id = fr.form_id
-    LEFT JOIN form_likes     fl ON f.id = fl.form_id
-    LEFT JOIN form_bookmarks fb ON f.id = fb.form_id
-    LEFT JOIN form_comments  fc ON f.id = fc.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS response_count FROM form_responses GROUP BY form_id) fr ON f.id = fr.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS like_count FROM form_likes GROUP BY form_id) fl ON f.id = fl.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS bookmark_count FROM form_bookmarks GROUP BY form_id) fb ON f.id = fb.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS comment_count FROM form_comments GROUP BY form_id) fc ON f.id = fc.form_id
+    LEFT JOIN form_likes fl_me ON f.id = fl_me.form_id AND fl_me.user_id = ?
+    LEFT JOIN form_bookmarks fb_current ON f.id = fb_current.form_id AND fb_current.user_id = ?
     WHERE fb_me.user_id = ?
-    GROUP BY f.id
     ORDER BY fb_me.created_at DESC");
 mysqli_stmt_bind_param($stmtB, 'iii', $uid, $uid, $uid);
 mysqli_stmt_execute($stmtB);
@@ -70,21 +72,22 @@ $stmtL = mysqli_prepare($conn, "
     SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.end_date, f.is_published, f.show_stats,
            f.created_at, fli.created_at AS liked_at,
            u.username AS author, u.avatar AS author_avatar,
-           COUNT(DISTINCT fr.id)  AS response_count,
-           COUNT(DISTINCT flc.id) AS like_count,
-           COUNT(DISTINCT fb.id)  AS bookmark_count,
-           COUNT(DISTINCT fc.id)  AS comment_count,
-           MAX(CASE WHEN flc.user_id = ? THEN 1 ELSE 0 END) AS user_liked,
-           MAX(CASE WHEN fb.user_id  = ? THEN 1 ELSE 0 END) AS user_bookmarked
+           COALESCE(fr.response_count, 0) AS response_count,
+           COALESCE(fl.like_count, 0) AS like_count,
+           COALESCE(fb.bookmark_count, 0) AS bookmark_count,
+           COALESCE(fc.comment_count, 0) AS comment_count,
+           CASE WHEN fl_current.id IS NULL THEN 0 ELSE 1 END AS user_liked,
+           CASE WHEN fb_me.id IS NULL THEN 0 ELSE 1 END AS user_bookmarked
     FROM form_likes fli
     JOIN forms f    ON fli.form_id = f.id
     JOIN users u    ON f.user_id   = u.id
-    LEFT JOIN form_responses fr  ON f.id = fr.form_id
-    LEFT JOIN form_likes     flc ON f.id = flc.form_id
-    LEFT JOIN form_bookmarks fb  ON f.id = fb.form_id
-    LEFT JOIN form_comments  fc  ON f.id = fc.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS response_count FROM form_responses GROUP BY form_id) fr ON f.id = fr.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS like_count FROM form_likes GROUP BY form_id) fl ON f.id = fl.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS bookmark_count FROM form_bookmarks GROUP BY form_id) fb ON f.id = fb.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS comment_count FROM form_comments GROUP BY form_id) fc ON f.id = fc.form_id
+    LEFT JOIN form_likes fl_current ON f.id = fl_current.form_id AND fl_current.user_id = ?
+    LEFT JOIN form_bookmarks fb_me ON f.id = fb_me.form_id AND fb_me.user_id = ?
     WHERE fli.user_id = ?
-    GROUP BY f.id
     ORDER BY fli.created_at DESC");
 mysqli_stmt_bind_param($stmtL, 'iii', $uid, $uid, $uid);
 mysqli_stmt_execute($stmtL);
@@ -185,7 +188,7 @@ function timeAgo($dt) {
     <div class="text-center py-5 text-muted">
         <i class="bi bi-journal-plus" style="font-size:3rem;"></i>
         <p class="mt-3">還沒有建立任何表單</p>
-        <a href="<?= REL_BASE ?>member/create_form.php" class="btn btn-glow-primary btn-sm">建立第一個表單</a>
+        <a href="<?= REL_BASE ?>member/create_form.php?return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-glow-primary btn-sm">建立第一個表單</a>
     </div>
 <?php else: ?>
 <div class="row justify-content-center"><div class="col-lg-7">
@@ -221,11 +224,11 @@ function timeAgo($dt) {
                     <i class="bi bi-three-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-pencil text-purple me-2"></i> 編輯表單</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計<?php if (!($form['show_stats'] ?? 1)): ?><i class="bi bi-lock-fill text-secondary ms-1 small"></i><?php endif; ?></a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
+                    <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye text-success me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="POST" class="d-block m-0">
@@ -237,9 +240,9 @@ function timeAgo($dt) {
                         </form>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item btn-delete-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-trash me-2"></i> 刪除表單</button></li>
+                    <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag text-report-orange me-2"></i> 檢舉表單</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag me-2"></i> 檢舉表單</button></li>
+                    <li><button class="dropdown-item text-danger btn-delete-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-trash text-danger me-2"></i> 刪除表單</button></li>
                 </ul>
             </div>
         </div>
@@ -254,9 +257,9 @@ function timeAgo($dt) {
         <?php endif; ?>
         <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
         <?php if (!$form['is_published']): ?>
-            <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 草稿，尚未發布</button>
+            <button class="btn btn-outline-secondary btn-sm w-100 mb-3 form-fill-disabled" disabled><i class="bi bi-lock-fill me-1"></i> 草稿，尚未發布</button>
         <?php elseif ($expired): ?>
-            <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
+            <button class="btn btn-outline-secondary btn-sm w-100 mb-3 form-fill-disabled" disabled><i class="bi bi-lock-fill me-1"></i> 已截止，無法填寫</button>
         <?php else: ?>
             <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
         <?php endif; ?>
@@ -325,18 +328,18 @@ function timeAgo($dt) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <?php if ($form['user_id'] == $uid): ?>
-                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-pencil text-purple me-2"></i> 編輯表單</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
-                    <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
+                    <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye text-success me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag me-2"></i> 檢舉表單</button></li>
+                    <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag text-report-orange me-2"></i> 檢舉表單</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item text-warning btn-remove-bookmark" data-id="<?= $form['id'] ?>"><i class="bi bi-bookmark-x me-2"></i> 取消收藏</button></li>
+                    <li><button class="dropdown-item text-warning btn-remove-bookmark" data-id="<?= $form['id'] ?>"><i class="bi bi-bookmark-x text-warning me-2"></i> 取消收藏</button></li>
                 </ul>
             </div>
         </div>
@@ -351,9 +354,9 @@ function timeAgo($dt) {
         <?php endif; ?>
         <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
         <?php if (!$form['is_published']): ?>
-            <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 尚未發布</button>
+            <button class="btn btn-outline-secondary btn-sm w-100 mb-3 form-fill-disabled" disabled><i class="bi bi-lock-fill me-1"></i> 尚未發布</button>
         <?php elseif ($expired): ?>
-            <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
+            <button class="btn btn-outline-secondary btn-sm w-100 mb-3 form-fill-disabled" disabled><i class="bi bi-lock-fill me-1"></i> 已截止，無法填寫</button>
         <?php else: ?>
             <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
         <?php endif; ?>
@@ -423,18 +426,18 @@ function timeAgo($dt) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <?php if ($form['user_id'] == $uid): ?>
-                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>"><i class="bi bi-pencil me-2"></i> 編輯表單</a></li>
+                    <li><a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-pencil text-purple me-2"></i> 編輯表單</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
                     <?php if ($form['show_stats'] ?? 1): ?>
                     <li><a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>"><i class="bi bi-bar-chart text-info me-2"></i> 查看統計</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <?php endif; ?>
-                    <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye me-2"></i> 預覽表單</button></li>
+                    <li><button class="dropdown-item btn-preview-form" data-form-id="<?= $form['id'] ?>" data-form-title="<?= htmlspecialchars($form['title']) ?>"><i class="bi bi-eye text-success me-2"></i> 預覽表單</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag me-2"></i> 檢舉表單</button></li>
+                    <li><button class="dropdown-item btn-report-my-form" data-form-id="<?= $form['id'] ?>"><i class="bi bi-flag text-report-orange me-2"></i> 檢舉表單</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item text-danger btn-unlike" data-id="<?= $form['id'] ?>"><i class="bi bi-heartbreak me-2"></i> 取消按讚</button></li>
+                    <li><button class="dropdown-item text-danger btn-unlike" data-id="<?= $form['id'] ?>"><i class="bi bi-heartbreak text-danger me-2"></i> 取消按讚</button></li>
                 </ul>
             </div>
         </div>
@@ -449,9 +452,9 @@ function timeAgo($dt) {
         <?php endif; ?>
         <div class="text-muted small mb-3"><i class="bi bi-pencil-square"></i> <?= $form['response_count'] ?> 人填答</div>
         <?php if (!$form['is_published']): ?>
-            <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 尚未發布</button>
+            <button class="btn btn-outline-secondary btn-sm w-100 mb-3 form-fill-disabled" disabled><i class="bi bi-lock-fill me-1"></i> 尚未發布</button>
         <?php elseif ($expired): ?>
-            <button class="btn btn-outline-secondary btn-sm w-100 mb-3" disabled><i class="bi bi-lock"></i> 已截止，無法填寫</button>
+            <button class="btn btn-outline-secondary btn-sm w-100 mb-3 form-fill-disabled" disabled><i class="bi bi-lock-fill me-1"></i> 已截止，無法填寫</button>
         <?php else: ?>
             <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary w-100 mb-3"><i class="bi bi-pencil"></i> 填寫表單</a>
         <?php endif; ?>

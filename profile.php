@@ -24,10 +24,46 @@ if (!$pu) {
 
 $cur_uid = isLoggedIn() ? $_SESSION['user_id'] : 0;
 $now     = date('Y-m-d H:i:s');
+$has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
+
+function profileFormFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs) {
+    if (!empty($form['start_date']) && $form['start_date'] > $now) {
+        return '尚未開始，無法填寫';
+    }
+    if (!empty($form['end_date']) && $form['end_date'] < $now) {
+        return '已截止，無法填寫';
+    }
+    if (!$user_id) {
+        return '請先登入才能填寫';
+    }
+    if (($form['response_scope'] ?? 'all_members') === 'club_members') {
+        $club_ids = [];
+        if ($has_form_clubs) {
+            $fid = (int)$form['id'];
+            $res = mysqli_query($conn, "SELECT club_id FROM form_clubs WHERE form_id = $fid");
+            while ($row = mysqli_fetch_assoc($res)) {
+                $club_ids[] = (int)$row['club_id'];
+            }
+        }
+        if (!empty($form['club_id'])) {
+            $club_ids[] = (int)$form['club_id'];
+        }
+        $club_ids = array_values(array_unique(array_filter($club_ids)));
+        if (empty($club_ids)) {
+            return '僅限所屬社團成員填答';
+        }
+        $list = implode(',', array_map('intval', $club_ids));
+        $chk = mysqli_query($conn, "SELECT id FROM club_members WHERE user_id = $user_id AND status = 'active' AND club_id IN ($list) LIMIT 1");
+        if (!mysqli_fetch_assoc($chk)) {
+            return '僅限所屬社團成員填答';
+        }
+    }
+    return '';
+}
 
 // 取已發布表單
 $stmtF = mysqli_prepare($conn, "
-    SELECT f.id, f.title, f.description, f.end_date, f.created_at,
+    SELECT f.id, f.title, f.description, f.start_date, f.end_date, f.allow_multiple, f.response_scope, f.club_id, f.created_at,
            COUNT(DISTINCT fr.id) AS response_count,
            COUNT(DISTINCT fl.id) AS like_count,
            COUNT(DISTINCT fb.id) AS bookmark_count
@@ -143,13 +179,14 @@ require_once 'config/header.php';
                     </div>
                 </div>
                 <div class="card-footer bg-transparent">
-                    <?php if (!$form['end_date'] || $form['end_date'] >= $now): ?>
+                    <?php $fillBlockReason = profileFormFillBlockReason($conn, $form, $cur_uid, $now, $has_form_clubs); ?>
+                    <?php if (!$fillBlockReason): ?>
                         <a href="<?= REL_BASE ?>form_view.php?id=<?= $form['id'] ?>" class="btn btn-glow-primary btn-sm w-100">
                             <i class="bi bi-pencil"></i> 填寫表單
                         </a>
                     <?php else: ?>
-                        <button class="btn btn-outline-secondary btn-sm w-100" disabled>
-                            <i class="bi bi-lock"></i> 已截止
+                        <button class="btn btn-outline-secondary btn-sm w-100 form-fill-disabled" disabled>
+                            <i class="bi bi-lock-fill me-1"></i> <?= htmlspecialchars($fillBlockReason) ?>
                         </button>
                     <?php endif; ?>
                 </div>

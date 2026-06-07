@@ -44,7 +44,7 @@ require_once '../config/header.php';
 
         <!-- 頂部標題列 -->
         <div class="d-flex align-items-center gap-2 mb-3">
-            <a href="<?= REL_BASE ?>member/messages.php" class="btn btn-sm btn-outline-secondary">
+            <a href="<?= REL_BASE ?>member/messages.php" class="btn btn-sm btn-glow-primary">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <?= renderAvatar($other['username'], $other['avatar'], 36) ?>

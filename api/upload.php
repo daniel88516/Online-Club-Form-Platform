@@ -33,9 +33,18 @@ if ($file['size'] > MAX_SIZE) {
 }
 
 // 檢查 MIME 類型
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mime  = finfo_file($finfo, $file['tmp_name']);
-finfo_close($finfo);
+$mime = null;
+if (function_exists('finfo_open') && defined('FILEINFO_MIME_TYPE')) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo !== false) {
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+    }
+}
+if (!is_string($mime) || $mime === '') {
+    $imageInfo = @getimagesize($file['tmp_name']);
+    $mime = is_array($imageInfo) && isset($imageInfo['mime']) ? $imageInfo['mime'] : null;
+}
 if (!in_array($mime, ALLOWED_TYPES)) {
     echo json_encode(['success' => false, 'message' => '只允許 JPG / PNG / GIF / WebP']);
     exit();

@@ -29,11 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['role'] = $user['role'];
             $_SESSION['avatar'] = $user['avatar'];
 
-            if ($user['role'] === 'admin') {
-                header('Location: ' . APP_BASE . '/admin/dashboard.php');
-            } else {
-                header('Location: ' . APP_BASE . '/member/my_forms.php');
-            }
+            header('Location: ' . APP_BASE . '/index.php');
             exit();
         } else {
             $error = '帳號或密碼錯誤';

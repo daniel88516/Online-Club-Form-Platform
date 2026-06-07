@@ -85,8 +85,8 @@ require_once '../config/header.php';
         </h4>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i> 返回
+        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-glow-primary btn-sm">
+            <i class="bi bi-arrow-left"></i> 返回後台
         </a>
     </div>
 </div>
@@ -205,6 +205,7 @@ require_once '../config/header.php';
                                         </form>
                                     </li>
                                     <?php if ($r['target_content']): ?>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form method="POST" class="d-block m-0"
                                               data-cute-confirm="確定要刪除這個<?= $r['type'] === 'form' ? '表單' : '留言' ?>嗎？"

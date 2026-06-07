@@ -35,7 +35,7 @@ require_once '../config/header.php';
 
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h4 class="fw-bold mb-0"><i class="bi bi-people-fill"></i> 社團管理</h4>
-    <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-glow-dark btn-sm"><i class="bi bi-arrow-left"></i> 返回後台</a>
+    <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-glow-primary btn-sm"><i class="bi bi-arrow-left"></i> 返回後台</a>
 </div>
 
 <div class="card mb-4 border-0 admin-stat-card stat-blue">

@@ -46,8 +46,8 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-file-earmark-text"></i> 表單管理</h4>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i> 返回
+        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-glow-primary btn-sm">
+            <i class="bi bi-arrow-left"></i> 返回後台
         </a>
     </div>
 </div>
@@ -106,16 +106,12 @@ require_once '../config/header.php';
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <?php if ($form['user_id'] == $_SESSION['user_id']): ?>
                                     <li>
-                                        <a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>">
+                                        <a class="dropdown-item" href="<?= REL_BASE ?>member/edit_form.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
                                             <i class="bi bi-pencil text-primary me-2"></i> 編輯表單
                                         </a>
                                     </li>
-                                    <?php endif; ?>
-                                    <?php if ($form['user_id'] == $_SESSION['user_id']): ?>
                                     <li><hr class="dropdown-divider"></li>
-                                    <?php endif; ?>
                                     <li>
                                         <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $form['id'] ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
                                             <i class="bi bi-bar-chart text-info me-2"></i> 查看統計

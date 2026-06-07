@@ -2,23 +2,56 @@
 require_once '../config/session.php';
 require_once '../config/db.php';
 
-if (!isLoggedIn()) { http_response_code(403); echo '請先登入'; exit(); }
-
 $id = intval($_GET['id'] ?? 0);
 if (!$id) { http_response_code(400); echo '參數錯誤'; exit(); }
 
-// 只有表單擁有者或 admin 可預覽
 if (isAdmin()) {
     $stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ?");
     mysqli_stmt_bind_param($stmt, 'i', $id);
 } else {
-    $stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ? AND user_id = ?");
-    mysqli_stmt_bind_param($stmt, 'ii', $id, $_SESSION['user_id']);
+    $stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $id);
 }
 mysqli_stmt_execute($stmt);
 $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if (!$form) { http_response_code(404); echo '找不到表單或無查看權限'; exit(); }
+
+if (!isAdmin() && (!isLoggedIn() || (int)$form['user_id'] !== (int)$_SESSION['user_id'])) {
+    if (empty($form['is_published'])) {
+        http_response_code(404);
+        echo '找不到表單或無查看權限';
+        exit();
+    }
+
+    $visible = !empty($form['show_on_index']);
+    $club_ids = [];
+    $has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
+    if ($has_form_clubs) {
+        $fc_result = mysqli_query($conn, "SELECT club_id FROM form_clubs WHERE form_id = $id");
+        while ($fc = mysqli_fetch_assoc($fc_result)) $club_ids[] = (int)$fc['club_id'];
+    }
+    if (!empty($form['club_id'])) $club_ids[] = (int)$form['club_id'];
+    $club_ids = array_values(array_unique(array_filter($club_ids)));
+
+    if (!$visible && !empty($club_ids)) {
+        $club_id_list = implode(',', array_map('intval', $club_ids));
+        $public_club = mysqli_query($conn, "SELECT id FROM clubs WHERE is_public = 1 AND id IN ($club_id_list) LIMIT 1");
+        $visible = (bool)mysqli_fetch_assoc($public_club);
+
+        if (!$visible && isLoggedIn()) {
+            $uid = (int)$_SESSION['user_id'];
+            $member_check = mysqli_query($conn, "SELECT id FROM club_members WHERE user_id = $uid AND status = 'active' AND club_id IN ($club_id_list) LIMIT 1");
+            $visible = (bool)mysqli_fetch_assoc($member_check);
+        }
+    }
+
+    if (!$visible) {
+        http_response_code(404);
+        echo '找不到表單或無查看權限';
+        exit();
+    }
+}
 
 $fields_result = mysqli_query($conn, "SELECT * FROM form_fields WHERE form_id = $id ORDER BY order_num");
 $fields = [];
@@ -27,11 +60,6 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
     $fields[] = $f;
 }
 ?>
-<div class="alert alert-warning py-2 mb-3 d-flex align-items-center gap-2">
-    <i class="bi bi-eye-fill"></i>
-    <span class="small">預覽模式 — 表單提交功能已停用</span>
-</div>
-
 <div class="card mb-3">
     <?php if ($form['cover_image']): ?>
         <img src="<?= htmlspecialchars(assetUrl($form['cover_image'])) ?>" class="card-img-top" style="max-height:250px;object-fit:cover;">
@@ -100,7 +128,7 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
 
     <div class="d-grid mb-2">
         <button class="btn btn-primary btn-lg" disabled>
-            <i class="bi bi-send"></i> 提交（預覽模式停用）
+            <i class="bi bi-lock"></i> 預覽模式停用
         </button>
     </div>
 <?php endif; ?>

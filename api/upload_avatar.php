@@ -29,9 +29,18 @@ if ($file['size'] > 2 * 1024 * 1024) {
     exit();
 }
 
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mime  = finfo_file($finfo, $file['tmp_name']);
-finfo_close($finfo);
+$mime = null;
+if (function_exists('finfo_open') && defined('FILEINFO_MIME_TYPE')) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo !== false) {
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+    }
+}
+if (!is_string($mime) || $mime === '') {
+    $imageInfo = @getimagesize($file['tmp_name']);
+    $mime = is_array($imageInfo) && isset($imageInfo['mime']) ? $imageInfo['mime'] : null;
+}
 $allowed = ['image/jpeg', 'image/png', 'image/webp'];
 if (!in_array($mime, $allowed)) {
     ob_end_clean();

@@ -40,16 +40,63 @@ $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 if (!$form) {
     require_once 'config/header.php';
     echo '<div class="alert alert-danger">表單不存在或尚未發布</div>';
+    echo '<script>window.addEventListener("load", function () { if (window.cuteToast) cuteToast({ type: "error", icon: "❌", msg: "表單不存在或尚未發布" }); });</script>';
     require_once 'config/footer.php';
     exit();
 }
 
-// 檢查截止時間（預覽模式跳過）
-if (!$preview && $form['end_date'] && $form['end_date'] < $now) {
+function renderFormBlocked($message, $icon = '🔒', $type = 'error') {
     require_once 'config/header.php';
-    echo '<div class="alert alert-warning"><i class="bi bi-clock"></i> 此表單已截止填答</div>';
+    $safe_message = htmlspecialchars($message, ENT_QUOTES);
+    $safe_icon = htmlspecialchars($icon, ENT_QUOTES);
+    $safe_type = htmlspecialchars($type, ENT_QUOTES);
+    echo '<div class="row justify-content-center"><div class="col-lg-7">';
+    echo '<div class="alert alert-warning d-flex align-items-center gap-2">';
+    echo '<i class="bi bi-exclamation-triangle"></i><span>' . $safe_message . '</span>';
+    echo '</div></div></div>';
+    echo '<script>window.addEventListener("load", function () { if (window.cuteToast) cuteToast({ type: "' . $safe_type . '", icon: "' . $safe_icon . '", msg: "' . $safe_message . '" }); });</script>';
     require_once 'config/footer.php';
     exit();
+}
+
+// 檢查填答期間（預覽模式跳過）
+if (!$preview && $form['start_date'] && $form['start_date'] > $now) {
+    renderFormBlocked('此表單尚未開始填答，開始時間：' . date('Y/m/d H:i', strtotime($form['start_date'])), '⏰');
+}
+
+if (!$preview && $form['end_date'] && $form['end_date'] < $now) {
+    renderFormBlocked('此表單已截止填答', '⏰');
+}
+
+// 檢查登入與填答對象（預覽模式跳過）
+if (!$preview && !isLoggedIn()) {
+    renderFormBlocked('請先登入才能填答此表單');
+}
+
+if (!$preview && ($form['response_scope'] ?? 'all_members') === 'club_members') {
+    $uid = (int)$_SESSION['user_id'];
+    $club_ids = [];
+    $has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
+    if ($has_form_clubs) {
+        $fc_result = mysqli_query($conn, "SELECT club_id FROM form_clubs WHERE form_id = $id");
+        while ($fc = mysqli_fetch_assoc($fc_result)) {
+            $club_ids[] = (int)$fc['club_id'];
+        }
+    }
+    if (!empty($form['club_id'])) {
+        $club_ids[] = (int)$form['club_id'];
+    }
+    $club_ids = array_values(array_unique(array_filter($club_ids)));
+
+    if (empty($club_ids)) {
+        renderFormBlocked('此表單設定僅限所屬社團成員填答，但尚未指定所屬社團');
+    }
+
+    $club_id_list = implode(',', array_map('intval', $club_ids));
+    $member_check = mysqli_query($conn, "SELECT id FROM club_members WHERE user_id = $uid AND status = 'active' AND club_id IN ($club_id_list) LIMIT 1");
+    if (!mysqli_fetch_assoc($member_check)) {
+        renderFormBlocked('此表單僅限所屬社團成員填答');
+    }
 }
 
 // 檢查是否重複填答（預覽模式跳過）
@@ -59,10 +106,7 @@ if (!$preview && !$form['allow_multiple'] && isLoggedIn()) {
     mysqli_stmt_execute($check);
     mysqli_stmt_store_result($check);
     if (mysqli_stmt_num_rows($check) > 0) {
-        require_once 'config/header.php';
-        echo '<div class="alert alert-info"><i class="bi bi-check-circle"></i> 您已填答過此表單</div>';
-        require_once 'config/footer.php';
-        exit();
+        renderFormBlocked('您已填答過此表單', 'ℹ️', 'info');
     }
 }
 
@@ -125,7 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $answers = $_POST['answers'] ?? [];
 
     if (!isLoggedIn()) {
-        $error = '請先登入才能提交';
+        header('Location: ' . APP_BASE . '/login.php');
+        exit();
     } else {
     // 檢查必填
     $missing = false;
@@ -305,14 +350,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
-                                <li>
-                                    <button class="dropdown-item text-danger" id="btn-delete-form">
-                                        <i class="bi bi-trash"></i> 刪除表單
-                                    </button>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <?php endif; ?>
                                 <?php if (!empty($form['show_stats']) || isAdmin() || $form['user_id'] == $user_id): ?>
                                 <li>
                                     <a class="dropdown-item" href="<?= REL_BASE ?>member/form_responses.php?id=<?= $id ?>&return_to=<?= urlencode($_SERVER['REQUEST_URI']) ?>">
@@ -324,7 +361,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php if (isLoggedIn()): ?>
                                 <li>
                                     <button class="dropdown-item" id="btn-report-form">
-                                        <i class="bi bi-flag"></i> 檢舉表單
+                                        <i class="bi bi-flag text-report-orange me-2"></i> 檢舉表單
+                                    </button>
+                                </li>
+                                <?php endif; ?>
+                                <?php if (isAdmin() || $form['user_id'] == $user_id): ?>
+                                <?php if (isLoggedIn()): ?><li><hr class="dropdown-divider"></li><?php endif; ?>
+                                <li>
+                                    <button class="dropdown-item text-danger" id="btn-delete-form">
+                                        <i class="bi bi-trash"></i> 刪除表單
                                     </button>
                                 </li>
                                 <?php endif; ?>
@@ -351,7 +396,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($error): ?>
                 <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
-
             <form method="POST" action="" id="fillForm">
                 <input type="hidden" name="return_to" value="<?= $form_back_attr ?>">
                 <?php if ($edit_response_id): ?>
@@ -425,15 +469,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
 
                 <div class="d-grid mb-4">
-                    <?php if (!isLoggedIn()): ?>
-                    <button type="button" class="btn btn-glow-red w-100" disabled>
-                        <i class="bi bi-lock"></i> 請先登入才能提交
-                    </button>
-                    <?php else: ?>
                     <button type="submit" class="btn btn-glow-primary w-100" <?= $preview ? 'disabled title="預覽模式，無法提交"' : '' ?>>
                         <i class="bi bi-send"></i> 提交
                     </button>
-                    <?php endif; ?>
                 </div>
             </form>
         <?php endif; ?>

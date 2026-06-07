@@ -59,8 +59,8 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-people"></i> 會員管理</h4>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i> 返回
+        <a href="<?= REL_BASE ?>admin/dashboard.php" class="btn btn-glow-primary btn-sm">
+            <i class="bi bi-arrow-left"></i> 返回後台
         </a>
     </div>
 </div>

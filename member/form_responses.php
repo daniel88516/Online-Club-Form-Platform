@@ -5,7 +5,7 @@ require_once '../config/db.php';
 
 $id = intval($_GET['id'] ?? 0);
 $viewer_id = isLoggedIn() ? $_SESSION['user_id'] : 0;
-$stats_back_url = REL_BASE . 'member/my_forms.php';
+$stats_back_url = REL_BASE . 'index.php';
 $back_source = $_GET['return_to'] ?? ($_SERVER['HTTP_REFERER'] ?? '');
 if ($back_source !== '') {
     $parts = parse_url($back_source);

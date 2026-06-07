@@ -10,15 +10,15 @@ $now = date('Y-m-d H:i:s');
 $stmt = mysqli_prepare($conn, "
     SELECT f.id, f.title, f.description, f.end_date, f.is_published,
            u.username AS author,
-           COUNT(DISTINCT fr.id) AS response_count,
-           COUNT(DISTINCT fl.id) AS like_count
+           fb.created_at AS bookmarked_at,
+           COALESCE(fr.response_count, 0) AS response_count,
+           COALESCE(fl.like_count, 0) AS like_count
     FROM form_bookmarks fb
     JOIN forms f ON fb.form_id = f.id
     JOIN users u ON f.user_id = u.id
-    LEFT JOIN form_responses fr ON f.id = fr.form_id
-    LEFT JOIN form_likes fl ON f.id = fl.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS response_count FROM form_responses GROUP BY form_id) fr ON f.id = fr.form_id
+    LEFT JOIN (SELECT form_id, COUNT(*) AS like_count FROM form_likes GROUP BY form_id) fl ON f.id = fl.form_id
     WHERE fb.user_id = ?
-    GROUP BY f.id
     ORDER BY fb.created_at DESC
 ");
 mysqli_stmt_bind_param($stmt, 'i', $user_id);
@@ -30,7 +30,7 @@ require_once '../config/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i class="bi bi-bookmark-fill text-warning"></i> 我的收藏</h4>
-    <a href="<?= REL_BASE ?>index.php" class="btn btn-outline-secondary btn-sm">
+    <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-primary btn-sm">
         <i class="bi bi-arrow-left"></i> 返回首頁
     </a>
 </div>

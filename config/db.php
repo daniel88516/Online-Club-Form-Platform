@@ -21,3 +21,4 @@ function addColumnIfNotExists($conn, $table, $column, $definition) {
     }
 }
 
+addColumnIfNotExists($conn, 'forms', 'response_scope', "ENUM('all_members','club_members') NOT NULL DEFAULT 'all_members' AFTER `show_on_index`");

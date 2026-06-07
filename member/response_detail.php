@@ -41,7 +41,7 @@ require_once '../config/header.php';
         <p class="text-muted">表單：<?= htmlspecialchars($response['form_title']) ?></p>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>member/form_responses.php?id=<?= $response['form_id'] ?>" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= REL_BASE ?>member/form_responses.php?id=<?= $response['form_id'] ?>" class="btn btn-glow-primary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回統計
         </a>
     </div>

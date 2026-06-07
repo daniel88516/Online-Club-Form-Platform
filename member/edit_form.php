@@ -4,12 +4,35 @@ require_once '../config/session.php';
 require_once '../config/db.php';
 requireLogin();
 
+$form_back_url = REL_BASE . 'index.php';
+$back_source = $_POST['return_to'] ?? $_GET['return_to'] ?? ($_SERVER['HTTP_REFERER'] ?? '');
+if ($back_source !== '') {
+    $parts = parse_url($back_source);
+    $current_host = $_SERVER['HTTP_HOST'] ?? '';
+    $is_explicit_return = isset($_POST['return_to']) || isset($_GET['return_to']);
+    $is_current_page = !$is_explicit_return && (($parts['path'] ?? '') === ($_SERVER['SCRIPT_NAME'] ?? ''));
+
+    if ($parts !== false && !$is_current_page) {
+        $host_ok = !isset($parts['host']) || strcasecmp($parts['host'], $current_host) === 0;
+        $scheme_ok = !isset($parts['scheme']) || in_array(strtolower($parts['scheme']), ['http', 'https'], true);
+        if ($host_ok && $scheme_ok) {
+            $form_back_url = $back_source;
+        }
+    }
+}
+$form_back_attr = htmlspecialchars($form_back_url, ENT_QUOTES);
+
 $id = intval($_GET['id'] ?? 0);
 $has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
 
-// 確認表單屬於此會員
-$stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ? AND user_id = ?");
-mysqli_stmt_bind_param($stmt, 'ii', $id, $_SESSION['user_id']);
+// 確認表單屬於此會員；管理者可由後台代理編輯
+if (isAdmin()) {
+    $stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $id);
+} else {
+    $stmt = mysqli_prepare($conn, "SELECT * FROM forms WHERE id = ? AND user_id = ?");
+    mysqli_stmt_bind_param($stmt, 'ii', $id, $_SESSION['user_id']);
+}
 mysqli_stmt_execute($stmt);
 $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
@@ -17,6 +40,8 @@ if (!$form) {
     header('Location: ' . APP_BASE . '/member/my_forms.php');
     exit();
 }
+
+$club_owner_id = isAdmin() ? (int)$form['user_id'] : (int)$_SESSION['user_id'];
 
 // 取得欄位
 $fields_result = mysqli_query($conn, "SELECT * FROM form_fields WHERE form_id = $id ORDER BY order_num");
@@ -48,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $show_stats          = isset($_POST['show_stats']) ? 1 : 0;
     $anonymous_responses = isset($_POST['anonymous_responses']) ? 1 : 0;
     $show_on_index       = isset($_POST['show_on_index']) ? 1 : 0;
+    $response_scope      = ($_POST['response_scope'] ?? 'all_members') === 'club_members' ? 'club_members' : 'all_members';
     $fields         = $_POST['fields'] ?? [];
 
     // 檢查選擇類型欄位是否有填入選項
@@ -82,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             SELECT c.id FROM clubs c
             JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ? AND cm.status = 'active'
         ");
-        mysqli_stmt_bind_param($club_stmt, 'i', $_SESSION['user_id']);
+        mysqli_stmt_bind_param($club_stmt, 'i', $club_owner_id);
         mysqli_stmt_execute($club_stmt);
         $club_result = mysqli_stmt_get_result($club_stmt);
         while ($club = mysqli_fetch_assoc($club_result)) {
@@ -90,16 +116,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $selected_club_ids = array_values(array_intersect($selected_club_ids, $allowed_club_ids));
 
+        if ($response_scope === 'club_members' && empty($selected_club_ids)) {
+            $error = '若填答對象設定為「僅所屬社團成員」，請至少選擇一個所屬社團';
+        } else {
         mysqli_begin_transaction($conn);
 
         $fallback_club_id = (!$has_form_clubs && !empty($selected_club_ids)) ? $selected_club_ids[0] : null;
 
         // 更新表單本體；正式多社團曝光位置由 form_clubs 管理。
-        $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, club_id=? WHERE id=? AND user_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssssssiiiiiiii',
-            $title, $description, $cover_image, $target_group, $start_date, $end_date,
-            $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $fallback_club_id, $id, $_SESSION['user_id']
-        );
+        if (isAdmin()) {
+            $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, response_scope=?, club_id=? WHERE id=?");
+            mysqli_stmt_bind_param($stmt, 'ssssssiiiiisii',
+                $title, $description, $cover_image, $target_group, $start_date, $end_date,
+                $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $fallback_club_id, $id
+            );
+        } else {
+            $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, response_scope=?, club_id=? WHERE id=? AND user_id=?");
+            mysqli_stmt_bind_param($stmt, 'ssssssiiiiisiii',
+                $title, $description, $cover_image, $target_group, $start_date, $end_date,
+                $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $fallback_club_id, $id, $_SESSION['user_id']
+            );
+        }
         $updated = mysqli_stmt_execute($stmt);
 
         // 刪除舊欄位
@@ -116,7 +153,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $options  = null;
 
                 if (in_array($type, ['radio', 'checkbox', 'dropdown']) && !empty($field['options'])) {
-                    $opts = array_filter(array_map('trim', explode("\n", $field['options'])));
+                    $raw_options = is_array($field['options'])
+                        ? $field['options']
+                        : explode("\n", $field['options']);
+                    $opts = array_filter(array_map('trim', $raw_options));
                     $options = json_encode(array_values($opts), JSON_UNESCAPED_UNICODE);
                 }
 
@@ -148,12 +188,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($updated) {
             mysqli_commit($conn);
-            header('Location: ' . APP_BASE . '/member/my_forms.php?msg=updated');
+            header('Location: ' . $form_back_url);
             exit();
         }
 
         mysqli_rollback($conn);
         $error = '更新失敗，請稍後再試';
+        }
     }
 }
 
@@ -164,7 +205,7 @@ $my_clubs_stmt = mysqli_prepare($conn, "
     JOIN club_members cm ON cm.club_id = c.id AND cm.user_id = ? AND cm.status = 'active'
     ORDER BY cm.joined_at DESC
 ");
-mysqli_stmt_bind_param($my_clubs_stmt, 'i', $_SESSION['user_id']);
+mysqli_stmt_bind_param($my_clubs_stmt, 'i', $club_owner_id);
 mysqli_stmt_execute($my_clubs_stmt);
 $my_clubs_result = mysqli_stmt_get_result($my_clubs_stmt);
 $my_clubs = [];
@@ -187,6 +228,9 @@ $my_club_ids = array_map(function ($club) {
 }, $my_clubs);
 $selected_club_ids = array_values(array_intersect($selected_club_ids, $my_club_ids));
 $selected_show_on_index = (int)($form['show_on_index'] ?? 0) === 1;
+$selected_response_scope = ($form['response_scope'] ?? 'all_members') === 'club_members'
+    ? 'club_members'
+    : 'all_members';
 
 require_once '../config/header.php';
 ?>
@@ -196,7 +240,7 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-pencil"></i> 編輯表單</h4>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-outline-secondary btn-sm">
+        <a href="<?= $form_back_attr ?>" class="btn btn-glow-primary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -207,6 +251,7 @@ require_once '../config/header.php';
 <?php endif; ?>
 
 <form method="POST" action="" id="formBuilder" enctype="multipart/form-data">
+    <input type="hidden" name="return_to" value="<?= $form_back_attr ?>">
     <div class="row g-4">
         <div class="col-lg-4">
             <div class="card">
@@ -236,17 +281,7 @@ require_once '../config/header.php';
                             <small class="text-muted d-block mt-1">上傳新圖片將取代現有封面</small>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">填答對象</label>
-                        <select name="target_group" class="form-select">
-                            <option value="">所有人（公開）</option>
-                            <?php while ($g = mysqli_fetch_assoc($groups)): ?>
-                                <option value="<?= $g['id'] ?>" <?= $form['target_group'] == $g['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($g['name']) ?> 群組
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
-                    </div>
+                    <input type="hidden" name="target_group" value="">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">所屬社團</label>
                         <div class="border rounded p-2 mb-2">
@@ -267,6 +302,23 @@ require_once '../config/header.php';
                         </button>
                         <div id="club-picker-preview" class="small text-muted mt-2">
                             不屬於任何社團
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">設定填答對象</label>
+                        <div class="border rounded p-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="response_scope" id="response_scope_all" value="all_members"
+                                       <?= $selected_response_scope === 'all_members' ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="response_scope_all">所有登入會員</label>
+                                <div class="form-text">任何登入會員拿到表單連結都可以填答。</div>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio" name="response_scope" id="response_scope_club" value="club_members"
+                                       <?= $selected_response_scope === 'club_members' ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="response_scope_club">僅所屬社團成員</label>
+                                <div class="form-text">只有上方所選社團的 active 成員可以填答。</div>
+                            </div>
                         </div>
                     </div>
                     <?php
@@ -433,6 +485,58 @@ const fieldIcons  = { short_text:'bi-input-cursor-text', long_text:'bi-text-para
 
 function hasOptions(type) { return ['radio','checkbox','dropdown'].includes(type); }
 
+function optionIcon(type) {
+    if (type === 'radio') return '<i class="bi bi-circle option-kind-icon"></i>';
+    if (type === 'checkbox') return '<i class="bi bi-square option-kind-icon"></i>';
+    return '<i class="bi bi-list option-kind-icon"></i>';
+}
+
+function optionRowHTML(type, value = '') {
+    const safeValue = $('<span>').text(value).html();
+    return `
+        <div class="option-row d-flex align-items-center gap-2 mb-2">
+            <button type="button" class="btn btn-sm btn-link text-muted p-0 option-drag-handle" title="拖曳排序">
+                <i class="bi bi-grip-vertical"></i>
+            </button>
+            <span class="option-kind">${optionIcon(type)}</span>
+            <textarea name="" class="form-control form-control-sm option-input" rows="1" placeholder="選項文字">${safeValue}</textarea>
+            <button type="button" class="btn btn-glow-red btn-sm remove-option" title="刪除選項">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>`;
+}
+
+function autoResizeOption($el) {
+    $el.css('height', 'auto');
+    $el.css('height', Math.max(34, $el[0].scrollHeight) + 'px');
+}
+
+function syncOptionNames($card) {
+    const fieldName = $card.find('input[name$="[type]"]').attr('name') || '';
+    const match = fieldName.match(/^fields\[\d+\]/);
+    if (!match) return;
+    $card.find('.option-input').each(function () {
+        $(this).attr('name', match[0] + '[options][]');
+        autoResizeOption($(this));
+    });
+}
+
+function initOptionSortable(el) {
+    if (!window.Sortable || !el || el.dataset.sortableReady) return;
+    Sortable.create(el, {
+        handle: '.option-drag-handle',
+        animation: 150,
+        ghostClass: 'opacity-50',
+        forceFallback: true,
+        fallbackOnBody: true,
+        fallbackTolerance: 3,
+        onEnd: function () {
+            syncOptionNames($(el).closest('.field-card'));
+        }
+    });
+    el.dataset.sortableReady = '1';
+}
+
 function addField(type, label='', required=false, options='') {
     $('#empty-hint').hide();
     const idx = fieldCount++;
@@ -440,10 +544,21 @@ function addField(type, label='', required=false, options='') {
     if (!label && (type === 'short_text' || type === 'long_text')) {
         label = '說說你的看法吧!!!';
     }
+    const optionValues = Array.isArray(options)
+        ? options
+        : String(options || '').split('\n').filter(v => v.trim() !== '');
+    const defaultOptions = optionValues.length ? optionValues : ['選項 1', '選項 2'];
     const optHTML = hasOptions(type) ? `
-        <div class="mt-2">
-            <label class="form-label small">選項（每行一個）</label>
-            <textarea name="fields[${idx}][options]" class="form-control form-control-sm" rows="3">${options}</textarea>
+        <div class="mt-2 option-builder" data-option-type="${type}">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <label class="form-label small mb-0">選項</label>
+                <button type="button" class="btn btn-glow-primary btn-sm add-option">
+                    <i class="bi bi-plus-lg"></i> 新增選項
+                </button>
+            </div>
+            <div class="option-list">
+                ${defaultOptions.map(value => optionRowHTML(type, value)).join('')}
+            </div>
         </div>` : '';
     const html = `
     <div class="field-card" id="field-${idx}">
@@ -470,6 +585,9 @@ function addField(type, label='', required=false, options='') {
         </div>
     </div>`;
     $('#fields-container').append(html);
+    const $card = $(`#field-${idx}`);
+    syncOptionNames($card);
+    initOptionSortable($card.find('.option-list')[0]);
 }
 
 function clubNameById(id) {
@@ -567,7 +685,7 @@ $(document).ready(function () {
         '<?= $f['field_type'] ?>',
         '<?= addslashes(htmlspecialchars_decode($f['label'])) ?>',
         <?= $f['is_required'] ? 'true' : 'false' ?>,
-        '<?= $f['options'] ? implode('\n', json_decode($f['options'], true)) : '' ?>'
+        <?= json_encode($f['options'] ? json_decode($f['options'], true) : [], JSON_UNESCAPED_UNICODE) ?>
     );
     <?php endforeach; ?>
 
@@ -618,6 +736,24 @@ $(document).ready(function () {
         $(`#field-${$(this).data('id')}`).remove();
         if ($('.field-card').length === 0) $('#empty-hint').show();
     });
+    $(document).on('click', '.add-option', function () {
+        const $builder = $(this).closest('.option-builder');
+        const type = $builder.data('option-type');
+        const nextNum = $builder.find('.option-row').length + 1;
+        $builder.find('.option-list').append(optionRowHTML(type, `選項 ${nextNum}`));
+        const $card = $(this).closest('.field-card');
+        syncOptionNames($card);
+        initOptionSortable($builder.find('.option-list')[0]);
+    });
+    $(document).on('click', '.remove-option', function () {
+        const $card = $(this).closest('.field-card');
+        $(this).closest('.option-row').remove();
+        syncOptionNames($card);
+    });
+    $(document).on('input', '.option-input', function () {
+        autoResizeOption($(this));
+        $(this).removeClass('is-invalid');
+    });
     $('#formBuilder').on('submit', function (e) {
         // 先把 Quill 說明內容填入 hidden field
         if (typeof quillDesc !== 'undefined') {
@@ -641,6 +777,35 @@ $(document).ready(function () {
             return;
         }
         $('input[name="start_date"], input[name="end_date"]').removeClass('is-invalid');
+        if ($('input[name="response_scope"]:checked').val() === 'club_members' && selectedClubIds.length === 0) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '僅所屬社團成員填答時，請至少選擇一個所屬社團' });
+            return;
+        }
+        $('.field-card').each(function () {
+            syncOptionNames($(this));
+        });
+
+        let hasOptionError = false;
+        $('.field-card').each(function () {
+            const type = $(this).find('input[name$="[type]"]').val();
+            if (['radio', 'checkbox', 'dropdown'].includes(type)) {
+                const options = $(this).find('.option-input').filter(function () {
+                    return $(this).val().trim() !== '';
+                });
+                if (options.length === 0) {
+                    hasOptionError = true;
+                    $(this).find('.option-input').addClass('is-invalid');
+                } else {
+                    $(this).find('.option-input').removeClass('is-invalid');
+                }
+            }
+        });
+        if (hasOptionError) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '單選題、核取方塊、下拉選單必須至少填入一個選項' });
+            return;
+        }
         // 依 DOM 順序重新排序欄位索引，確保拖曳後順序正確
         let newIdx = 0;
         $('#fields-container .field-card').each(function () {
@@ -650,6 +815,7 @@ $(document).ready(function () {
                     $(this).attr('name', n.replace(/^fields\[\d+\]/, 'fields[' + newIdx + ']'));
                 }
             });
+            syncOptionNames($(this));
             newIdx++;
         });
     });
@@ -760,4 +926,5 @@ Sortable.create(document.getElementById('fields-container'), {
     fallbackTolerance: 3
 });
 </script>
+<?php define('FAB_CUSTOM', true); ?>
 <?php require_once '../config/footer.php'; ?>

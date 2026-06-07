@@ -5,6 +5,24 @@ require_once '../config/session.php';
 require_once '../config/db.php';
 requireLogin();
 
+$form_back_url = REL_BASE . 'index.php';
+$back_source = $_POST['return_to'] ?? $_GET['return_to'] ?? ($_SERVER['HTTP_REFERER'] ?? '');
+if ($back_source !== '') {
+    $parts = parse_url($back_source);
+    $current_host = $_SERVER['HTTP_HOST'] ?? '';
+    $is_explicit_return = isset($_POST['return_to']) || isset($_GET['return_to']);
+    $is_current_page = !$is_explicit_return && (($parts['path'] ?? '') === ($_SERVER['SCRIPT_NAME'] ?? ''));
+
+    if ($parts !== false && !$is_current_page) {
+        $host_ok = !isset($parts['host']) || strcasecmp($parts['host'], $current_host) === 0;
+        $scheme_ok = !isset($parts['scheme']) || in_array(strtolower($parts['scheme']), ['http', 'https'], true);
+        if ($host_ok && $scheme_ok) {
+            $form_back_url = $back_source;
+        }
+    }
+}
+$form_back_attr = htmlspecialchars($form_back_url, ENT_QUOTES);
+
 $error = '';
 $success = '';
 $has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_clubs'")) > 0;
@@ -21,11 +39,11 @@ function normalizeFieldOptions($options) {
     }));
 }
 
-function insertFormWithFields($conn, $user_id, $title, $description, $cover_image, $target_group, $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $club_id, $fields) {
-    $stmt = mysqli_prepare($conn, "INSERT INTO forms (user_id, title, description, cover_image, target_group, start_date, end_date, allow_multiple, is_published, show_stats, anonymous_responses, show_on_index, club_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmt, 'issssssiiiiii',
+function insertFormWithFields($conn, $user_id, $title, $description, $cover_image, $target_group, $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $club_id, $fields) {
+    $stmt = mysqli_prepare($conn, "INSERT INTO forms (user_id, title, description, cover_image, target_group, start_date, end_date, allow_multiple, is_published, show_stats, anonymous_responses, show_on_index, response_scope, club_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, 'issssssiiiiisi',
         $user_id, $title, $description, $cover_image, $target_group,
-        $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $club_id
+        $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $club_id
     );
 
     if (!mysqli_stmt_execute($stmt)) {
@@ -78,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $show_stats          = isset($_POST['show_stats']) ? 1 : 0;
     $anonymous_responses = isset($_POST['anonymous_responses']) ? 1 : 0;
     $show_on_index       = isset($_POST['show_on_index']) ? 1 : 0;
+    $response_scope      = ($_POST['response_scope'] ?? 'all_members') === 'club_members' ? 'club_members' : 'all_members';
     $fields       = $_POST['fields'] ?? [];
 
     // 檢查選擇類型欄位是否有填入選項
@@ -119,29 +138,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $allowed_club_ids[] = (int)$club['id'];
         }
         $selected_club_ids = array_values(array_intersect($selected_club_ids, $allowed_club_ids));
-        mysqli_begin_transaction($conn);
-        $fallback_club_id = (!$has_form_clubs && !empty($selected_club_ids)) ? $selected_club_ids[0] : null;
-        $form_id = insertFormWithFields($conn, $_SESSION['user_id'], $title, $description, $cover_image, $target_group, $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $fallback_club_id, $fields);
-        $created = (bool)$form_id;
+        if ($response_scope === 'club_members' && empty($selected_club_ids)) {
+            $error = '若填答對象設定為「僅所屬社團成員」，請至少選擇一個所屬社團';
+        } else {
+            mysqli_begin_transaction($conn);
+            $fallback_club_id = (!$has_form_clubs && !empty($selected_club_ids)) ? $selected_club_ids[0] : null;
+            $form_id = insertFormWithFields($conn, $_SESSION['user_id'], $title, $description, $cover_image, $target_group, $start_date, $end_date, $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $fallback_club_id, $fields);
+            $created = (bool)$form_id;
 
-        if ($created && $has_form_clubs && !empty($selected_club_ids)) {
-            $stmt_club = mysqli_prepare($conn, "INSERT INTO form_clubs (form_id, club_id) VALUES (?, ?)");
-            foreach ($selected_club_ids as $club_id) {
-                mysqli_stmt_bind_param($stmt_club, 'ii', $form_id, $club_id);
-                if (!mysqli_stmt_execute($stmt_club)) {
-                    $created = false;
-                    break;
+            if ($created && $has_form_clubs && !empty($selected_club_ids)) {
+                $stmt_club = mysqli_prepare($conn, "INSERT INTO form_clubs (form_id, club_id) VALUES (?, ?)");
+                foreach ($selected_club_ids as $club_id) {
+                    mysqli_stmt_bind_param($stmt_club, 'ii', $form_id, $club_id);
+                    if (!mysqli_stmt_execute($stmt_club)) {
+                        $created = false;
+                        break;
+                    }
                 }
             }
-        }
 
-        if ($created) {
-            mysqli_commit($conn);
-            header('Location: ' . APP_BASE . '/member/my_forms.php?msg=created');
-            exit();
-        } else {
-            mysqli_rollback($conn);
-            $error = '建立失敗，請稍後再試';
+            if ($created) {
+                mysqli_commit($conn);
+                header('Location: ' . APP_BASE . '/member/my_forms.php?msg=created');
+                exit();
+            } else {
+                mysqli_rollback($conn);
+                $error = '建立失敗，請稍後再試';
+            }
         }
     }
 }
@@ -184,6 +207,9 @@ $selected_club_ids = array_values(array_intersect($selected_club_ids, $my_club_i
 $selected_show_on_index = $_SERVER['REQUEST_METHOD'] === 'POST'
     ? isset($_POST['show_on_index'])
     : empty($selected_club_ids);
+$selected_response_scope = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['response_scope'] ?? '') === 'club_members')
+    ? 'club_members'
+    : 'all_members';
 
 require_once '../config/header.php';
 ?>
@@ -193,7 +219,7 @@ require_once '../config/header.php';
         <h4 class="fw-bold"><i class="bi bi-plus-circle"></i> 新增表單</h4>
     </div>
     <div class="col-auto">
-        <a href="<?= REL_BASE ?>member/my_forms.php" class="btn btn-glow-primary btn-sm">
+        <a href="<?= $form_back_attr ?>" class="btn btn-glow-primary btn-sm">
             <i class="bi bi-arrow-left"></i> 返回
         </a>
     </div>
@@ -204,6 +230,7 @@ require_once '../config/header.php';
 <?php endif; ?>
 
 <form method="POST" action="" id="formBuilder" enctype="multipart/form-data">
+    <input type="hidden" name="return_to" value="<?= $form_back_attr ?>">
     <div class="row g-4">
         <!-- 左側：表單設定 -->
         <div class="col-lg-4">
@@ -250,6 +277,23 @@ require_once '../config/header.php';
                         </button>
                         <div id="club-picker-preview" class="small text-muted mt-2">
                             不屬於任何社團
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">設定填答對象</label>
+                        <div class="border rounded p-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="response_scope" id="response_scope_all" value="all_members"
+                                       <?= $selected_response_scope === 'all_members' ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="response_scope_all">所有登入會員</label>
+                                <div class="form-text">任何登入會員拿到表單連結都可以填答。</div>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio" name="response_scope" id="response_scope_club" value="club_members"
+                                       <?= $selected_response_scope === 'club_members' ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="response_scope_club">僅所屬社團成員</label>
+                                <div class="form-text">只有上方所選社團的 active 成員可以填答。</div>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -761,6 +805,12 @@ $(document).ready(function () {
             return;
         }
         $('#start_date, #end_date').removeClass('is-invalid');
+
+        if ($('input[name="response_scope"]:checked').val() === 'club_members' && selectedClubIds.length === 0) {
+            e.preventDefault();
+            window.cuteToast({ type: 'error', msg: '僅所屬社團成員填答時，請至少選擇一個所屬社團' });
+            return;
+        }
 
         $('.field-card').each(function () {
             syncOptionNames($(this));

@@ -39,7 +39,7 @@ CREATE TABLE `club_members` (
   `status` enum('active','pending','invited') DEFAULT 'active',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_club_user` (`club_id`,`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -48,7 +48,7 @@ CREATE TABLE `club_members` (
 
 LOCK TABLES `club_members` WRITE;
 /*!40000 ALTER TABLE `club_members` DISABLE KEYS */;
-INSERT INTO `club_members` VALUES (1,1,2,'owner','2026-04-20 18:10:55','active'),(40,1,1,'member','2026-04-21 08:54:39','active');
+INSERT INTO `club_members` VALUES (1,1,2,'owner','2026-04-20 18:10:55','active'),(43,2,2,'owner','2026-05-26 10:24:02','active'),(44,1,1,'member','2026-05-27 15:21:17','active');
 /*!40000 ALTER TABLE `club_members` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -68,7 +68,7 @@ CREATE TABLE `clubs` (
   `is_public` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +77,7 @@ CREATE TABLE `clubs` (
 
 LOCK TABLES `clubs` WRITE;
 /*!40000 ALTER TABLE `clubs` DISABLE KEYS */;
-INSERT INTO `clubs` VALUES (1,'GTR俱樂部','GTR最棒','/uploads/comments/img_69e6e510aa0027.51304278.jpg',2,0,'2026-04-20 18:10:55');
+INSERT INTO `clubs` VALUES (1,'GTR俱樂部','GTR最棒','/uploads/comments/img_69e6e510aa0027.51304278.jpg',2,0,'2026-04-20 18:10:55'),(2,'F1俱樂部','喜歡F1的人都可以進來喔','/uploads/comments/img_6a157b5a146ce9.32800354.jpg',2,0,'2026-05-26 10:24:02');
 /*!40000 ALTER TABLE `clubs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -98,7 +98,7 @@ CREATE TABLE `comment_likes` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `comment_likes_ibfk_1` FOREIGN KEY (`comment_id`) REFERENCES `form_comments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `comment_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -107,7 +107,7 @@ CREATE TABLE `comment_likes` (
 
 LOCK TABLES `comment_likes` WRITE;
 /*!40000 ALTER TABLE `comment_likes` DISABLE KEYS */;
-INSERT INTO `comment_likes` VALUES (1,1,2,'2026-03-08 13:25:46');
+INSERT INTO `comment_likes` VALUES (1,1,2,'2026-03-08 13:25:46'),(2,6,2,'2026-05-12 15:24:13'),(4,3,2,'2026-05-12 16:33:36'),(5,2,2,'2026-06-05 22:43:33');
 /*!40000 ALTER TABLE `comment_likes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -128,7 +128,7 @@ CREATE TABLE `form_bookmarks` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `form_bookmarks_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `form_bookmarks_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -137,8 +137,36 @@ CREATE TABLE `form_bookmarks` (
 
 LOCK TABLES `form_bookmarks` WRITE;
 /*!40000 ALTER TABLE `form_bookmarks` DISABLE KEYS */;
-INSERT INTO `form_bookmarks` VALUES (1,1,2,'2026-03-08 12:30:01'),(2,2,2,'2026-03-09 06:27:18'),(3,2,1,'2026-04-04 14:56:12');
+INSERT INTO `form_bookmarks` VALUES (2,2,2,'2026-03-09 06:27:18'),(3,2,1,'2026-04-04 14:56:12'),(7,1,2,'2026-05-12 15:24:20'),(9,15,2,'2026-05-14 15:08:29'),(10,9,2,'2026-05-23 18:56:53');
 /*!40000 ALTER TABLE `form_bookmarks` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `form_clubs`
+--
+
+DROP TABLE IF EXISTS `form_clubs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `form_clubs` (
+  `form_id` int(11) NOT NULL,
+  `club_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`form_id`,`club_id`),
+  KEY `idx_form_clubs_club_id` (`club_id`),
+  CONSTRAINT `form_clubs_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `form_clubs_ibfk_2` FOREIGN KEY (`club_id`) REFERENCES `clubs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `form_clubs`
+--
+
+LOCK TABLES `form_clubs` WRITE;
+/*!40000 ALTER TABLE `form_clubs` DISABLE KEYS */;
+INSERT INTO `form_clubs` VALUES (15,1,'2026-05-27 07:39:48');
+/*!40000 ALTER TABLE `form_clubs` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -163,7 +191,7 @@ CREATE TABLE `form_comments` (
   CONSTRAINT `form_comments_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `form_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `form_comments_ibfk_3` FOREIGN KEY (`parent_id`) REFERENCES `form_comments` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172,7 +200,7 @@ CREATE TABLE `form_comments` (
 
 LOCK TABLES `form_comments` WRITE;
 /*!40000 ALTER TABLE `form_comments` DISABLE KEYS */;
-INSERT INTO `form_comments` VALUES (1,1,2,'<p>當然可愛</p>',NULL,NULL,'2026-03-08 12:34:27'),(2,1,2,'<p>對阿</p>',1,NULL,'2026-03-08 13:30:51'),(3,1,1,'<p>我也覺得不錯</p>',NULL,NULL,'2026-03-08 15:16:13'),(4,1,1,'<p>對阿</p>',1,NULL,'2026-03-08 15:16:19'),(5,2,2,'<p>當然是russel</p>',NULL,NULL,'2026-03-09 06:27:32'),(6,2,1,'<p>很棒</p>',NULL,NULL,'2026-04-04 14:56:20');
+INSERT INTO `form_comments` VALUES (1,1,2,'<p>當然可愛</p>',NULL,NULL,'2026-03-08 12:34:27'),(2,1,2,'<p>對阿</p>',1,NULL,'2026-03-08 13:30:51'),(3,1,1,'<p>我也覺得不錯</p>',NULL,NULL,'2026-03-08 15:16:13'),(4,1,1,'<p>對阿</p>',1,NULL,'2026-03-08 15:16:19'),(5,2,2,'<p>當然是russel</p>',NULL,NULL,'2026-03-09 06:27:32'),(6,2,1,'<p>很棒</p>',NULL,NULL,'2026-04-04 14:56:20'),(11,1,2,'<p>我也覺得</p>',3,NULL,'2026-05-12 15:24:28'),(17,15,2,'<p>你好</p>',NULL,NULL,'2026-05-23 18:59:33'),(19,1,2,'<p>我也覺得</p>',2,NULL,'2026-06-05 20:01:41'),(20,1,2,'<p>對</p>',NULL,NULL,'2026-06-05 20:17:10'),(21,1,2,'<p>我也是</p>',3,NULL,'2026-06-05 20:17:21'),(22,1,2,'<p>對阿</p>',NULL,NULL,'2026-06-05 22:30:49'),(23,1,2,'<p>對阿</p>',4,NULL,'2026-06-05 22:31:04'),(24,1,2,'<p>好</p>',NULL,NULL,'2026-06-05 22:43:19'),(25,1,2,'<p>很棒</p>',3,NULL,'2026-06-05 22:43:28'),(26,1,2,'<p>好</p>',NULL,NULL,'2026-06-06 08:55:09'),(27,1,2,'<p>沒錯</p>',4,NULL,'2026-06-06 08:55:22'),(28,1,2,'<p>好棒</p>',NULL,NULL,'2026-06-06 09:05:07'),(29,1,2,'<p>好棒</p>',3,NULL,'2026-06-06 09:05:16'),(30,2,2,'<p>很棒</p>',NULL,NULL,'2026-06-06 10:41:38'),(31,2,2,'<p>我也覺得很棒</p>',6,NULL,'2026-06-06 10:41:46'),(32,2,2,'<p>好</p>',NULL,NULL,'2026-06-06 10:48:13'),(33,2,2,'<p>很讚</p>',6,NULL,'2026-06-06 10:48:25'),(34,1,2,'<p>很棒</p>',NULL,NULL,'2026-06-06 23:04:28'),(35,1,2,'<p>你好</p>',4,NULL,'2026-06-06 23:04:37');
 /*!40000 ALTER TABLE `form_comments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -194,7 +222,7 @@ CREATE TABLE `form_fields` (
   PRIMARY KEY (`id`),
   KEY `form_id` (`form_id`),
   CONSTRAINT `form_fields_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -203,7 +231,7 @@ CREATE TABLE `form_fields` (
 
 LOCK TABLES `form_fields` WRITE;
 /*!40000 ALTER TABLE `form_fields` DISABLE KEYS */;
-INSERT INTO `form_fields` VALUES (1,1,'radio','你覺得初音可愛嗎',1,'[\"是\",\"否\",\"不知道\"]',0),(2,1,'short_text','說說你的看法吧',0,NULL,1),(7,2,'dropdown','是誰呢',1,'[\"舒馬克\",\"Senna\",\"漢寶\",\"汽車人\",\"其他\"]',0),(8,2,'short_text','說說你的看法吧!!!',0,NULL,1),(20,9,'radio','咖哩飯要拌嗎',1,'[\"要\",\"不要\",\"都可以\"]',0),(21,9,'long_text','說說你的看法吧!!!',0,NULL,1);
+INSERT INTO `form_fields` VALUES (1,1,'radio','你覺得初音可愛嗎',1,'[\"是\",\"否\",\"不知道\"]',0),(2,1,'short_text','說說你的看法吧',0,NULL,1),(7,2,'dropdown','是誰呢',1,'[\"舒馬克\",\"Senna\",\"漢寶\",\"汽車人\",\"其他\"]',0),(8,2,'short_text','說說你的看法吧!!!',0,NULL,1),(20,9,'radio','咖哩飯要拌嗎',1,'[\"要\",\"不要\",\"都可以\"]',0),(21,9,'long_text','說說你的看法吧!!!',0,NULL,1),(30,15,'radio','GTR 是好車嗎',1,'[\"是\",\"否\",\"不知道\"]',0),(31,15,'short_text','說說你的看法吧!!!',0,NULL,1);
 /*!40000 ALTER TABLE `form_fields` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -224,7 +252,7 @@ CREATE TABLE `form_likes` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `form_likes_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `form_likes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -233,7 +261,7 @@ CREATE TABLE `form_likes` (
 
 LOCK TABLES `form_likes` WRITE;
 /*!40000 ALTER TABLE `form_likes` DISABLE KEYS */;
-INSERT INTO `form_likes` VALUES (1,1,2,'2026-03-08 12:30:02'),(2,2,2,'2026-03-09 06:27:18'),(3,2,1,'2026-04-04 14:56:11'),(8,9,1,'2026-04-20 16:13:44');
+INSERT INTO `form_likes` VALUES (2,2,2,'2026-03-09 06:27:18'),(3,2,1,'2026-04-04 14:56:11'),(8,9,1,'2026-04-20 16:13:44'),(10,9,2,'2026-05-12 15:16:49'),(20,15,2,'2026-06-06 10:53:09');
 /*!40000 ALTER TABLE `form_likes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -254,7 +282,7 @@ CREATE TABLE `form_responses` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `form_responses_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `form_responses_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -288,13 +316,15 @@ CREATE TABLE `forms` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `show_stats` tinyint(1) DEFAULT 1,
   `anonymous_responses` tinyint(1) DEFAULT 0,
+  `show_on_index` tinyint(1) NOT NULL DEFAULT 1,
+  `response_scope` enum('all_members','club_members') NOT NULL DEFAULT 'all_members',
   `club_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `target_group` (`target_group`),
   CONSTRAINT `forms_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `forms_ibfk_2` FOREIGN KEY (`target_group`) REFERENCES `groups` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,7 +333,7 @@ CREATE TABLE `forms` (
 
 LOCK TABLES `forms` WRITE;
 /*!40000 ALTER TABLE `forms` DISABLE KEYS */;
-INSERT INTO `forms` VALUES (1,2,'初音可愛嗎','<p>你覺得初音可愛嗎</p>','/uploads/forms/img_69ad6b074f1f87.96832362.jpg',NULL,'0000-00-00 00:00:00','2026-03-25 20:27:00',1,1,'2026-03-08 12:29:37',1,0,NULL),(2,1,'F1 goat 是誰','<p>請問F1 goat 是誰?</p>','/uploads/forms/img_69ad923d80dba9.05451323.jpg',NULL,NULL,'2026-03-27 23:14:00',1,1,'2026-03-08 15:14:42',1,0,NULL),(9,12,'咖哩飯要拌嗎','<p>咖哩飯要拌嗎</p>',NULL,NULL,'0000-00-00 00:00:00','2026-04-27 00:00:00',1,1,'2026-04-20 15:48:23',1,0,NULL);
+INSERT INTO `forms` VALUES (1,2,'初音可愛嗎','<p>你覺得初音可愛嗎</p>','/uploads/forms/img_69ad6b074f1f87.96832362.jpg',NULL,'0000-00-00 00:00:00','2026-03-25 20:27:00',1,1,'2026-03-08 12:29:37',1,0,1,'all_members',NULL),(2,1,'F1 goat 是誰','<p>請問F1 goat 是誰?</p>','/uploads/forms/img_69ad923d80dba9.05451323.jpg',NULL,NULL,'2026-03-27 23:14:00',1,1,'2026-03-08 15:14:42',1,0,1,'all_members',NULL),(9,12,'咖哩飯要拌嗎','<p>咖哩飯要拌嗎</p>',NULL,NULL,'0000-00-00 00:00:00','2026-04-27 00:00:00',1,1,'2026-04-20 15:48:23',1,0,1,'all_members',NULL),(15,2,'GTR 是好車嗎','<p><br></p>','/uploads/forms/img_6a05daa2877689.52994864.webp',NULL,NULL,NULL,1,1,'2026-05-14 13:41:24',1,0,0,'all_members',1);
 /*!40000 ALTER TABLE `forms` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -352,7 +382,7 @@ CREATE TABLE `messages` (
   KEY `receiver_id` (`receiver_id`),
   CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -361,7 +391,7 @@ CREATE TABLE `messages` (
 
 LOCK TABLES `messages` WRITE;
 /*!40000 ALTER TABLE `messages` DISABLE KEYS */;
-INSERT INTO `messages` VALUES (1,1,2,'你在幹麻',1,'2026-03-08 15:16:33'),(2,2,1,'我在吃飯阿',1,'2026-03-08 15:17:02'),(3,1,2,'那你覺得我要不要去考研究所，你會覺得很重要嗎',1,'2026-03-08 15:20:18'),(4,2,1,'可以阿我自己覺得很不錯阿',1,'2026-03-08 15:20:43'),(5,1,2,'是這樣嗎',1,'2026-03-09 06:07:48'),(6,2,1,'對阿',1,'2026-03-09 06:08:08'),(7,2,1,'[sticker:🥰]',1,'2026-03-09 06:17:33'),(8,2,1,'😀😂🥰',1,'2026-03-09 06:17:53'),(9,2,1,'[sticker:🥹]',1,'2026-03-09 06:18:01'),(10,2,1,'[sticker:🫶]',1,'2026-03-09 06:20:48'),(11,2,1,'[sticker:💯]',1,'2026-03-09 06:20:52'),(12,2,1,'😡😡😡😡😭😭😭😭',1,'2026-03-09 06:20:53'),(13,2,1,'[sticker:🐸]',1,'2026-03-09 06:21:21'),(14,2,1,'[sticker:💪]',1,'2026-03-09 06:21:28'),(15,2,1,'[sticker:💪]',1,'2026-03-09 06:21:29'),(16,2,1,'[sticker:💪]',1,'2026-03-09 06:21:29'),(17,2,1,'😬😬',1,'2026-03-09 06:21:32'),(18,2,1,'[sticker:🐸]',1,'2026-03-09 06:21:44'),(19,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:1]',1,'2026-03-09 06:22:08'),(20,3,2,'【社團申請通知】\n用戶「member」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-20 19:25:42'),(21,3,1,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！',1,'2026-04-20 19:26:18'),(22,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 07:31:40'),(23,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 07:33:34'),(24,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:34:08'),(25,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:45:40'),(26,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:47:28'),(27,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:47:30'),(28,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:48:29'),(29,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:48:31'),(30,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:48:34'),(31,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 07:49:52'),(32,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:50:19'),(33,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:50:23'),(34,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:50:25'),(35,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:51:40'),(36,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:52:12'),(37,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:54:04'),(38,3,12,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！',1,'2026-04-21 07:57:12'),(39,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 08:22:27'),(40,3,12,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！[CLUB:1]',1,'2026-04-21 08:22:47'),(41,3,12,'【社團通知】\n你已被移出社團「GTR俱樂部」。',1,'2026-04-21 08:25:00'),(42,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 08:25:05'),(43,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 08:30:37'),(44,3,12,'【社團申請未通過】\n您申請加入社團「GTR俱樂部」未通過審核。',1,'2026-04-21 08:33:49'),(45,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:33:57'),(46,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:36:49'),(47,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團審核。[CLUB:1]',1,'2026-04-21 08:39:37'),(48,3,12,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！[CLUB:1]',1,'2026-04-21 08:39:58'),(49,3,2,'【社團申請通知】\n用戶「member」申請加入您的社團「GTR俱樂部」，請前往社團審核。[CLUB:1]',1,'2026-04-21 08:42:55'),(50,3,1,'【社團申請未通過】\n您申請加入社團「GTR俱樂部」未通過審核。[CLUBS_EXPLORE]',1,'2026-04-21 08:43:08'),(51,3,1,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:44:27'),(52,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:46:50'),(53,3,1,'【社團通知】\n你已被移出社團「GTR俱樂部」。[CLUBS_EXPLORE]',1,'2026-04-21 08:47:37'),(54,3,1,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:47:49'),(55,3,1,'【社團邀請已取消】\n您被邀請加入社團「GTR俱樂部」的邀請已被取消。',1,'2026-04-21 08:51:13'),(58,3,1,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:54:39');
+INSERT INTO `messages` VALUES (1,1,2,'你在幹麻',1,'2026-03-08 15:16:33'),(2,2,1,'我在吃飯阿',1,'2026-03-08 15:17:02'),(3,1,2,'那你覺得我要不要去考研究所，你會覺得很重要嗎',1,'2026-03-08 15:20:18'),(4,2,1,'可以阿我自己覺得很不錯阿',1,'2026-03-08 15:20:43'),(5,1,2,'是這樣嗎',1,'2026-03-09 06:07:48'),(6,2,1,'對阿',1,'2026-03-09 06:08:08'),(7,2,1,'[sticker:🥰]',1,'2026-03-09 06:17:33'),(8,2,1,'😀😂🥰',1,'2026-03-09 06:17:53'),(9,2,1,'[sticker:🥹]',1,'2026-03-09 06:18:01'),(10,2,1,'[sticker:🫶]',1,'2026-03-09 06:20:48'),(11,2,1,'[sticker:💯]',1,'2026-03-09 06:20:52'),(12,2,1,'😡😡😡😡😭😭😭😭',1,'2026-03-09 06:20:53'),(13,2,1,'[sticker:🐸]',1,'2026-03-09 06:21:21'),(14,2,1,'[sticker:💪]',1,'2026-03-09 06:21:28'),(15,2,1,'[sticker:💪]',1,'2026-03-09 06:21:29'),(16,2,1,'[sticker:💪]',1,'2026-03-09 06:21:29'),(17,2,1,'😬😬',1,'2026-03-09 06:21:32'),(18,2,1,'[sticker:🐸]',1,'2026-03-09 06:21:44'),(19,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:1]',1,'2026-03-09 06:22:08'),(20,3,2,'【社團申請通知】\n用戶「member」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-20 19:25:42'),(21,3,1,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！',1,'2026-04-20 19:26:18'),(22,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 07:31:40'),(23,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 07:33:34'),(24,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:34:08'),(25,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:45:40'),(26,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:47:28'),(27,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:47:30'),(28,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:48:29'),(29,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:48:31'),(30,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:48:34'),(31,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 07:49:52'),(32,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:50:19'),(33,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:50:23'),(34,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:50:25'),(35,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:51:40'),(36,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:52:12'),(37,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 07:54:04'),(38,3,12,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！',1,'2026-04-21 07:57:12'),(39,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 08:22:27'),(40,3,12,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！[CLUB:1]',1,'2026-04-21 08:22:47'),(41,3,12,'【社團通知】\n你已被移出社團「GTR俱樂部」。',1,'2026-04-21 08:25:00'),(42,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往社團頁面確認邀請。',1,'2026-04-21 08:25:05'),(43,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團頁面審核。',1,'2026-04-21 08:30:37'),(44,3,12,'【社團申請未通過】\n您申請加入社團「GTR俱樂部」未通過審核。',1,'2026-04-21 08:33:49'),(45,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:33:57'),(46,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:36:49'),(47,3,2,'【社團申請通知】\n用戶「daniel」申請加入您的社團「GTR俱樂部」，請前往社團審核。[CLUB:1]',1,'2026-04-21 08:39:37'),(48,3,12,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！[CLUB:1]',1,'2026-04-21 08:39:58'),(49,3,2,'【社團申請通知】\n用戶「member」申請加入您的社團「GTR俱樂部」，請前往社團審核。[CLUB:1]',1,'2026-04-21 08:42:55'),(50,3,1,'【社團申請未通過】\n您申請加入社團「GTR俱樂部」未通過審核。[CLUBS_EXPLORE]',1,'2026-04-21 08:43:08'),(51,3,1,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:44:27'),(52,3,12,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:46:50'),(53,3,1,'【社團通知】\n你已被移出社團「GTR俱樂部」。[CLUBS_EXPLORE]',1,'2026-04-21 08:47:37'),(54,3,1,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:47:49'),(55,3,1,'【社團邀請已取消】\n您被邀請加入社團「GTR俱樂部」的邀請已被取消。',1,'2026-04-21 08:51:13'),(58,3,1,'【社團邀請】\n您被邀請加入社團「GTR俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-04-21 08:54:39'),(59,2,1,'嗨嗨',1,'2026-05-12 15:42:05'),(60,2,1,'😀',1,'2026-05-12 15:42:08'),(61,2,1,'😀',1,'2026-05-12 15:42:13'),(62,2,1,'嗨',1,'2026-05-12 15:42:18'),(63,2,1,'嗨嗨',1,'2026-05-12 15:42:23'),(64,2,1,'你好阿',1,'2026-05-12 15:42:26'),(65,2,1,'你好',1,'2026-05-14 12:47:01'),(66,3,2,'【檢舉通知】\n類型：表單\n原因：詐騙\n目標 ID：9\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:2]',1,'2026-05-14 12:52:10'),(67,2,1,'嗨',1,'2026-05-14 13:04:11'),(68,2,1,'哈囉你好阿',1,'2026-05-14 15:09:44'),(69,3,2,'【檢舉通知】\n類型：表單\n原因：詐騙\n目標 ID：9\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:3]',1,'2026-05-14 15:14:05'),(70,3,2,'【檢舉通知】\n類型：留言\n原因：騷擾內容\n目標 ID：5\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:4]',1,'2026-05-19 18:47:28'),(72,3,2,'【社團申請通知】\n用戶「member」申請加入您的社團「GTR俱樂部」，請前往社團審核。[CLUB:1]',1,'2026-05-19 19:13:59'),(73,3,1,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！[CLUB:1]',1,'2026-05-19 19:16:51'),(74,3,1,'【社團通知】\n你已被移出社團「GTR俱樂部」。[CLUBS_EXPLORE]',1,'2026-05-19 19:19:25'),(75,2,1,'你好',1,'2026-05-19 20:07:51'),(76,2,1,'你好',1,'2026-05-23 20:11:54'),(77,3,2,'【社團申請通知】\n用戶「member」申請加入您的社團「GTR俱樂部」，請前往社團審核。[CLUB:1]',1,'2026-05-27 15:21:17'),(78,3,1,'【社團申請通過】\n您申請加入社團「GTR俱樂部」已通過審核！[CLUB:1]',1,'2026-05-27 15:21:31'),(79,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:5]',1,'2026-06-05 20:03:00'),(80,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-05 20:10:35'),(81,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-05 20:12:16'),(82,2,1,'嗨',1,'2026-06-05 20:15:39'),(83,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:6]',1,'2026-06-05 20:20:33'),(84,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-05 20:23:03'),(86,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：9\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:7]',1,'2026-06-05 20:43:02'),(87,2,1,'哈囉',1,'2026-06-05 22:33:03'),(88,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:8]',1,'2026-06-05 22:37:14'),(89,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-05 22:39:48'),(90,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:9]',1,'2026-06-05 22:48:54'),(91,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-05 22:51:26'),(92,2,1,'嗨',1,'2026-06-06 08:57:28'),(93,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:10]',1,'2026-06-06 09:01:45'),(94,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-06 09:10:20'),(95,3,1,'【社團邀請】\n您被邀請加入社團「F1俱樂部」，請前往待處理社團確認邀請。[CLUBS_PENDING]',1,'2026-06-06 10:54:59'),(96,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:11]',1,'2026-06-06 11:38:56'),(97,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:12]',1,'2026-06-06 11:41:16'),(98,3,2,'【檢舉通知】\n類型：表單\n原因：騷擾內容\n目標 ID：2\n\n請前往管理後台 › 檢舉管理 處理。[REPORT:13]',1,'2026-06-06 11:47:17');
 /*!40000 ALTER TABLE `messages` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -384,7 +414,7 @@ CREATE TABLE `reports` (
   PRIMARY KEY (`id`),
   KEY `reporter_id` (`reporter_id`),
   CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -393,7 +423,7 @@ CREATE TABLE `reports` (
 
 LOCK TABLES `reports` WRITE;
 /*!40000 ALTER TABLE `reports` DISABLE KEYS */;
-INSERT INTO `reports` VALUES (1,'form',2,2,'騷擾內容','resolved',NULL,'2026-03-09 06:22:08');
+INSERT INTO `reports` VALUES (1,'form',2,2,'騷擾內容','resolved',NULL,'2026-03-09 06:22:08'),(2,'form',9,2,'詐騙','resolved',NULL,'2026-05-14 12:52:10'),(3,'form',9,2,'詐騙','resolved',NULL,'2026-05-14 15:14:05'),(4,'comment',5,2,'騷擾內容','resolved',NULL,'2026-05-19 18:47:28'),(5,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-05 20:03:00'),(6,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-05 20:20:33'),(7,'form',9,2,'騷擾內容','resolved',NULL,'2026-06-05 20:43:02'),(8,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-05 22:37:14'),(9,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-05 22:48:54'),(10,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-06 09:01:45'),(11,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-06 11:38:56'),(12,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-06 11:41:16'),(13,'form',2,2,'騷擾內容','resolved',NULL,'2026-06-06 11:47:17');
 /*!40000 ALTER TABLE `reports` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -414,7 +444,7 @@ CREATE TABLE `response_answers` (
   KEY `field_id` (`field_id`),
   CONSTRAINT `response_answers_ibfk_1` FOREIGN KEY (`response_id`) REFERENCES `form_responses` (`id`) ON DELETE CASCADE,
   CONSTRAINT `response_answers_ibfk_2` FOREIGN KEY (`field_id`) REFERENCES `form_fields` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -460,7 +490,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'member','$2y$10$YxweHdRrvjwkbHCuQD6ofuDHf/gDsfGWmenoMNNskzdeM52Wg6WwK','member@example.com','member',1,'/uploads/avatars/avatar_1_69ad9284db6b1.jpg','/uploads/profile_bg/bg_1_69ad92a7c1371.jpg','2026-03-03 12:09:46','我是member',6),(2,'admin','$2y$10$pxYiFhrb.E0T9XvYqa5po.PF/7r6DLdl/gLRaqllzMiiMwqaRXIWu','admin@example.com','admin',2,'/uploads/avatars/avatar_2_69ad68db93264.jpg','/uploads/profile_bg/bg_2_69e6e5e13a28d.jpg','2026-03-03 12:09:46','搖曳露營好好看',6),(3,'系統','','system@localhost','member',NULL,NULL,NULL,'2026-03-03 12:15:37',NULL,7),(12,'daniel','$2y$10$XGXN98ES0ihBV5rIK3B/SeJ10R04OTZBbev4RAXRbpqTPVeM.7/M6','daniel88516@yahoo.com','member',1,NULL,NULL,'2026-04-19 10:34:37',NULL,7),(13,'jjjghu','$2y$10$jSjTyymehuFrpMQswMqtye/.a.XMamaC4ePXt4ZD1kbsR5WuudjBO','chiuliyou@gmail.com','member',1,NULL,NULL,'2026-04-19 14:53:16',NULL,7);
+INSERT INTO `users` VALUES (1,'member','$2y$10$YxweHdRrvjwkbHCuQD6ofuDHf/gDsfGWmenoMNNskzdeM52Wg6WwK','member@example.com','member',1,'/uploads/avatars/avatar_1_69ad9284db6b1.jpg','/uploads/profile_bg/bg_1_69ad92a7c1371.jpg','2026-03-03 12:09:46','我是member',6),(2,'admin','$2y$10$pxYiFhrb.E0T9XvYqa5po.PF/7r6DLdl/gLRaqllzMiiMwqaRXIWu','admin@example.com','admin',2,'/uploads/avatars/avatar_2_69ad68db93264.jpg','/uploads/profile_bg/bg_2_6a23fb9befb1f.jpg','2026-03-03 12:09:46','搖曳露營好好看!',6),(3,'系統','','system@localhost','member',NULL,NULL,NULL,'2026-03-03 12:15:37',NULL,7),(12,'daniel','$2y$10$XGXN98ES0ihBV5rIK3B/SeJ10R04OTZBbev4RAXRbpqTPVeM.7/M6','daniel88516@yahoo.com','member',1,NULL,NULL,'2026-04-19 10:34:37',NULL,7),(13,'jjjghu','$2y$10$jSjTyymehuFrpMQswMqtye/.a.XMamaC4ePXt4ZD1kbsR5WuudjBO','chiuliyou@gmail.com','member',1,NULL,NULL,'2026-04-19 14:53:16',NULL,7);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -477,4 +507,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-28 19:51:16
+-- Dump completed on 2026-06-07 14:23:03

@@ -1,6 +1,7 @@
 <?php
 require_once '../config/session.php';
 require_once '../config/db.php';
+requireAdmin();
 
 $token  = trim($_GET['token'] ?? '');
 $action = $_GET['action'] ?? '';
@@ -51,10 +52,32 @@ mysqli_stmt_execute($u);
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            var isDark;
+            if (theme === 'dark') isDark = true;
+            else if (theme === 'light') isDark = false;
+            else if (theme === 'auto') isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            else isDark = true;
+            document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+
+            var color = localStorage.getItem('themeColor') || '#6610f2';
+            if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+                var value = parseInt(color.slice(1), 16);
+                var r = (value >> 16) & 255;
+                var g = (value >> 8) & 255;
+                var b = value & 255;
+                document.documentElement.style.setProperty('--bs-primary', color);
+                document.documentElement.style.setProperty('--bs-primary-rgb', r + ',' + g + ',' + b);
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <title>處理完成</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="<?= REL_BASE ?>css/style.css?v=<?= filemtime($_SERVER['DOCUMENT_ROOT'] . APP_BASE . '/css/style.css') ?>">
 </head>
 <body class="bg-light">
 <div class="container d-flex justify-content-center align-items-center" style="min-height:80vh;">
@@ -62,7 +85,7 @@ mysqli_stmt_execute($u);
         <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
         <h3 class="mt-3 fw-bold">刪除成功</h3>
         <p class="text-muted">該<?= $type_label ?>已被成功刪除。</p>
-        <a href="<?= REL_BASE ?>index.php" class="btn btn-primary mt-2">返回首頁</a>
+        <a href="<?= REL_BASE ?>index.php" class="btn btn-glow-primary mt-2">返回首頁</a>
     </div>
 </div>
 </body>
