@@ -200,7 +200,7 @@ CREATE TABLE `form_comments` (
 
 LOCK TABLES `form_comments` WRITE;
 /*!40000 ALTER TABLE `form_comments` DISABLE KEYS */;
-INSERT INTO `form_comments` VALUES (1,1,2,'<p>當然可愛</p>',NULL,NULL,'2026-03-08 12:34:27'),(2,1,2,'<p>對阿</p>',1,NULL,'2026-03-08 13:30:51'),(3,1,1,'<p>我也覺得不錯</p>',NULL,NULL,'2026-03-08 15:16:13'),(4,1,1,'<p>對阿</p>',1,NULL,'2026-03-08 15:16:19'),(5,2,2,'<p>當然是russel</p>',NULL,NULL,'2026-03-09 06:27:32'),(6,2,1,'<p>很棒</p>',NULL,NULL,'2026-04-04 14:56:20'),(11,1,2,'<p>我也覺得</p>',3,NULL,'2026-05-12 15:24:28'),(17,15,2,'<p>你好</p>',NULL,NULL,'2026-05-23 18:59:33'),(19,1,2,'<p>我也覺得</p>',2,NULL,'2026-06-05 20:01:41'),(20,1,2,'<p>對</p>',NULL,NULL,'2026-06-05 20:17:10'),(21,1,2,'<p>我也是</p>',3,NULL,'2026-06-05 20:17:21'),(22,1,2,'<p>對阿</p>',NULL,NULL,'2026-06-05 22:30:49'),(23,1,2,'<p>對阿</p>',4,NULL,'2026-06-05 22:31:04'),(24,1,2,'<p>好</p>',NULL,NULL,'2026-06-05 22:43:19'),(25,1,2,'<p>很棒</p>',3,NULL,'2026-06-05 22:43:28'),(26,1,2,'<p>好</p>',NULL,NULL,'2026-06-06 08:55:09'),(27,1,2,'<p>沒錯</p>',4,NULL,'2026-06-06 08:55:22'),(28,1,2,'<p>好棒</p>',NULL,NULL,'2026-06-06 09:05:07'),(29,1,2,'<p>好棒</p>',3,NULL,'2026-06-06 09:05:16'),(30,2,2,'<p>很棒</p>',NULL,NULL,'2026-06-06 10:41:38'),(31,2,2,'<p>我也覺得很棒</p>',6,NULL,'2026-06-06 10:41:46'),(32,2,2,'<p>好</p>',NULL,NULL,'2026-06-06 10:48:13'),(33,2,2,'<p>很讚</p>',6,NULL,'2026-06-06 10:48:25'),(34,1,2,'<p>很棒</p>',NULL,NULL,'2026-06-06 23:04:28'),(35,1,2,'<p>你好</p>',4,NULL,'2026-06-06 23:04:37');
+INSERT INTO `form_comments` VALUES (1,1,2,'<p>當然可愛</p>',NULL,NULL,'2026-03-08 12:34:27'),(2,1,2,'<p>對阿</p>',1,NULL,'2026-03-08 13:30:51'),(3,1,1,'<p>我也覺得不錯</p>',NULL,NULL,'2026-03-08 15:16:13'),(4,1,1,'<p>對阿</p>',1,NULL,'2026-03-08 15:16:19'),(5,2,2,'<p>當然是russel</p>',NULL,NULL,'2026-03-09 06:27:32'),(6,2,1,'<p>很棒</p>',NULL,NULL,'2026-04-04 14:56:20'),(11,1,2,'<p>我也覺得</p>',3,NULL,'2026-05-12 15:24:28'),(17,15,2,'<p>你好</p>',NULL,NULL,'2026-05-23 18:59:33'),(20,1,2,'<p>對</p>',NULL,NULL,'2026-06-05 20:17:10'),(30,2,2,'<p>很棒</p>',NULL,NULL,'2026-06-06 10:41:38'),(31,2,2,'<p>我也覺得很棒</p>',6,NULL,'2026-06-06 10:41:46'),(32,2,2,'<p>好</p>',NULL,NULL,'2026-06-06 10:48:13'),(33,2,2,'<p>很讚</p>',6,NULL,'2026-06-06 10:48:25');
 /*!40000 ALTER TABLE `form_comments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -490,7 +490,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'member','$2y$10$YxweHdRrvjwkbHCuQD6ofuDHf/gDsfGWmenoMNNskzdeM52Wg6WwK','member@example.com','member',1,'/uploads/avatars/avatar_1_69ad9284db6b1.jpg','/uploads/profile_bg/bg_1_69ad92a7c1371.jpg','2026-03-03 12:09:46','我是member',6),(2,'admin','$2y$10$pxYiFhrb.E0T9XvYqa5po.PF/7r6DLdl/gLRaqllzMiiMwqaRXIWu','admin@example.com','admin',2,'/uploads/avatars/avatar_2_69ad68db93264.jpg','/uploads/profile_bg/bg_2_6a23fb9befb1f.jpg','2026-03-03 12:09:46','搖曳露營好好看!',6),(3,'系統','','system@localhost','member',NULL,NULL,NULL,'2026-03-03 12:15:37',NULL,7),(12,'daniel','$2y$10$XGXN98ES0ihBV5rIK3B/SeJ10R04OTZBbev4RAXRbpqTPVeM.7/M6','daniel88516@yahoo.com','member',1,NULL,NULL,'2026-04-19 10:34:37',NULL,7),(13,'jjjghu','$2y$10$jSjTyymehuFrpMQswMqtye/.a.XMamaC4ePXt4ZD1kbsR5WuudjBO','chiuliyou@gmail.com','member',1,NULL,NULL,'2026-04-19 14:53:16',NULL,7);
+INSERT INTO `users` VALUES (1,'member','$2y$10$YxweHdRrvjwkbHCuQD6ofuDHf/gDsfGWmenoMNNskzdeM52Wg6WwK','member@example.com','member',1,'/uploads/avatars/avatar_1_69ad9284db6b1.jpg','/uploads/profile_bg/bg_1_69ad92a7c1371.jpg','2026-03-03 12:09:46','我是member',6),(2,'admin','$2y$10$pxYiFhrb.E0T9XvYqa5po.PF/7r6DLdl/gLRaqllzMiiMwqaRXIWu','admin@example.com','admin',2,'/uploads/avatars/avatar_2_69ad68db93264.jpg','/uploads/profile_bg/bg_2_6a23fb9befb1f.jpg','2026-03-03 12:09:46','搖曳露營好好看!',6),(3,'系統','','system@localhost','member',NULL,NULL,NULL,'2026-03-03 12:15:37',NULL,7),(12,'daniel','$2y$10$XGXN98ES0ihBV5rIK3B/SeJ10R04OTZBbev4RAXRbpqTPVeM.7/M6','daniel88516@yahoo.com','member',1,'/uploads/avatars/avatar_12_6a2518d5d83ce.jpg','/uploads/profile_bg/bg_12_6a25190fc5fac.jpg','2026-04-19 10:34:37',NULL,6),(13,'jjjghu','$2y$10$jSjTyymehuFrpMQswMqtye/.a.XMamaC4ePXt4ZD1kbsR5WuudjBO','chiuliyou@gmail.com','member',1,NULL,NULL,'2026-04-19 14:53:16',NULL,7);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -507,4 +507,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-07 14:23:03
+-- Dump completed on 2026-06-07 16:10:27

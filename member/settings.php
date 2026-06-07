@@ -14,6 +14,65 @@ $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 $bg_ratio = intval($user['profile_bg_ratio'] ?? 7);
+$account_error = '';
+$account_success = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_account'])) {
+    $is_account_ajax = !empty($_POST['ajax_account']);
+    $new_username = trim($_POST['username'] ?? '');
+    $new_email = trim($_POST['email'] ?? '');
+
+    if ($new_username === '' || $new_email === '') {
+        $account_error = '帳號與 Email 皆為必填。';
+    } elseif (mb_strlen($new_username) < 3 || mb_strlen($new_username) > 20) {
+        $account_error = '帳號長度需為 3-20 字元。';
+    } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+        $account_error = 'Email 格式不正確。';
+    } else {
+        $stmt = mysqli_prepare($conn, "SELECT id FROM users WHERE username = ? AND id != ?");
+        mysqli_stmt_bind_param($stmt, 'si', $new_username, $user_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_store_result($stmt);
+        if (mysqli_stmt_num_rows($stmt) > 0) {
+            $account_error = '此帳號已被使用。';
+        }
+        mysqli_stmt_close($stmt);
+    }
+
+    if (!$account_error) {
+        $stmt = mysqli_prepare($conn, "SELECT id FROM users WHERE email = ? AND id != ?");
+        mysqli_stmt_bind_param($stmt, 'si', $new_email, $user_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_store_result($stmt);
+        if (mysqli_stmt_num_rows($stmt) > 0) {
+            $account_error = '此 Email 已被使用。';
+        }
+        mysqli_stmt_close($stmt);
+    }
+
+    if (!$account_error) {
+        $stmt = mysqli_prepare($conn, "UPDATE users SET username = ?, email = ? WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, 'ssi', $new_username, $new_email, $user_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        $_SESSION['username'] = $new_username;
+        $user['username'] = $new_username;
+        $user['email'] = $new_email;
+        $account_success = '帳號資料已更新。';
+    }
+
+    if ($is_account_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => !$account_error,
+            'message' => $account_error ?: $account_success,
+            'username' => $user['username'],
+            'email' => $user['email'] ?? ''
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+}
 
 require_once '../config/header.php';
 ?>
@@ -299,12 +358,20 @@ require_once '../config/header.php';
             <div class="card-body">
                 <div class="mb-3">
                     <label class="form-label text-muted small">使用者名稱</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" readonly>
+                    <form method="POST" id="account-form" novalidate>
+                        <input type="hidden" name="update_account" value="1">
+                    </form>
+                    <input type="text" name="username" id="settings-username" form="account-form" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" data-original="<?= htmlspecialchars($user['username']) ?>" required>
+                    <div id="settings-username-feedback" class="form-text"></div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label text-muted small">電子郵件</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($user['email'] ?? '—') ?>" readonly>
+                    <input type="email" name="email" id="settings-email" form="account-form" class="form-control" value="<?= htmlspecialchars($user['email'] ?? '') ?>" data-original="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
+                    <div id="settings-email-feedback" class="form-text"></div>
                 </div>
+                <button type="submit" form="account-form" class="btn btn-glow-primary btn-sm mb-3 d-none" id="btn-save-account">
+                    <i class="bi bi-check-lg me-1"></i> 儲存帳號資料
+                </button>
                 <div class="mb-0">
                     <label class="form-label text-muted small">身份</label>
                     <input type="text" class="form-control" value="<?= $user['role'] === 'admin' ? '管理員' : '一般會員' ?>" readonly>
@@ -323,6 +390,249 @@ require_once '../config/header.php';
 
 <script>
 window._bgRatio = <?= $bg_ratio ?>;
+
+function setAccountValid($input, $feedback, msg) {
+    $input.removeClass('is-invalid').addClass('is-valid');
+    $feedback.text(msg).removeClass('text-danger').addClass('text-success');
+}
+function setAccountInvalid($input, $feedback, msg) {
+    $input.removeClass('is-valid').addClass('is-invalid');
+    $feedback.text(msg).removeClass('text-success').addClass('text-danger');
+}
+function clearAccountState($input, $feedback) {
+    $input.removeClass('is-valid is-invalid');
+    $feedback.text('').removeClass('text-success text-danger');
+}
+
+(function () {
+    var $username = $('#settings-username');
+    var $email = $('#settings-email');
+    var $usernameFeedback = $('#settings-username-feedback');
+    var $emailFeedback = $('#settings-email-feedback');
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var usernameTimer = null;
+    var emailTimer = null;
+    var usernameRequest = null;
+    var emailRequest = null;
+
+    $('#btn-save-account').remove();
+    $username.prop('readonly', true);
+    $email.prop('readonly', true);
+
+    function toast(type, icon, msg) {
+        if (window.cuteToast) {
+            cuteToast({ type: type, icon: icon, msg: msg });
+        }
+    }
+
+    function resolvedAccountCheck(ok) {
+        return $.Deferred().resolve(ok).promise();
+    }
+
+    function validateUsername() {
+        var val = $username.val().trim();
+        $username.val(val);
+        if (val.length < 3 || val.length > 20) {
+            setAccountInvalid($username, $usernameFeedback, '帳號長度需為 3-20 字元');
+            return false;
+        }
+        clearAccountState($username, $usernameFeedback);
+        return true;
+    }
+
+    function checkUsernameAvailability() {
+        var val = $username.val().trim();
+        if (!validateUsername()) return resolvedAccountCheck(false);
+        if (val === String($username.data('original') || '')) {
+            clearAccountState($username, $usernameFeedback);
+            return resolvedAccountCheck(true);
+        }
+
+        if (usernameRequest) usernameRequest.abort();
+        $usernameFeedback.text('檢查中...').removeClass('text-danger text-success');
+        usernameRequest = $.ajax({
+            url: '<?= REL_BASE ?>api/check_username.php',
+            type: 'POST',
+            dataType: 'json',
+            data: { username: val, exclude_current: 1 },
+            success: function (res) {
+                if (res.exists) {
+                    setAccountInvalid($username, $usernameFeedback, '此帳號已被使用');
+                } else {
+                    setAccountValid($username, $usernameFeedback, '帳號可使用');
+                }
+            },
+            error: function (xhr) {
+                if (xhr && xhr.statusText === 'abort') return;
+                setAccountInvalid($username, $usernameFeedback, '驗證失敗，請稍後再試');
+            }
+        });
+        return usernameRequest.then(function (res) {
+            return !res.exists;
+        }, function () {
+            return false;
+        });
+    }
+
+    function validateEmail() {
+        var val = $email.val().trim();
+        $email.val(val);
+        if (!emailRegex.test(val)) {
+            setAccountInvalid($email, $emailFeedback, 'Email 格式不正確');
+            return false;
+        }
+        clearAccountState($email, $emailFeedback);
+        return true;
+    }
+
+    function checkEmailAvailability() {
+        var val = $email.val().trim();
+        if (!validateEmail()) return resolvedAccountCheck(false);
+        if (val === String($email.data('original') || '')) {
+            clearAccountState($email, $emailFeedback);
+            return resolvedAccountCheck(true);
+        }
+
+        if (emailRequest) emailRequest.abort();
+        $emailFeedback.text('檢查中...').removeClass('text-danger text-success');
+        emailRequest = $.ajax({
+            url: '<?= REL_BASE ?>api/check_email.php',
+            type: 'POST',
+            dataType: 'json',
+            data: { email: val, exclude_current: 1 },
+            success: function (res) {
+                if (!res.valid) {
+                    setAccountInvalid($email, $emailFeedback, 'Email 格式不正確');
+                } else if (res.exists) {
+                    setAccountInvalid($email, $emailFeedback, '此 Email 已被使用');
+                } else {
+                    setAccountValid($email, $emailFeedback, 'Email 可使用');
+                }
+            },
+            error: function (xhr) {
+                if (xhr && xhr.statusText === 'abort') return;
+                setAccountInvalid($email, $emailFeedback, '驗證失敗，請稍後再試');
+            }
+        });
+        return emailRequest.then(function (res) {
+            return res.valid && !res.exists;
+        }, function () {
+            return false;
+        });
+    }
+
+    function debounceAccountCheck(kind) {
+        var timer = kind === 'username' ? usernameTimer : emailTimer;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () {
+            if (kind === 'username') {
+                checkUsernameAvailability();
+            } else {
+                checkEmailAvailability();
+            }
+        }, 350);
+
+        if (kind === 'username') {
+            usernameTimer = timer;
+        } else {
+            emailTimer = timer;
+        }
+    }
+
+    function saveAccount($btn, done) {
+        if (!validateUsername() || !validateEmail()) return;
+
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+        $.when(checkUsernameAvailability(), checkEmailAvailability()).done(function (usernameOk, emailOk) {
+            if (!usernameOk || !emailOk) {
+                $btn.prop('disabled', false).html('<i class="bi bi-check-lg"></i>');
+                return;
+            }
+
+            $.post(window.location.href, {
+            update_account: 1,
+            ajax_account: 1,
+            username: $username.val().trim(),
+            email: $email.val().trim()
+        }, function (res) {
+            if (res.success) {
+                $username.val(res.username).data('original', res.username);
+                $email.val(res.email).data('original', res.email);
+                clearAccountState($username, $usernameFeedback);
+                clearAccountState($email, $emailFeedback);
+                toast('success', '✅', res.message || '帳號資料已更新。');
+                done();
+            } else {
+                toast('error', '❌', res.message || '更新失敗，請稍後再試。');
+            }
+        }, 'json').fail(function () {
+            toast('error', '❌', '網路錯誤，請稍後再試。');
+        }).always(function () {
+            $btn.prop('disabled', false).html('<i class="bi bi-check-lg"></i>');
+        });
+        });
+    }
+
+    function setupEditableField($input, $feedback) {
+        var $group = $('<div class="input-group"></div>');
+        $input.before($group);
+        $group.append($input);
+
+        var $edit = $('<button type="button" class="btn btn-glow-primary account-edit-btn">更新</button>');
+        $group.append($edit);
+
+        function showViewMode() {
+            $input.prop('readonly', true);
+            if ($input.is($username)) {
+                if (usernameTimer) clearTimeout(usernameTimer);
+                if (usernameRequest) usernameRequest.abort();
+            } else {
+                if (emailTimer) clearTimeout(emailTimer);
+                if (emailRequest) emailRequest.abort();
+            }
+            clearAccountState($input, $feedback);
+            $group.find('.account-save-btn,.account-cancel-btn').remove();
+            if (!$group.find('.account-edit-btn').length) {
+                $edit = $('<button type="button" class="btn btn-glow-primary account-edit-btn">更新</button>');
+                $group.append($edit);
+            }
+        }
+
+        function showEditMode() {
+            $input.prop('readonly', false).focus();
+            clearAccountState($input, $feedback);
+            $group.find('.account-edit-btn').remove();
+            var $save = $('<button type="button" class="btn btn-glow-primary account-icon-btn account-save-btn" title="更新"><i class="bi bi-check-lg"></i></button>');
+            var $cancel = $('<button type="button" class="btn btn-glow-primary account-icon-btn account-cancel-btn" title="取消"><i class="bi bi-x-lg"></i></button>');
+            $group.append($save, $cancel);
+
+            $save.on('click', function () {
+                saveAccount($save, showViewMode);
+            });
+            $cancel.on('click', function () {
+                $input.val($input.data('original'));
+                showViewMode();
+            });
+        }
+
+        $group.on('click', '.account-edit-btn', showEditMode);
+        $input.on('input', function () {
+            clearAccountState($input, $feedback);
+            debounceAccountCheck($input.is($username) ? 'username' : 'email');
+        }).on('blur', function () {
+            if ($input.prop('readonly')) return;
+            if ($input.is($username)) {
+                checkUsernameAvailability();
+            } else {
+                checkEmailAvailability();
+            }
+        });
+        showViewMode();
+    }
+
+    setupEditableField($username, $usernameFeedback);
+    setupEditableField($email, $emailFeedback);
+})();
 
 /* ── 背景比例選擇 ── */
 $(document).on('click', '.btn-ratio', function () {
@@ -658,6 +968,21 @@ $(document).on('click', '.btn-ratio', function () {
 }
 .auto-preview {
     background: linear-gradient(135deg, #ffffff 50%, #212529 50%);
+}
+.account-edit-btn {
+    min-width: 64px;
+}
+.account-icon-btn {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.account-icon-btn .bi {
+    line-height: 1;
 }
 
 /* ── 動畫設定滑桿軌道：淺色模式下補深軌道色 ── */
