@@ -8,6 +8,9 @@ requireAdmin();
 $error = '';
 $success = '';
 
+$admin_group_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM `groups` WHERE name = '管理' LIMIT 1"));
+$admin_group_id = (int)($admin_group_row['id'] ?? 2);
+
 // 刪除會員
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $del_id = intval($_POST['delete_id']);
@@ -21,26 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 
 // 修改角色
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_role_id'])) {
-    $uid  = intval($_POST['change_role_id']);
-    $role = $_POST['role'] === 'admin' ? 'admin' : 'member';
-    if ($uid == $_SESSION['user_id']) {
-        $error = '不能修改自己的角色';
-    } else {
-        $stmt = mysqli_prepare($conn, "UPDATE users SET role = ? WHERE id = ?");
-        mysqli_stmt_bind_param($stmt, 'si', $role, $uid);
-        mysqli_stmt_execute($stmt);
-        $success = '角色已更新';
-    }
+    $error = '角色由群組決定，請改群組。';
+    unset($_POST['change_role_id']);
 }
 
 // 修改群組
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_group_id'])) {
-    $uid      = intval($_POST['change_group_id']);
+    $uid = intval($_POST['change_group_id']);
     $group_id = !empty($_POST['group_id']) ? intval($_POST['group_id']) : null;
-    $stmt = mysqli_prepare($conn, "UPDATE users SET group_id = ? WHERE id = ?");
-    mysqli_stmt_bind_param($stmt, 'ii', $group_id, $uid);
-    mysqli_stmt_execute($stmt);
-    $success = '群組已更新';
+    $role = ($group_id && $group_id === $admin_group_id) ? 'admin' : 'member';
+    if ($uid == $_SESSION['user_id']) {
+        $error = '不能修改自己的群組與角色。';
+    } else {
+        $stmt = mysqli_prepare($conn, "UPDATE users SET group_id = ?, role = ? WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, 'isi', $group_id, $role, $uid);
+        mysqli_stmt_execute($stmt);
+        $success = '群組與角色已更新。';
+    }
+    unset($_POST['change_group_id']);
 }
 
 // 搜尋
@@ -69,7 +70,13 @@ require_once '../config/header.php';
     <div class="alert alert-danger alert-dismissible"><i class="bi bi-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 <?php if ($success): ?>
-    <div class="alert alert-success alert-dismissible"><i class="bi bi-check-circle"></i> <?= htmlspecialchars($success) ?></div>
+<script>
+window.addEventListener('load', function () {
+    if (window.cuteToast) {
+        cuteToast({ type: 'success', icon: '✅', msg: <?= json_encode($success, JSON_UNESCAPED_UNICODE) ?> });
+    }
+});
+</script>
 <?php endif; ?>
 
 <?php renderAdminSearchBar('search', $search, '搜尋帳號或 Email...', REL_BASE . 'admin/members.php'); ?>
@@ -116,11 +123,11 @@ require_once '../config/header.php';
                     <td>
                         <form method="POST" class="d-flex gap-1 align-items-center">
                             <input type="hidden" name="change_role_id" value="<?= $user['id'] ?>">
-                            <select name="role" class="form-select form-select-sm" style="min-width:90px;">
+                            <select name="role" class="form-select form-select-sm" style="min-width:90px;" disabled title="角色由群組決定">
                                 <option value="member" <?= $user['role'] === 'member' ? 'selected' : '' ?>>會員</option>
                                 <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>管理者</option>
                             </select>
-                            <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-check"></i></button>
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" disabled title="角色由群組決定"><i class="bi bi-check"></i></button>
                         </form>
                     </td>
                     <td class="small text-muted"><?= date('Y/m/d', strtotime($user['created_at'])) ?></td>
