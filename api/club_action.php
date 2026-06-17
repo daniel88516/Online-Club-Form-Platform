@@ -1,6 +1,7 @@
 <?php
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/upload_cleanup.php';
 header('Content-Type: application/json');
 
 if (!isLoggedIn()) {
@@ -187,7 +188,7 @@ if ($action === 'invite') {
 if ($action === 'search_users') {
     $club_id = intval($_POST['club_id'] ?? 0);
     // 確認是 owner
-    $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
+    $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id, cover_image FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
     if (!$owner) { echo json_encode(['success' => false, 'message' => '無權限']); exit(); }
 
     $q    = trim($_POST['q'] ?? '');
@@ -254,14 +255,20 @@ if ($action === 'decline_invite') {
 if ($action === 'update_cover') {
     $club_id   = intval($_POST['club_id'] ?? 0);
     $cover_url = trim($_POST['cover_url'] ?? '');
-    $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
-    if (!$owner) { echo json_encode(['success' => false, 'message' => '無權限']); exit(); }
-    if (!preg_match('#^/uploads/[a-zA-Z0-9_/.\-]+$#', $cover_url)) {
-        echo json_encode(['success' => false, 'message' => '無效的圖片路徑']); exit();
+    $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id, cover_image FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
+    if (!$owner) { echo json_encode(['success' => false, 'message' => '????']); exit(); }
+    if (!preg_match('#^/uploads/[a-zA-Z0-9_/.-]+$#', $cover_url)) {
+        echo json_encode(['success' => false, 'message' => '???????']); exit();
     }
     $u = mysqli_prepare($conn, "UPDATE clubs SET cover_image = ? WHERE id = ?");
     mysqli_stmt_bind_param($u, 'si', $cover_url, $club_id);
-    mysqli_stmt_execute($u);
+    $ok = mysqli_stmt_execute($u);
+    if (!$ok) {
+        cleanupReplacedUploads($conn, [$cover_url], []);
+        echo json_encode(['success' => false, 'message' => '??????']);
+        exit();
+    }
+    cleanupReplacedUploads($conn, [$owner['cover_image'] ?? null], [$cover_url]);
     echo json_encode(['success' => true]);
     exit();
 }
@@ -379,12 +386,13 @@ if ($action === 'transfer_owner') {
 // ── 刪除社團（owner）──
 if ($action === 'delete_club') {
     $club_id = intval($_POST['club_id'] ?? 0);
-    $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
-    if (!$owner) { echo json_encode(['success' => false, 'message' => '無權限']); exit(); }
+    $owner = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id, cover_image FROM clubs WHERE id = $club_id AND owner_id = $user_id"));
+    if (!$owner) { echo json_encode(['success' => false, 'message' => '????']); exit(); }
 
     mysqli_query($conn, "DELETE FROM form_clubs WHERE club_id = $club_id");
     mysqli_query($conn, "DELETE FROM club_members WHERE club_id = $club_id");
     mysqli_query($conn, "DELETE FROM clubs WHERE id = $club_id");
+    cleanupReplacedUploads($conn, [$owner['cover_image'] ?? null], []);
     echo json_encode(['success' => true]);
     exit();
 }
@@ -413,9 +421,11 @@ if ($action === 'owner_leave') {
         mysqli_stmt_execute($n);
     } else {
         // 無其他成員 → 刪除社團
+        $cover_row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT cover_image FROM clubs WHERE id = $club_id"));
         mysqli_query($conn, "DELETE FROM form_clubs WHERE club_id = $club_id");
         mysqli_query($conn, "DELETE FROM club_members WHERE club_id = $club_id");
         mysqli_query($conn, "DELETE FROM clubs WHERE id = $club_id");
+        cleanupReplacedUploads($conn, [$cover_row['cover_image'] ?? null], []);
     }
 
     echo json_encode(['success' => true]);

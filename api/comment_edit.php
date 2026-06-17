@@ -1,6 +1,7 @@
 <?php
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/upload_cleanup.php';
 
 header('Content-Type: application/json');
 
@@ -17,7 +18,7 @@ if (!$comment_id || $content === '') {
     exit();
 }
 
-$stmt = mysqli_prepare($conn, "SELECT user_id FROM form_comments WHERE id = ?");
+$stmt = mysqli_prepare($conn, "SELECT user_id, content FROM form_comments WHERE id = ?");
 mysqli_stmt_bind_param($stmt, 'i', $comment_id);
 mysqli_stmt_execute($stmt);
 $comment = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -34,6 +35,17 @@ if ($comment['user_id'] !== $_SESSION['user_id']) {
 
 $stmt = mysqli_prepare($conn, "UPDATE form_comments SET content = ? WHERE id = ?");
 mysqli_stmt_bind_param($stmt, 'si', $content, $comment_id);
-mysqli_stmt_execute($stmt);
+$ok = mysqli_stmt_execute($stmt);
+
+if ($ok) {
+    cleanupReplacedUploads(
+        $conn,
+        extractUploadPathsFromHtml($comment['content'] ?? ''),
+        extractUploadPathsFromHtml($content)
+    );
+} else {
+    echo json_encode(['success' => false, 'message' => '更新失敗']);
+    exit();
+}
 
 echo json_encode(['success' => true, 'content' => assetHtml($content)]);

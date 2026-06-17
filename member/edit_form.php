@@ -2,6 +2,7 @@
 $pageTitle = '編輯表單';
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/upload_cleanup.php';
 requireLogin();
 
 $form_back_url = REL_BASE . 'index.php';
@@ -65,6 +66,8 @@ function normalizeFieldOptions($options) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $old_cover_image = $form['cover_image'] ?? null;
+    $old_description = $form['description'] ?? '';
     $title          = trim($_POST['title'] ?? '');
     $description    = trim($_POST['description'] ?? '');
     $target_group   = !empty($_POST['target_group']) ? intval($_POST['target_group']) : null;
@@ -197,11 +200,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($updated) {
             mysqli_commit($conn);
+            cleanupReplacedUploads(
+                $conn,
+                array_merge([$old_cover_image], extractUploadPathsFromHtml($old_description)),
+                array_merge([$cover_image], extractUploadPathsFromHtml($description))
+            );
             header('Location: ' . APP_BASE . '/index.php');
             exit();
         }
 
         mysqli_rollback($conn);
+        cleanupReplacedUploads(
+            $conn,
+            array_merge([$cover_image], extractUploadPathsFromHtml($description)),
+            array_merge([$old_cover_image], extractUploadPathsFromHtml($old_description))
+        );
         $error = '更新失敗，請稍後再試';
         }
     }
@@ -281,7 +294,8 @@ require_once '../config/header.php';
                     <div class="mb-3">
                         <label class="form-label fw-semibold">封面圖片</label>
                         <input type="hidden" name="cover_image" id="cover-image-url"
-                               value="<?= htmlspecialchars($form['cover_image'] ?? '') ?>">
+                               value="<?= htmlspecialchars($form['cover_image'] ?? '') ?>"
+                               data-original="<?= htmlspecialchars($form['cover_image'] ?? '') ?>">
                         <input type="file" id="cover-image-input" class="form-control" accept="image/*">
                         <div id="cover-image-preview" class="mt-2"<?= $form['cover_image'] ? '' : ' style="display:none;"' ?>>
                             <img id="cover-image-thumb"
@@ -837,8 +851,13 @@ $('#cover-image-input').on('change', function () {
     const file = this.files[0];
     if (!file) return;
     const fd = new FormData();
+    const currentCover = $('#cover-image-url').val();
+    const originalCover = $('#cover-image-url').data('original') || '';
     fd.append('image', file);
     fd.append('type', 'forms');
+    if (currentCover && currentCover !== originalCover) {
+        fd.append('old_path', currentCover);
+    }
     $.ajax({
         url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
         data: fd, contentType: false, processData: false,

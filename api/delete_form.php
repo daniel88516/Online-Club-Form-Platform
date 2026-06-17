@@ -1,6 +1,7 @@
 <?php
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/upload_cleanup.php';
 
 header('Content-Type: application/json');
 
@@ -15,7 +16,7 @@ if (!$form_id) {
     exit();
 }
 
-$stmt = mysqli_prepare($conn, "SELECT user_id, title FROM forms WHERE id = ?");
+$stmt = mysqli_prepare($conn, "SELECT user_id, title, cover_image, description FROM forms WHERE id = ?");
 mysqli_stmt_bind_param($stmt, 'i', $form_id);
 mysqli_stmt_execute($stmt);
 $form = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -30,9 +31,23 @@ if (!isAdmin() && $form['user_id'] !== $_SESSION['user_id']) {
     exit();
 }
 
+$cleanup_paths = array_merge(
+    [$form['cover_image'] ?? null],
+    extractUploadPathsFromHtml($form['description'] ?? '')
+);
+$comment_stmt = mysqli_prepare($conn, "SELECT content FROM form_comments WHERE form_id = ?");
+mysqli_stmt_bind_param($comment_stmt, 'i', $form_id);
+mysqli_stmt_execute($comment_stmt);
+$comment_res = mysqli_stmt_get_result($comment_stmt);
+while ($comment = mysqli_fetch_assoc($comment_res)) {
+    $cleanup_paths = array_merge($cleanup_paths, extractUploadPathsFromHtml($comment['content'] ?? ''));
+}
+
 $del = mysqli_prepare($conn, "DELETE FROM forms WHERE id = ?");
 mysqli_stmt_bind_param($del, 'i', $form_id);
 mysqli_stmt_execute($del);
+
+cleanupReplacedUploads($conn, $cleanup_paths, []);
 
 // 系統通知表單建立者（刪除者不是自己才通知）
 if ($form['user_id'] !== $_SESSION['user_id']) {

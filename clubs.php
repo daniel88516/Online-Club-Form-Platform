@@ -375,6 +375,9 @@ $(document).on('click', '#btn-club-cover-crop-confirm', function () {
     .toBlob(function (blob) {
         _clubCoverCropModal.hide();
         const fd = new FormData();
+        if (_clubCoverUrl) {
+            fd.append('old_path', _clubCoverUrl);
+        }
         fd.append('image', blob, 'cover.jpg');
         fd.append('type', 'clubs');
         $.ajax({

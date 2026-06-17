@@ -2,6 +2,7 @@
 ob_start();
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/upload_cleanup.php';
 header('Content-Type: application/json');
 
 if (!isLoggedIn()) {
@@ -66,10 +67,27 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) {
 }
 
 $path = '/uploads/avatars/' . $filename;
+$old_path = null;
+$old_stmt = $conn->prepare("SELECT avatar FROM users WHERE id = ?");
+$old_stmt->bind_param('i', $user_id);
+$old_stmt->execute();
+$old_row = $old_stmt->get_result()->fetch_assoc();
+$old_path = $old_row['avatar'] ?? null;
+$old_stmt->close();
+
 $stmt = $conn->prepare("UPDATE users SET avatar = ? WHERE id = ?");
 $stmt->bind_param('si', $path, $user_id);
-$stmt->execute();
+$ok = $stmt->execute();
 $stmt->close();
+
+if (!$ok) {
+    @unlink($dest);
+    ob_end_clean();
+    echo json_encode(['success' => false, 'message' => '銝憭望?嚗??岫']);
+    exit();
+}
+
+cleanupReplacedUploads($conn, [$old_path], [$path]);
 
 ob_end_clean();
 echo json_encode(['success' => true, 'path' => $path]);

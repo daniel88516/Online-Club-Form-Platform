@@ -379,12 +379,6 @@ require_once '../config/header.php';
             </div>
         </div>
 
-        <!-- 加入時間 -->
-        <div class="text-center text-muted small">
-            <i class="bi bi-calendar3 me-1"></i>
-            加入時間：<?= date('Y 年 m 月 d 日', strtotime($user['created_at'])) ?>
-        </div>
-
     </div>
 </div>
 
@@ -1281,5 +1275,124 @@ window.addEventListener('load', function () {
     });
 })();
 </script>
+
+<?php if (isAdmin()): ?>
+<style>
+.advanced-tools-modal {
+    color: var(--bs-body-color);
+    background:
+        linear-gradient(180deg, rgba(var(--bs-primary-rgb, 13,110,253), .10), transparent 62%),
+        var(--bs-body-bg);
+    border: 1px solid rgba(var(--bs-primary-rgb, 13,110,253), .38);
+    box-shadow:
+        0 0 0 1px rgba(var(--bs-primary-rgb, 13,110,253), .10),
+        0 0 26px rgba(var(--bs-primary-rgb, 13,110,253), .30),
+        0 18px 46px rgba(0, 0, 0, .42);
+}
+.advanced-tools-modal .modal-header {
+    border-bottom-color: rgba(var(--bs-primary-rgb, 13,110,253), .22);
+}
+.advanced-tools-modal .modal-title i {
+    color: var(--bs-primary, #0d6efd);
+}
+.advanced-tools-modal .btn-close {
+    filter: var(--advanced-modal-close-filter, none);
+}
+[data-bs-theme="dark"] .advanced-tools-modal .btn-close {
+    --advanced-modal-close-filter: invert(1) grayscale(100%) brightness(200%);
+}
+</style>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-6">
+        <button type="button" class="btn btn-glow-dark w-100 d-flex align-items-center justify-content-center gap-2"
+                data-bs-toggle="modal" data-bs-target="#advancedToolsModal">
+            <i class="bi bi-tools"></i>
+            進階功能
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="advancedToolsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content advanced-tools-modal">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-tools me-2"></i>進階功能
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <button type="button" id="btn-clean-orphan-uploads"
+                        class="btn btn-glow-primary w-100 d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-trash3"></i>
+                    刪除孤兒圖片
+                </button>
+                <div id="orphan-cleanup-result" class="small text-muted mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const btn = document.getElementById('btn-clean-orphan-uploads');
+    const result = document.getElementById('orphan-cleanup-result');
+    if (!btn || !result) return;
+
+    let resultTimer = null;
+
+    function showCleanupResult(className, message) {
+        if (resultTimer) clearTimeout(resultTimer);
+        result.className = className;
+        result.textContent = message;
+        resultTimer = setTimeout(function () {
+            result.textContent = '';
+            result.className = 'small text-muted mt-3';
+        }, 3000);
+    }
+
+    btn.addEventListener('click', function () {
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span><span>清理中...</span>';
+        result.className = 'small text-muted mt-3';
+        result.textContent = '正在掃描 uploads 並檢查資料庫引用...';
+
+        fetch('<?= REL_BASE ?>api/cleanup_orphan_uploads.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
+            if (!res.success) {
+                showCleanupResult('small text-danger mt-3', res.message || '清理失敗');
+                return;
+            }
+
+            let message = '完成：刪除 ' + res.deleted_count + ' 張孤兒圖片，釋放 ' + res.deleted_size_mb + ' MiB。';
+            if (res.failed_count > 0) {
+                message += ' 有 ' + res.failed_count + ' 個檔案刪除失敗。';
+            }
+            showCleanupResult('small text-success mt-3', message);
+        })
+        .catch(function () {
+            showCleanupResult('small text-danger mt-3', '清理失敗，請稍後再試。');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        });
+    });
+})();
+</script>
+<?php endif; ?>
+
+<div class="row justify-content-center mt-3 mb-2">
+    <div class="col-lg-6 text-center text-muted small">
+        <i class="bi bi-calendar3 me-1"></i>
+        加入時間：<?= date('Y 年 m 月 d 日', strtotime($user['created_at'])) ?>
+    </div>
+</div>
 
 <?php require_once '../config/footer.php'; ?>

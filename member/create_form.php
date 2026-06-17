@@ -3,6 +3,7 @@ $pageTitle = '新增表單';
 define('FAB_CUSTOM', true);
 require_once '../config/session.php';
 require_once '../config/db.php';
+require_once '../config/upload_cleanup.php';
 requireLogin();
 
 $form_back_url = REL_BASE . 'index.php';
@@ -163,6 +164,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             } else {
                 mysqli_rollback($conn);
+                cleanupReplacedUploads(
+                    $conn,
+                    array_merge([$cover_image], extractUploadPathsFromHtml($description)),
+                    []
+                );
                 $error = '建立失敗，請稍後再試';
             }
         }
@@ -859,8 +865,12 @@ $('#cover-image-input').on('change', function () {
     const file = this.files[0];
     if (!file) return;
     const fd = new FormData();
+    const currentCover = $('#cover-image-url').val();
     fd.append('image', file);
     fd.append('type', 'forms');
+    if (currentCover) {
+        fd.append('old_path', currentCover);
+    }
     $.ajax({
         url: '<?= REL_BASE ?>api/upload.php', type: 'POST',
         data: fd, contentType: false, processData: false,
