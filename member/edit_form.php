@@ -52,6 +52,18 @@ while ($f = mysqli_fetch_assoc($fields_result)) {
 
 $error = '';
 
+function normalizeFieldOptions($options) {
+    if (is_array($options)) {
+        return array_values(array_filter(array_map('trim', $options), function ($value) {
+            return $value !== '';
+        }));
+    }
+
+    return array_values(array_filter(array_map('trim', explode("\n", (string)$options)), function ($value) {
+        return $value !== '';
+    }));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title          = trim($_POST['title'] ?? '');
     $description    = trim($_POST['description'] ?? '');
@@ -81,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($fields as $field) {
         $type = $field['type'] ?? '';
         if (in_array($type, ['radio', 'checkbox', 'dropdown'])) {
-            $opts = array_filter(array_map('trim', explode("\n", $field['options'] ?? '')));
+            $opts = normalizeFieldOptions($field['options'] ?? []);
             if (empty($opts)) { $optionError = true; break; }
         }
     }
@@ -125,13 +137,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 更新表單本體；正式多社團曝光位置由 form_clubs 管理。
         if (isAdmin()) {
-            $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, response_scope=?, club_id=? WHERE id=?");
+            $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, response_scope=?, club_id=?, updated_at=NOW() WHERE id=?");
             mysqli_stmt_bind_param($stmt, 'ssssssiiiiisii',
                 $title, $description, $cover_image, $target_group, $start_date, $end_date,
                 $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $fallback_club_id, $id
             );
         } else {
-            $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, response_scope=?, club_id=? WHERE id=? AND user_id=?");
+            $stmt = mysqli_prepare($conn, "UPDATE forms SET title=?, description=?, cover_image=?, target_group=?, start_date=?, end_date=?, allow_multiple=?, is_published=?, show_stats=?, anonymous_responses=?, show_on_index=?, response_scope=?, club_id=?, updated_at=NOW() WHERE id=? AND user_id=?");
             mysqli_stmt_bind_param($stmt, 'ssssssiiiiisiii',
                 $title, $description, $cover_image, $target_group, $start_date, $end_date,
                 $allow_multiple, $is_published, $show_stats, $anonymous_responses, $show_on_index, $response_scope, $fallback_club_id, $id, $_SESSION['user_id']
@@ -153,10 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $options  = null;
 
                 if (in_array($type, ['radio', 'checkbox', 'dropdown']) && !empty($field['options'])) {
-                    $raw_options = is_array($field['options'])
-                        ? $field['options']
-                        : explode("\n", $field['options']);
-                    $opts = array_filter(array_map('trim', $raw_options));
+                    $opts = normalizeFieldOptions($field['options']);
                     $options = json_encode(array_values($opts), JSON_UNESCAPED_UNICODE);
                 }
 
@@ -188,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($updated) {
             mysqli_commit($conn);
-            header('Location: ' . $form_back_url);
+            header('Location: ' . APP_BASE . '/index.php');
             exit();
         }
 

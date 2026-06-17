@@ -28,6 +28,16 @@
     transform-origin: center;
     animation: ptcl-fly var(--dur) ease-out var(--delay) forwards;
 }
+.card.dropdown-open {
+    position: relative;
+    z-index: 1060;
+    transform: none !important;
+    animation: none !important;
+    will-change: auto !important;
+}
+.card.dropdown-open .dropdown-menu {
+    z-index: 1065;
+}
 </style>
 
 <!-- hover / spring keyframes 由 JS 依 localStorage 動態注入 -->
@@ -169,9 +179,9 @@
 
 // ══ Dropdown 開啟時暫停 will-change（避免 stacking context 截斷 fixed 定位）══
 $(document).on('show.bs.dropdown', '.card .dropdown', function () {
-    $(this).closest('.card').css('will-change', 'auto');
+    $(this).closest('.card').addClass('dropdown-open').css('will-change', 'auto');
 }).on('hidden.bs.dropdown', '.card .dropdown', function () {
-    $(this).closest('.card').css('will-change', 'transform');
+    $(this).closest('.card').removeClass('dropdown-open').css('will-change', 'transform');
 });
 
 // ══ 全域環境主題引擎（下雪 / 落花 / 星空 / 泡泡）══

@@ -984,6 +984,10 @@ $(document).on('click', '.btn-ratio', function () {
 .account-icon-btn .bi {
     line-height: 1;
 }
+.ambient-opt.is-active {
+    color: var(--bs-body-color) !important;
+    font-weight: 600;
+}
 
 /* ── 動畫設定滑桿軌道：淺色模式下補深軌道色 ── */
 #anim-body .form-range::-webkit-slider-runnable-track {
@@ -1031,11 +1035,24 @@ $(document).on('click', '.btn-ratio', function () {
     const root    = document.getElementById('html-root');
 
     function applyTheme(t) {
+        let isDark;
         if (t === 'auto') {
-            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            root.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         } else {
-            root.setAttribute('data-bs-theme', t);
+            isDark = t === 'dark';
+        }
+
+        root.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+        if (isDark) {
+            root.style.background = '#000';
+            root.style.colorScheme = 'dark';
+        } else {
+            root.style.background = '';
+            root.style.colorScheme = '';
+        }
+
+        if (window.applyThemeColor) {
+            applyThemeColor(localStorage.getItem('themeColor') || '#6610f2');
         }
     }
 
@@ -1043,9 +1060,17 @@ $(document).on('click', '.btn-ratio', function () {
         options.forEach(el => el.classList.toggle('active', el.dataset.theme === t));
     }
 
+    function notifyThemeChanged(t) {
+        window.dispatchEvent(new CustomEvent('appThemeChanged', { detail: { theme: t } }));
+    }
+
     // 初始化
     const saved = localStorage.getItem('theme') || 'auto';
     setActive(saved);
+
+    window.addEventListener('appThemeChanged', function (e) {
+        setActive((e.detail && e.detail.theme) || (localStorage.getItem('theme') || 'auto'));
+    });
 
     options.forEach(el => {
         el.addEventListener('click', function () {
@@ -1053,7 +1078,15 @@ $(document).on('click', '.btn-ratio', function () {
             localStorage.setItem('theme', t);
             applyTheme(t);
             setActive(t);
+            notifyThemeChanged(t);
         });
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+        if ((localStorage.getItem('theme') || 'auto') === 'auto') {
+            applyTheme('auto');
+            notifyThemeChanged('auto');
+        }
     });
 })();
 </script>
@@ -1228,8 +1261,9 @@ window.addEventListener('load', function () {
         document.querySelectorAll('.ambient-opt').forEach(function (btn) {
             var active = btn.dataset.theme === t;
             var rgb = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary-rgb').trim() || '13,110,253';
+            btn.classList.toggle('is-active', active);
             btn.style.background  = active ? 'rgba(' + rgb + ',0.18)' : '';
-            btn.style.color       = active ? '#fff' : '';
+            btn.style.color       = active ? 'var(--bs-body-color)' : '';
             btn.style.borderColor = active ? 'rgba(' + rgb + ',0.60)' : '';
             btn.style.boxShadow   = active ? '0 0 14px rgba(' + rgb + ',0.60),0 0 32px rgba(' + rgb + ',0.25)' : '';
         });

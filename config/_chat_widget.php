@@ -96,6 +96,7 @@
 .chat-bubble-wrap.me { flex-direction: column; align-items: flex-end; }
 .chat-bubble {
     max-width: 72%;
+    min-width: 8.4rem;
     padding: 7px 12px;
     border-radius: 18px;
     font-size: 0.85rem;
@@ -134,7 +135,7 @@
 [data-bs-theme="dark"] .chat-bubble.system { border-color: #5d4a00; }
 [data-bs-theme="dark"] .sys-bubble-body { background: #2a2200; color: #fde68a; }
 .sys-bubble-body .time { font-size: 0.63rem; opacity: .6; margin-top: 5px; }
-.chat-bubble .time { font-size: 0.65rem; opacity: .65; margin-top: 3px; }
+.chat-bubble .time { font-size: 0.65rem; opacity: .65; margin-top: 3px; white-space: nowrap; }
 .read-receipt {
     font-size: 0.63rem;
     color: var(--bs-secondary-color, #6c757d);

@@ -9,7 +9,7 @@ $has_form_clubs = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'form_cl
 $has_show_on_index = mysqli_num_rows(mysqli_query($conn, "SHOW COLUMNS FROM forms LIKE 'show_on_index'")) > 0;
 $index_filter = $has_show_on_index ? "AND f.show_on_index = 1" : "AND f.club_id IS NULL";
 
-$sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_date, f.end_date, f.allow_multiple, f.created_at, f.show_stats, f.anonymous_responses, f.response_scope, f.club_id,
+$sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_date, f.end_date, f.allow_multiple, f.created_at, COALESCE(f.updated_at, f.created_at) AS sort_at, f.show_stats, f.anonymous_responses, f.response_scope, f.club_id,
                u.username AS author, u.avatar AS author_avatar,
                g.name AS group_name,
                COUNT(DISTINCT fr.id) AS response_count,
@@ -29,7 +29,7 @@ $sql = "SELECT f.id, f.user_id, f.title, f.description, f.cover_image, f.start_d
           AND (f.target_group IS NULL)
           $index_filter
         GROUP BY f.id
-        ORDER BY f.created_at DESC";
+        ORDER BY sort_at DESC";
 
 $forms = mysqli_query($conn, $sql);
 $showNavSearch = true;
@@ -71,6 +71,7 @@ function formFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs) {
         white-space: nowrap;
     }
 }
+
 </style>
 
 <div class="row justify-content-center">
@@ -80,11 +81,11 @@ function formFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs) {
         <!-- 標題 = 排序下拉選單 -->
         <div class="mb-3">
             <div class="dropdown">
-                <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
+                <button class="btn sort-trigger dropdown-toggle d-inline-flex align-items-center gap-2 fw-bold px-3 py-2"
                         data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-house-door"></i> <span id="sort-label-text">最新動態</span>
                 </button>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu sort-menu">
                     <li><button class="dropdown-item sort-opt active" data-mode="date_desc"><i class="bi bi-clock-history me-2 text-primary"></i>最新動態</button></li>
                     <li><button class="dropdown-item sort-opt" data-mode="date_asc"><i class="bi bi-clock me-2 text-secondary"></i>最舊動態</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -114,7 +115,7 @@ function formFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs) {
         <div id="feed-container">
         <?php while ($form = mysqli_fetch_assoc($forms)): ?>
         <div class="card mb-4 feed-card-item" id="form-card-<?= $form['id'] ?>"
-             data-date="<?= strtotime($form['created_at']) ?>"
+             data-date="<?= strtotime($form['sort_at']) ?>"
              data-resp="<?= $form['response_count'] ?>"
              data-like="<?= $form['like_count'] ?>"
              data-title="<?= htmlspecialchars(mb_strtolower($form['title'])) ?>"
@@ -128,11 +129,11 @@ function formFillBlockReason($conn, $form, $user_id, $now, $has_form_clubs) {
                     </a>
                     <div class="text-muted small">
                         <?php
-                        $diff = time() - strtotime($form['created_at']);
+                        $diff = time() - strtotime($form['sort_at']);
                         if ($diff < 60) echo '剛剛';
                         elseif ($diff < 3600) echo floor($diff/60) . ' 分鐘前';
                         elseif ($diff < 86400) echo floor($diff/3600) . ' 小時前';
-                        else echo date('Y/m/d', strtotime($form['created_at']));
+                        else echo date('Y/m/d', strtotime($form['sort_at']));
                         ?>
                     </div>
                 </div>

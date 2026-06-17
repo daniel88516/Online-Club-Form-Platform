@@ -119,7 +119,7 @@ require_once __DIR__ . '/session.php';
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="<?= REL_BASE ?>index.php">
+        <a class="navbar-brand site-brand-neon fw-bold" href="<?= REL_BASE ?>index.php">
             <i class="bi bi-file-earmark-text"></i> 線上表單系統
         </a>
         <?php if (!empty($showNavSearch)): ?>
@@ -254,20 +254,33 @@ require_once __DIR__ . '/session.php';
         });
     }
 
+    function notifyThemeChanged(t) {
+        window.dispatchEvent(new CustomEvent('appThemeChanged', { detail: { theme: t } }));
+    }
+
     /* 初始化：標記當前作用中的按鈕 */
     syncButtons(getCur());
+
+    window.addEventListener('appThemeChanged', function (e) {
+        syncButtons((e.detail && e.detail.theme) || getCur());
+    });
 
     /* 點擊切換 */
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('.nav-theme-btn');
         if (!btn) return;
         e.stopPropagation();
-        applyTheme(btn.getAttribute('data-t'));
+        var t = btn.getAttribute('data-t');
+        applyTheme(t);
+        notifyThemeChanged(t);
     });
 
     /* 監聽系統偏好變更（只在「系統」模式下有效） */
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-        if (getCur() === 'auto') applyTheme('auto');
+        if (getCur() === 'auto') {
+            applyTheme('auto');
+            notifyThemeChanged('auto');
+        }
     });
 })();
 </script>

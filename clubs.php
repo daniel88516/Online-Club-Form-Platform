@@ -16,11 +16,11 @@ $q       = trim($_GET['q'] ?? '');
 <!-- 標題排序 + 建立按鈕 -->
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="dropdown">
-        <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.15rem;background:transparent;border:none;color:inherit;"
+        <button class="btn sort-trigger dropdown-toggle d-inline-flex align-items-center gap-2 fw-bold px-3 py-2"
                 data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-people"></i> <span id="sort-label-text">探索社團</span>
         </button>
-        <ul class="dropdown-menu">
+        <ul class="dropdown-menu sort-menu">
             <li><button class="dropdown-item sort-opt active" data-mode="members_desc"><i class="bi bi-people me-2 text-info"></i>成員最多</button></li>
             <li><button class="dropdown-item sort-opt" data-mode="date_desc"><i class="bi bi-clock-history me-2 text-primary"></i>最新建立</button></li>
             <li><button class="dropdown-item sort-opt" data-mode="date_asc"><i class="bi bi-clock me-2 text-secondary"></i>最早建立</button></li>

@@ -197,8 +197,8 @@ require_once 'config/header.php';
                 <!-- 查看成員按鈕 -->
                 <?php if (in_array($club['my_role'], ['owner','member'])): ?>
                 <div class="mt-3">
-                    <button class="btn btn-glow-dark btn-sm" data-bs-toggle="modal" data-bs-target="#memberListModal" style="font-size:0.9rem;padding:0.28rem 0.7rem;">
-                        <i class="bi bi-people-fill"></i> 查看成員（<?= $club['member_count'] ?>）
+                    <button class="btn btn-glow-dark btn-sm" id="btn-member-list" data-bs-toggle="modal" data-bs-target="#memberListModal" style="font-size:0.9rem;padding:0.28rem 0.7rem;">
+                        <i class="bi bi-people-fill"></i> 查看成員（<span id="club-member-count"><?= $club['member_count'] ?></span>）
                     </button>
                 </div>
                 <?php endif; ?>
@@ -233,11 +233,11 @@ require_once 'config/header.php';
         <!-- 社團表單列表 -->
         <div class="mb-3 d-flex align-items-center justify-content-between">
             <div class="dropdown">
-                <button class="btn ps-2 fw-bold dropdown-toggle d-inline-flex align-items-center gap-1 lh-1" style="font-size:1.05rem;background:transparent;border:none;color:inherit;"
+                <button class="btn sort-trigger dropdown-toggle d-inline-flex align-items-center gap-2 fw-bold px-3 py-2"
                         data-bs-toggle="dropdown">
                     <i class="bi bi-journal-text"></i> <span id="sort-label-text">最新動態</span>
                 </button>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu sort-menu">
                     <li><button class="dropdown-item sort-opt active" data-mode="date_desc"><i class="bi bi-clock-history me-2 text-primary"></i>最新動態</button></li>
                     <li><button class="dropdown-item sort-opt" data-mode="date_asc"><i class="bi bi-clock me-2 text-secondary"></i>最舊動態</button></li>
                     <li><hr class="dropdown-divider"></li>
@@ -628,7 +628,12 @@ $(document).on('click', '.btn-kick-member', function () {
         if (!ok) return;
         $btn.prop('disabled', true);
         $.post('<?= REL_BASE ?>api/club_action.php', { action: 'kick', club_id: CLUB_ID, target_uid: uid }, function (res) {
-            if (res.success) $('#member-row-' + uid).fadeOut(300, function () { $(this).remove(); });
+            if (res.success) {
+                $('#member-row-' + uid).fadeOut(300, function () { $(this).remove(); });
+                const $count = $('#club-member-count');
+                const nextCount = Math.max(0, (parseInt($count.text(), 10) || 0) - 1);
+                $count.text(nextCount);
+            }
             else { alert(res.message); $btn.prop('disabled', false); }
         }, 'json');
     });
